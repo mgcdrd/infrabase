@@ -1,0 +1,25 @@
+---
+
+
+# ====================================
+# ====================================
+# get some basic info before we start
+#- name: LVM2 - main - find root LVM info
+#  ansible.builtin.debug:
+#    msg: "{{ ansible_facts.facter_mountpoints['/'].device   }}"
+
+- name: LVM2 - main - find root LVM info
+  ansible.builtin.set_fact:
+    root_mapper: "{{ ansible_facts.facter_mountpoints['/'].device | split('/') | last }}"
+
+- name: LVM2 - main - set fact for OS VG
+  ansible.builtin.set_fact:
+    os_vgs: "{{ root_mapper | split('-lv') | first }}"
+
+- name: LVM2 - main - import VG checks
+  import_tasks: roles/lvm2/tasks/vgchecks.yml
+  when: 'lvm_settings is defined'
+- name: LVM2 - main - import LV checks
+  import_tasks: roles/lvm2/tasks/lvchecks.yml
+  when: 'lvm_settings is defined'
+

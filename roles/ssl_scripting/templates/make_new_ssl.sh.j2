@@ -1,0 +1,73 @@
+#!/bin/bash
+
+# see if an FQDN was given, and if not get it...
+if [[ $# -lt 1 ]]; then
+  echo "No FQDN given, let's get it"
+  read -p "New FQDN: " FQDN
+  read -p "Additional names, enter to continue without: " CNAMES
+else
+  FQDN=$1
+fi
+
+if [[ $# -gt 1 ]]; then
+  shift
+  CNAMES=$@
+fi
+
+
+
+# get the script's dir and make the sub-dir if neccessary
+SCRIPT_DIR=$(dirname $0)
+if [[ ! -d ${SCRIPT_DIR}/extras ]]; then mkdir -p ${SCRIPT_DIR}/extras ;fi
+
+
+# check if a csr exists and notify the user
+if [[ -f ${SCRIPT_DIR}/extras/${FQDN}.csr ]]; then
+  echo "WARN: An CSR for $FQDN exists:  $(ls ${SCRIPT_DIR}/extras/${FQDN}.csr)"
+  read -p "Continue [Y/n]: " BOOL_QUIT
+  if [[ "$BOOL_QUIT" == "N" ]] || [[ "$BOOL_QUIT" == "n" ]]; then
+    echo
+    echo "Quitting....good bye."
+    exit
+  fi
+fi
+
+SAN_ENTRIES=()
+i=1
+for name in $CNAMES; do
+  SAN_ENTRIES+=("DNS.${i} = ${name}")
+  ((i++))
+done
+SAN_CONFIG=$(printf "%s\n" "${SAN_ENTRIES[@]}")
+
+
+openssl req -new -sha256 -nodes -out ${SCRIPT_DIR}/extras/${FQDN}.csr -newkey rsa:4096 -keyout ${SCRIPT_DIR}/${FQDN}.key -config <(cat <<EOF
+[req]
+default_bits = {{ ssl_scripting.def_bits | default('2048') }}
+prompt = no
+default_md = {{ ssl_scripting.def_md | default('sha256') }}
+distinguished_name = dn
+req_extensions = req_ext
+
+[dn]
+C =  {{ ssl_scripting.country }}
+ST = {{ ssl_scripting.state }}
+L =  {{ ssl_scripting.locale }}
+O =  {{ ssl_scripting.org }}
+OU = {{ ssl_scripting.orgunit }}
+emailAddress = {{ ssl_scripting.email }}
+CN = ${FQDN}
+
+[req_ext]
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = ${FQDN}
+${SAN_CONFIG}
+EOF
+)
+
+
+echo
+echo
+cat ${SCRIPT_DIR}/extras/${FQDN}.csr

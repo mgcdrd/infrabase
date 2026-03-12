@@ -1,0 +1,15 @@
+---
+galaxy_info:
+  author: mgcdrd
+  description: ssl_scripting to automate SSL/TLS key/cert generation
+  role_name: ssl_scripting
+
+  license: GPL-3.0-or-later
+
+  min_ansible_version: '2.14'
+
+  galaxy_tags:
+    - mgcdrd
+    - ssl_scripting
+
+collections: []

@@ -1,0 +1,4 @@
+# Cluster node entries (added by Ansible)
+{% for host in groups[cluster_group] %}
+{{ hostvars[host]['ansible_default_ipv4']['address'] }}  {{ hostvars[host]['ansible_hostname'] }}  {{ hostvars[host]['ansible_fqdn'] }}
+{% endfor %}

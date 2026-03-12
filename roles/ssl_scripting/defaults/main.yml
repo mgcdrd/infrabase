@@ -1,0 +1,29 @@
+---
+
+ssl_scripting:
+  # The base directory to use; will be created if doesn't exist
+  base_dir: /root/ssl_gen
+
+  # The default bit size to write to the script for certs and keys created with it
+  def_bits: 2048
+
+  # the default md checksum to write to the script for certs and keys created with it
+  def_md:   sha256
+
+  # The country to write to the script for certs and keys created with it
+  country:  US
+
+  # The state to write to the script for certs and keys created with it
+  state:    XX
+
+  # The locale to write to the script for certs and keys created with it
+  locale:   YY
+
+  # The organization to write to the script for certs and keys created with it
+  org:      ZZ
+
+  # The organizational unit to write to the script for certs and keys created with it
+  orgunit:  AA
+
+  # The mail to write to the script for certs and keys created with it
+  email:    admins@acme.com

@@ -1,0 +1,24 @@
+namespace: mgcdrd
+name: infrabase
+version: 0.1.0
+readme: README.md
+authors:
+- mgcdrd mgcdryad@example.com
+
+# A short summary description of the collection
+description: -|
+  Reusable base roles that can be included in higher level roles, such a service installations/configurations. 
+  Not necessarily intended for sole use, but can be.
+
+license:
+- GPL-3.0-or-later
+
+#dependencies: {}
+
+#repository: https://gitlab.internal.dev/ansible/collections/
+#documentation: http://docs.example.com
+#homepage: http://example.com
+#issues: http://example.com/issue/tracker
+
+build_ignore: []
+
