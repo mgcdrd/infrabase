@@ -1,23 +1,24 @@
 galaxy_info:
   author: mgcdrd
-  description: looks for a group all hosts are a part of and adds all host in any group to the /etc/hosts on all hosts.
-
-  #issue_tracker_url: http://example.com/issue/tracker
+  description: >-
+    Populates /etc/hosts with the IPs and hostnames of a cluster group.
+    Designed for Kubernetes, HAProxy, Galera, and similar cluster deployments.
 
   license: GPL-3.0-or-later
 
   min_ansible_version: "2.14"
 
   platforms:
-  - name: EL
-    versions:
-    - '8'
-    - '9'
-  - name: Debian
-    versions:
-    - bullseye
-  
-  galaxy_tags: 
-  - mgcdrd
+    - name: EL
+      versions:
+        - '9'
+        - '10'
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
 
-#dependencies: []
+  galaxy_tags:
+    - mgcdrd
+    - hosts
+    - cluster

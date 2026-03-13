@@ -1,0 +1,29 @@
+---
+
+# Inventory group whose members will be written into /etc/hosts on every host
+# in the play. If left empty, cluster node entries are skipped for that host.
+# Set this in group_vars for the cluster group so only those hosts manage peer entries.
+etc_hosts_group: ""
+
+# Ansible facts key for the network interface used to resolve each host's IP.
+# Defaults to the host's default IPv4 interface.
+# Override if your cluster nodes communicate over a dedicated interface.
+# Examples:
+#   etc_hosts_interface: ansible_default_ipv4   # default route interface (default)
+#   etc_hosts_interface: ansible_eth1           # second ethernet
+#   etc_hosts_interface: ansible_bond0          # bonded interface
+etc_hosts_interface: ansible_default_ipv4
+
+# Static entries to add to /etc/hosts on every host in the play.
+# Written as a separate managed block — coexists with cluster node entries.
+# Each entry requires 'ip' and 'hostname'. 'aliases' is optional.
+# Note: Ansible does not merge lists across variable files. If you define
+# this in multiple places (group_vars, host_vars), only the highest-precedence
+# value is used — they are not concatenated.
+etc_hosts_entries: []
+# etc_hosts_entries:
+#   - ip: 10.0.0.1
+#     hostname: storage.internal
+#   - ip: 10.0.0.2
+#     hostname: registry.internal
+#     aliases: registry

@@ -1,43 +1,35 @@
 ---
-# tasks file for etc_hosts
 
-- name: debug
-  debug:
-    msg: >-
-      {{
-        groups | dict2items | rejectattr('key', 'in', ['all', 'ungrouped']) | map(attribute='value') | flatten | unique | list
-      }}
+# =====================
+# Cluster node entries (only when etc_hosts_group is set)
+- name: etc_hosts - Validate etc_hosts_group exists in inventory
+  ansible.builtin.assert:
+    that:
+      - etc_hosts_group in groups
+    fail_msg: >-
+      etc_hosts_group '{{ etc_hosts_group }}' does not exist in the inventory.
+  when: etc_hosts_group | length > 0
 
-# Use the hosts defined in the playbook itself
-- name: Find the group used in the play
-  set_fact:
-    cluster_group: >-
-      {{ groups
-        | dict2items
-        | selectattr('value', 'equalto', play_hosts)
-        | map(attribute='key')
-        | select('match', '^(?!all$|ungrouped$).*')
-        | list
-        | first
-      }}
+- name: etc_hosts - Resolve target host list
+  ansible.builtin.set_fact:
+    _etc_hosts_hosts: "{{ groups[etc_hosts_group] }}"
+    _etc_hosts_label: "{{ etc_hosts_group | upper }}"
+  when: etc_hosts_group | length > 0
 
-
-- name: Remove old /etc/hosts entries for group "{{ cluster_group }}"
-  ansible.builtin.lineinfile:
-    path: /etc/hosts
-    regexp: '.*\s{{ item }}(\s|$)'
-    state: absent
-    backup: yes
-  loop: "{{ groups[cluster_group] }}"
-
-
-#------------------------------
-# Used to set when part of cluster
-#------------------------------
-- name: Add "{{ cluster_group }}" cluster nodes to /etc/hosts
+- name: etc_hosts - Write cluster node entries to /etc/hosts
   ansible.builtin.blockinfile:
     path: /etc/hosts
-    marker: "#  {mark} ANSIBLE MANAGED {{ cluster_group | upper }} NODES"
-    block:  "{{ lookup('template', 'etc_hosts_cluster.j2') }}"
-    backup: yes
-  
+    marker: "# {mark} ANSIBLE MANAGED {{ _etc_hosts_label }} NODES"
+    block: "{{ lookup('template', 'etc_hosts_cluster.j2') }}"
+    backup: true
+  when: etc_hosts_group | length > 0
+
+# =====================
+# Static entries (only when etc_hosts_entries is non-empty)
+- name: etc_hosts - Write static entries to /etc/hosts
+  ansible.builtin.blockinfile:
+    path: /etc/hosts
+    marker: "# {mark} ANSIBLE MANAGED STATIC ENTRIES"
+    block: "{{ lookup('template', 'etc_hosts_static.j2') }}"
+    backup: true
+  when: etc_hosts_entries | length > 0

@@ -1,4 +1,7 @@
-# Cluster node entries (added by Ansible)
-{% for host in groups[cluster_group] %}
-{{ hostvars[host]['ansible_default_ipv4']['address'] }}  {{ hostvars[host]['ansible_hostname'] }}  {{ hostvars[host]['ansible_fqdn'] }}
+{% for host in _etc_hosts_hosts %}
+{% set _iface = hostvars[host].get(etc_hosts_interface, {}) %}
+{% set _ip = _iface.get('address', '') %}
+{% if _ip %}
+{{ _ip }}  {{ hostvars[host]['ansible_hostname'] }}  {{ hostvars[host]['ansible_fqdn'] }}
+{% endif %}
 {% endfor %}
