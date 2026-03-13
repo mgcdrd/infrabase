@@ -1,0 +1,42 @@
+---
+
+# OS-specific internal variables - not intended for user override
+_postfix_os_vars:
+  Debian:
+    packages:
+      - postfix
+      - bsd-mailx
+    sasl_packages:
+      - libsasl2-modules
+    daemon_directory: /usr/lib/postfix/sbin
+    shlib_directory: /usr/lib/postfix
+    sendmail_path: /usr/sbin/sendmail
+    newaliases_path: /usr/bin/newaliases
+    mailq_path: /usr/bin/mailq
+    tls_cert_file: /etc/ssl/certs/ssl-cert-snakeoil.pem
+    tls_key_file: /etc/ssl/private/ssl-cert-snakeoil.key
+    tls_ca_path: /etc/ssl/certs
+    tls_ca_file: /etc/ssl/certs/ca-certificates.crt
+    html_directory: /usr/share/doc/postfix/html
+    readme_directory: /usr/share/doc/postfix
+    sample_directory: /usr/share/doc/postfix/samples
+  RedHat:
+    packages:
+      - postfix
+      - mailx
+    sasl_packages:
+      - cyrus-sasl-plain
+    daemon_directory: /usr/libexec/postfix
+    shlib_directory: /usr/lib64/postfix
+    sendmail_path: /usr/sbin/sendmail.postfix
+    newaliases_path: /usr/bin/newaliases.postfix
+    mailq_path: /usr/bin/mailq.postfix
+    tls_cert_file: /etc/pki/tls/certs/postfix.pem
+    tls_key_file: /etc/pki/tls/private/postfix.key
+    tls_ca_path: /etc/pki/tls/certs
+    tls_ca_file: /etc/pki/tls/certs/ca-bundle.crt
+    html_directory: no
+    readme_directory: /usr/share/doc/postfix/README_FILES
+    sample_directory: /usr/share/doc/postfix/samples
+
+_postfix_os: "{{ _postfix_os_vars[ansible_facts['os_family']] }}"

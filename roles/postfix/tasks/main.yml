@@ -1,0 +1,7 @@
+---
+
+- name: postfix main - install
+  import_tasks: roles/postfix/tasks/install.yml
+
+- name: postfix main - configure
+  import_tasks: roles/postfix/tasks/config.yml

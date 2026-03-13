@@ -1,0 +1,56 @@
+---
+
+# =====================
+# Deploy main.cf
+- name: postfix config - Deploy /etc/postfix/main.cf
+  ansible.builtin.template:
+    src: main.cf.j2
+    dest: /etc/postfix/main.cf
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  notify: restart postfix
+
+# =====================
+# SASL credentials for outbound relay auth (either mode, when relayhost is set)
+- name: postfix config - Deploy SASL password file
+  ansible.builtin.template:
+    src: sasl_passwd.j2
+    dest: /etc/postfix/sasl_passwd
+    owner: root
+    group: root
+    mode: '0600'
+  when: postfix_sasl_enabled and postfix_relayhost | length > 0
+  notify:
+    - postmap sasl_passwd
+    - restart postfix
+
+- name: postfix config - Remove SASL password file if not needed
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/postfix/sasl_passwd
+    - /etc/postfix/sasl_passwd.db
+  when: not postfix_sasl_enabled or postfix_relayhost | length == 0
+
+# =====================
+# Aliases
+- name: postfix config - Configure /etc/aliases entries
+  ansible.builtin.lineinfile:
+    path: /etc/aliases
+    regexp: "^{{ item.key }}:"
+    line: "{{ item.key }}: {{ item.value }}"
+    state: present
+  loop: "{{ postfix_aliases | dict2items }}"
+  when: postfix_aliases | length > 0
+  notify: run newaliases
+
+# =====================
+# Enable and start service
+- name: postfix config - Enable and start postfix
+  ansible.builtin.systemd_service:
+    name: postfix.service
+    state: started
+    enabled: true

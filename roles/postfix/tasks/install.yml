@@ -1,0 +1,54 @@
+---
+
+# =====================
+# Validate configuration before installing
+- name: postfix install - Validate relayhost is set for client mode
+  ansible.builtin.assert:
+    that:
+      - postfix_mode == 'relay' or (postfix_relayhost | length > 0)
+    fail_msg: >-
+      postfix_relayhost must be set when postfix_mode is 'client'.
+      Example: postfix_relayhost: "[mail.example.com]:25"
+
+- name: postfix install - Validate SASL credentials if SASL is enabled
+  ansible.builtin.assert:
+    that:
+      - postfix_sasl_username is defined
+      - postfix_sasl_password is defined
+    fail_msg: >-
+      postfix_sasl_username and postfix_sasl_password must be defined
+      when postfix_sasl_enabled is true.
+  when: postfix_sasl_enabled
+
+- name: postfix install - Validate cert auth key file is defined alongside cert file
+  ansible.builtin.assert:
+    that:
+      - postfix_smtp_tls_key_file is defined
+    fail_msg: >-
+      postfix_smtp_tls_key_file must be defined when postfix_smtp_tls_cert_file is set.
+  when: postfix_smtp_tls_cert_file is defined
+
+# =====================
+# Debian install
+- name: postfix install - Install packages (Debian)
+  ansible.builtin.apt:
+    pkg: >-
+      {{
+        _postfix_os.packages +
+        (_postfix_os.sasl_packages if postfix_sasl_enabled else [])
+      }}
+    state: present
+    update_cache: true
+  when: ansible_facts['os_family'] == 'Debian'
+
+# =====================
+# RedHat install
+- name: postfix install - Install packages (RedHat)
+  ansible.builtin.dnf:
+    name: >-
+      {{
+        _postfix_os.packages +
+        (_postfix_os.sasl_packages if postfix_sasl_enabled else [])
+      }}
+    state: present
+  when: ansible_facts['os_family'] == 'RedHat'

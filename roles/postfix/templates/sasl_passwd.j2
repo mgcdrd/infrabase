@@ -1,0 +1,5 @@
+# Managed by Ansible - do not edit manually
+# Role: mgcdrd.infrabase.postfix
+# Postfix SASL credentials for outbound relay authentication.
+# After any change, run: postmap /etc/postfix/sasl_passwd
+{{ postfix_relayhost }} {{ postfix_sasl_username }}:{{ postfix_sasl_password }}

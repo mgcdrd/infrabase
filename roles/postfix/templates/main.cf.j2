@@ -1,0 +1,128 @@
+# Managed by Ansible - do not edit manually
+# Role: mgcdrd.infrabase.postfix
+# Mode: {{ postfix_mode }}
+
+# COMPATIBILITY
+compatibility_level = 2
+
+# LOCAL PATHNAME INFORMATION
+queue_directory = /var/spool/postfix
+command_directory = /usr/sbin
+daemon_directory = {{ _postfix_os.daemon_directory }}
+data_directory = /var/lib/postfix
+
+# QUEUE AND PROCESS OWNERSHIP
+mail_owner = postfix
+
+# INTERNET HOST AND DOMAIN NAMES
+myhostname = {{ postfix_myhostname }}
+mydomain = {{ postfix_mydomain }}
+
+# SENDING MAIL
+# myorigin controls the domain appended to locally-posted mail.
+myorigin = {{ postfix_myorigin }}
+
+# RECEIVING MAIL
+# inet_interfaces controls which interfaces postfix listens on.
+inet_interfaces = {{ postfix_inet_interfaces }}
+inet_protocols = {{ postfix_inet_protocols }}
+
+{% if postfix_mode == 'client' %}
+# ============================================================
+# CLIENT MODE: forward all mail to the configured relay host
+# ============================================================
+
+# Do not accept mail for local delivery - relay everything
+mydestination =
+
+# Forward all mail to the relay
+relayhost = {{ postfix_relayhost }}
+
+# Only trust localhost
+mynetworks = 127.0.0.0/8 [::1]/128
+
+{% else %}
+# ============================================================
+# RELAY MODE: accept mail from trusted networks and forward it
+# ============================================================
+
+# Accept mail destined for this host and localhost
+mydestination = $myhostname, localhost.$mydomain, localhost
+
+# Trusted networks allowed to relay through this host
+mynetworks = {{ postfix_mynetworks }}
+
+{% if postfix_relay_domains | length > 0 %}
+# Domains this relay accepts and forwards mail for
+relay_domains = {{ postfix_relay_domains }}
+{% endif %}
+
+{% if postfix_relayhost | length > 0 %}
+# Forward to upstream relay (tiered/smarthost setup)
+relayhost = {{ postfix_relayhost }}
+{% endif %}
+
+{% endif %}
+
+# REJECTING MAIL FOR UNKNOWN LOCAL USERS
+unknown_local_recipient_reject_code = 550
+
+# ALIAS DATABASE
+alias_maps = hash:/etc/aliases
+alias_database = hash:/etc/aliases
+
+{% if postfix_tls_enabled %}
+# ============================================================
+# TLS CONFIGURATION
+# ============================================================
+
+{% if postfix_mode == 'relay' %}
+# Inbound TLS (SMTP server) - announce STARTTLS to connecting clients
+smtpd_tls_cert_file = {{ postfix_tls_cert_file | default(_postfix_os.tls_cert_file) }}
+smtpd_tls_key_file = {{ postfix_tls_key_file | default(_postfix_os.tls_key_file) }}
+smtpd_tls_security_level = {{ postfix_tls_security_level }}
+
+{% endif %}
+# Outbound TLS (SMTP client) - use TLS when connecting to remote servers
+smtp_tls_CApath = {{ _postfix_os.tls_ca_path }}
+smtp_tls_CAfile = {{ _postfix_os.tls_ca_file }}
+smtp_tls_security_level = {{ postfix_tls_security_level }}
+
+{% endif %}
+
+{% if postfix_smtp_tls_cert_file is defined %}
+# ============================================================
+# OUTBOUND CLIENT CERTIFICATE (authenticating to upstream relay)
+# ============================================================
+smtp_tls_cert_file = {{ postfix_smtp_tls_cert_file }}
+smtp_tls_key_file = {{ postfix_smtp_tls_key_file }}
+
+{% endif %}
+{% if postfix_sasl_enabled and postfix_relayhost | length > 0 %}
+# ============================================================
+# SASL AUTHENTICATION (authenticating to upstream relay)
+# ============================================================
+smtp_sasl_auth_enable = yes
+smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+smtp_sasl_security_options = noanonymous
+smtp_tls_security_level = encrypt
+
+{% endif %}
+
+# DEBUGGING CONTROL
+debug_peer_level = 2
+debugger_command =
+         PATH=/bin:/usr/bin:/usr/local/bin:/usr/X11R6/bin
+         ddd $daemon_directory/$process_name $process_id & sleep 5
+
+# INSTALL-TIME CONFIGURATION INFORMATION
+sendmail_path = {{ _postfix_os.sendmail_path }}
+newaliases_path = {{ _postfix_os.newaliases_path }}
+mailq_path = {{ _postfix_os.mailq_path }}
+setgid_group = postdrop
+html_directory = {{ _postfix_os.html_directory }}
+manpage_directory = /usr/share/man
+sample_directory = {{ _postfix_os.sample_directory }}
+readme_directory = {{ _postfix_os.readme_directory }}
+meta_directory = /etc/postfix
+shlib_directory = {{ _postfix_os.shlib_directory }}

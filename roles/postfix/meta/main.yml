@@ -1,8 +1,8 @@
 ---
 galaxy_info:
   author: mgcdrd
-  description: ROLE_DESCRIPTION
-  role_name: ROLE_NAME
+  description: Install and configure Postfix MTA on Debian and RedHat family systems
+  role_name: postfix
 
   license: GPL-3.0-or-later
 

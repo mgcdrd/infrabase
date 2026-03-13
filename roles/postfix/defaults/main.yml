@@ -1,0 +1,71 @@
+---
+
+# Role mode:
+#   client - send all mail to a relay (typical for application/infra hosts)
+#   relay  - accept mail from mynetworks and forward it onward
+postfix_mode: client
+
+# Identity - defaults to host facts
+postfix_myhostname: "{{ ansible_fqdn }}"
+postfix_mydomain: "{{ ansible_domain }}"
+postfix_myorigin: $mydomain
+
+# Network interfaces Postfix listens on
+# loopback-only: safe default for client mode
+# all:           required for relay mode
+postfix_inet_interfaces: loopback-only
+postfix_inet_protocols: all
+
+# -------------------------
+# UPSTREAM RELAY settings (both modes)
+# -------------------------
+# Where to forward all outbound mail. Use [brackets] to disable MX lookup.
+# Required when postfix_mode is 'client'.
+# Optional when postfix_mode is 'relay' (for tiered/smarthost setups).
+# Examples:
+#   postfix_relayhost: "[mail.example.com]:25"
+#   postfix_relayhost: "[mail.example.com]:587"
+postfix_relayhost: ""
+
+# SASL (password) authentication to the upstream relay.
+# Applies to both modes when postfix_relayhost is set.
+postfix_sasl_enabled: false
+# postfix_sasl_username: ""
+# postfix_sasl_password: ""   # use ansible-vault for this value
+
+# Certificate authentication to the upstream relay.
+# Applies to both modes when postfix_relayhost is set.
+# Both variables must be set together.
+# postfix_smtp_tls_cert_file: /path/to/client.pem
+# postfix_smtp_tls_key_file:  /path/to/client.key
+
+# -------------------------
+# RELAY MODE settings
+# -------------------------
+# Networks trusted to relay mail through this host
+postfix_mynetworks: "127.0.0.0/8 [::1]/128"
+
+# Domains this relay accepts and forwards mail for.
+# Leave empty to only relay for hosts in postfix_mynetworks.
+postfix_relay_domains: ""
+
+# -------------------------
+# TLS settings (both modes)
+# -------------------------
+postfix_tls_enabled: true
+# Opportunistic TLS by default. Use 'encrypt' to require TLS.
+postfix_tls_security_level: may
+# Inbound server certificate for relay mode (smtpd_tls_*).
+# Defaults are set automatically per OS family (see README Default Values).
+# postfix_tls_cert_file: /path/to/server.pem
+# postfix_tls_key_file:  /path/to/server.key
+
+# -------------------------
+# Optional alias overrides
+# -------------------------
+# Key/value pairs added to /etc/aliases.
+# Example:
+#   postfix_aliases:
+#     root: admin@example.com
+#     postmaster: admin@example.com
+postfix_aliases: {}
