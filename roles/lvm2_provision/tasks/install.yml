@@ -1,0 +1,14 @@
+---
+
+- name: lvm2_provision install - Install lvm2 (Debian)
+  ansible.builtin.apt:
+    name: lvm2
+    state: present
+    update_cache: true
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: lvm2_provision install - Install lvm2 (RedHat)
+  ansible.builtin.dnf:
+    name: lvm2
+    state: present
+  when: ansible_facts['os_family'] == 'RedHat'

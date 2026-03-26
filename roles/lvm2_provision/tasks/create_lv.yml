@@ -1,0 +1,10 @@
+---
+
+- name: lvm2_provision create_lv - Create logical volumes
+  community.general.lvol:
+    vg: "{{ item.vg }}"
+    lv: "{{ item.lv }}"
+    size: "{{ item.size }}"
+    shrink: false
+    state: present
+  loop: "{{ lvm_provision_volumes }}"

@@ -1,0 +1,71 @@
+---
+
+# =====================
+# lvm_provision_vgs preflight
+
+- name: lvm2_provision preflight - Assert all lvm_provision_vgs entries have required keys
+  ansible.builtin.assert:
+    that:
+      - item.vg is defined and item.vg | length > 0
+      - item.pvs is defined and item.pvs | length > 0
+    fail_msg: >-
+      lvm_provision_vgs entry is missing required keys.
+      Each entry must have 'vg' (VG name) and 'pvs' (list of block devices).
+  loop: "{{ lvm_provision_vgs }}"
+
+- name: lvm2_provision preflight - Check PV block devices
+  ansible.builtin.stat:
+    path: "{{ dev }}"
+  register: _lvm_prov_pv_stat
+  loop: "{{ lvm_provision_vgs | map(attribute='pvs') | flatten }}"
+  loop_control:
+    loop_var: dev
+
+- name: lvm2_provision preflight - Fail on missing or non-block PV devices
+  ansible.builtin.assert:
+    that:
+      - item.stat.exists
+      - item.stat.isblk
+    fail_msg: >-
+      '{{ item.dev }}' does not exist or is not a block device.
+      Check the pvs list for the relevant lvm_provision_vgs entry.
+  loop: "{{ _lvm_prov_pv_stat.results }}"
+
+- name: lvm2_provision preflight - Assert PV devices are not claimed by a different VG
+  ansible.builtin.assert:
+    that:
+      - >-
+        item.1 not in (ansible_facts['lvm']['pvs'] | default({}))
+        or (ansible_facts['lvm']['pvs'][item.1]['vg'] | default('')) == item.0.vg
+        or (ansible_facts['lvm']['pvs'][item.1]['vg'] | default('')) == ''
+    fail_msg: >-
+      Block device '{{ item.1 }}' is already a PV in VG
+      '{{ ansible_facts['lvm']['pvs'][item.1]['vg'] | default('unknown') }}'.
+      Cannot add it to '{{ item.0.vg }}'.
+  with_subelements:
+    - "{{ lvm_provision_vgs }}"
+    - pvs
+
+# =====================
+# lvm_provision_volumes preflight
+
+- name: lvm2_provision preflight - Assert all lvm_provision_volumes entries have required keys
+  ansible.builtin.assert:
+    that:
+      - item.lv is defined and item.lv | length > 0
+      - item.vg is defined and item.vg | length > 0
+      - item.size is defined and item.size | string | length > 0
+    fail_msg: >-
+      lvm_provision_volumes entry is missing required keys.
+      Each entry must have 'lv' (LV name), 'vg' (VG name), and 'size' (e.g. 20G).
+  loop: "{{ lvm_provision_volumes }}"
+
+- name: lvm2_provision preflight - Warn when mount is defined without explicit fstype
+  ansible.builtin.debug:
+    msg: >-
+      lvm_provision_volumes entry '{{ item.lv }}' defines 'mount' without 'fstype' —
+      defaulting to ext4.
+  loop: "{{ lvm_provision_volumes }}"
+  when:
+    - item.mount is defined
+    - item.fstype is not defined

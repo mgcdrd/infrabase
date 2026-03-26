@@ -1,0 +1,24 @@
+galaxy_info:
+  author: mgcdrd
+  description: Installs the latest Docker CE on Debian and Rocky Linux systems.
+
+  #issue_tracker_url: http://example.com/issue/tracker
+
+  license: GPL-3.0-or-later
+
+  min_ansible_version: "2.14"
+
+  platforms:
+  - name: Debian
+    versions:
+    - bookworm
+    - trixie
+  - name: EL
+    versions:
+    - '9'
+    - '10'
+
+  galaxy_tags:
+  - mgcdrd
+
+#dependencies: []

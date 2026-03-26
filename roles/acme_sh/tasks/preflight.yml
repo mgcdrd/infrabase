@@ -1,0 +1,37 @@
+---
+
+- name: acme_sh preflight - Assert required variables
+  ansible.builtin.assert:
+    that:
+      - acme_sh_email | length > 0
+    fail_msg: "acme_sh_email must be set to register an ACME account."
+
+- name: acme_sh preflight - Assert EAB credentials present when enabled
+  ansible.builtin.assert:
+    that:
+      - acme_sh_eab_kid | length > 0
+      - acme_sh_eab_hmac_key | length > 0
+    fail_msg: "acme_sh_eab_kid and acme_sh_eab_hmac_key must both be set when acme_sh_eab_enabled is true."
+  when: acme_sh_eab_enabled
+
+- name: acme_sh preflight - Assert Cloudflare credentials for dns_cf certs
+  ansible.builtin.assert:
+    that:
+      - >-
+        acme_sh_cf_token | length > 0
+        or (acme_sh_cf_key | length > 0 and acme_sh_cf_email | length > 0)
+    fail_msg: >-
+      dns_cf challenge requires either acme_sh_cf_token
+      or both acme_sh_cf_key and acme_sh_cf_email.
+  when: acme_sh_certs | selectattr('challenge', 'equalto', 'dns_cf') | list | length > 0
+
+- name: acme_sh preflight - Assert webroot_path set for webroot certs
+  ansible.builtin.assert:
+    that:
+      - _wrcert.webroot_path is defined
+      - _wrcert.webroot_path | length > 0
+    fail_msg: "webroot challenge requires webroot_path on cert: {{ ([_wrcert.domain] if _wrcert.domain is defined else _wrcert.domains) | first }}"
+  loop: "{{ acme_sh_certs | selectattr('challenge', 'equalto', 'webroot') | list }}"
+  loop_control:
+    loop_var: _wrcert
+    label: "{{ ([_wrcert.domain] if _wrcert.domain is defined else _wrcert.domains) | first }}"

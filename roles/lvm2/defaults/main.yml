@@ -1,0 +1,30 @@
+---
+
+# Override the auto-detected OS volume group.
+# The role detects this from the root mount device at runtime.
+# Set explicitly if auto-detection fails or the role is used for non-OS VGs.
+lvm_os_vg: ""
+
+# ---- LOGICAL VOLUME OPERATIONS ----
+
+# Logical volumes to extend. Role only extends existing LVs — it does not create them.
+lvm_volumes: []
+# lvm_volumes:
+#   - lv: lv_home                   # LV name (required)
+#     vg: vg_os                     # VG name (optional — defaults to detected OS VG)
+#     size: 50G                     # Absolute target size (50G) or amount to add (+10G)
+#     resizefs: true                # Resize the filesystem after extending (default: true)
+#     shrink: false                 # Allow shrinking — must be explicitly true (default: false)
+#     threshold: 85                 # Only extend when filesystem usage % is >= this value.
+#     mount: /home                  # Mount point for threshold check (required with threshold).
+
+# ---- VOLUME GROUP OPERATIONS ----
+
+# Volume groups to extend by adding new physical volumes.
+# Use this to bring a newly attached disk into an existing VG before extending LVs.
+lvm_vg_extensions: []
+# lvm_vg_extensions:
+#   - vg: vg_data                   # VG to extend (required)
+#     pvs:                          # Block devices to add as PVs (required)
+#       - /dev/sdb
+#       - /dev/sdc

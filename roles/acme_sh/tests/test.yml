@@ -1,0 +1,20 @@
+---
+
+- hosts: all
+  gather_facts: true
+  become: true
+  roles:
+    - mgcdrd.infrabase.acme_sh
+  vars:
+    acme_sh_email: "admin@lab.example.com"
+    acme_sh_ca: letsencrypt
+    acme_sh_staging: true                    # use staging for tests
+
+    acme_sh_cf_token: "{{ vault_cf_token }}"
+
+    acme_sh_certs:
+      - domains:
+          - "dns.lab.example.com"
+        challenge: dns_cf
+        reload_cmd: "docker compose -f /srv/phpipam/docker-compose.yaml restart phpipam-web"
+        state: present

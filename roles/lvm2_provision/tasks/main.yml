@@ -1,0 +1,38 @@
+---
+
+# =====================
+# Ensure lvm2 is installed
+- name: lvm2_provision main - Install lvm2
+  import_tasks: install.yml
+
+# =====================
+# Safety checks — run before touching anything
+- name: lvm2_provision main - Preflight validation
+  import_tasks: preflight.yml
+  when: lvm_provision_vgs | length > 0 or lvm_provision_volumes | length > 0
+
+# =====================
+# Create VGs (initializes PVs as needed)
+- name: lvm2_provision main - Create volume groups
+  import_tasks: create_vg.yml
+  when: lvm_provision_vgs | length > 0
+
+# Refresh LVM facts so LV creation sees the newly created VGs
+- name: lvm2_provision main - Refresh LVM facts after VG creation
+  ansible.builtin.setup:
+    gather_subset:
+      - '!all'
+      - hardware
+  when: lvm_provision_vgs | length > 0
+
+# =====================
+# Create LVs
+- name: lvm2_provision main - Create logical volumes
+  import_tasks: create_lv.yml
+  when: lvm_provision_volumes | length > 0
+
+# =====================
+# Format, mount, and persist to fstab
+- name: lvm2_provision main - Create filesystems and mount
+  import_tasks: mount.yml
+  when: lvm_provision_volumes | selectattr('mount', 'defined') | list | length > 0

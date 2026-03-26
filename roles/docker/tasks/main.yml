@@ -1,0 +1,9 @@
+---
+
+- name: docker main - install (Debian)
+  import_tasks: install-debian.yml
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: docker main - install (RedHat)
+  import_tasks: install-redhat.yml
+  when: ansible_facts['os_family'] == 'RedHat'

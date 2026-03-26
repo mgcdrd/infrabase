@@ -1,0 +1,17 @@
+---
+
+- name: acme_sh - Validate required variables
+  ansible.builtin.import_tasks: preflight.yml
+
+- name: acme_sh - Install acme.sh
+  ansible.builtin.import_tasks: install.yml
+
+- name: acme_sh - Register account and set default CA
+  ansible.builtin.import_tasks: account.yml
+
+- name: acme_sh - Manage certificates
+  ansible.builtin.include_tasks: manage_cert.yml
+  loop: "{{ acme_sh_certs }}"
+  loop_control:
+    loop_var: _cert
+    label: "{{ ([_cert.domain] if _cert.domain is defined else _cert.domains) | first }}"

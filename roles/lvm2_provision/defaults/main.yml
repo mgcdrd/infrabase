@@ -1,0 +1,20 @@
+---
+
+# Volume groups to create.
+lvm_provision_vgs: []
+# lvm_provision_vgs:
+#   - vg: vg_data                   # VG name (required)
+#     pvs:                          # Block devices to use as PVs (required)
+#       - /dev/sdb
+#       - /dev/sdc
+#     pesize: "4"                   # PE size in MiB (optional, default: 4)
+
+# Logical volumes to create.
+lvm_provision_volumes: []
+# lvm_provision_volumes:
+#   - lv: lv_data                   # LV name (required)
+#     vg: vg_data                   # VG name (required)
+#     size: 100G                    # LV size (required)
+#     fstype: ext4                  # Filesystem type (optional, default: ext4)
+#     mount: /data                  # Mount point (optional — if set, formats + mounts + adds fstab entry)
+#     mount_opts: defaults          # fstab mount options (optional, default: defaults)

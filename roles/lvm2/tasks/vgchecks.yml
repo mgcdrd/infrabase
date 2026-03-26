@@ -1,5 +1,4 @@
 ---
-
 # =================================
 # =================================
 # returns a space separated list of available block devices
@@ -41,4 +40,3 @@
   loop:  
   - "{{ lvm_settings }}"
   when:  "item.vg is defined and not item.vg in ansible_facts.lvm.vgs"
-

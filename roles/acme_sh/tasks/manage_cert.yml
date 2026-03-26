@@ -1,0 +1,121 @@
+---
+
+# _cert is the loop variable from main.yml
+# Each call handles one certificate entry (primary domain + optional SANs).
+# Supports both `domain: example.com` (string) and `domains: [example.com, ...]` (list).
+
+- name: "acme_sh cert - Normalize domain list"
+  ansible.builtin.set_fact:
+    _acme_domains: >-
+      {{
+        [_cert.domain] if _cert.domain is defined
+        else _cert.domains
+      }}
+
+- name: "acme_sh cert - Set facts for {{ _acme_domains | first }}"
+  ansible.builtin.set_fact:
+    _acme_primary:  "{{ _acme_domains | first }}"
+    _acme_state:    "{{ _cert.state | default('present') }}"
+    _acme_cert_dir: "{{ acme_sh_cert_base_dir }}/{{ _acme_domains | first }}"
+
+# ---- ABSENT: revoke and remove ----
+
+- name: "acme_sh cert - Revoke and remove {{ _acme_primary }}"
+  ansible.builtin.command:
+    cmd: >-
+      {{ acme_sh_install_dir }}/acme.sh
+      --revoke -d {{ _acme_primary }}
+      --remove
+  when: _acme_state == 'absent'
+  failed_when: false   # already revoked/missing is acceptable
+  changed_when: true
+
+- name: "acme_sh cert - Remove deployed cert dir for {{ _acme_primary }}"
+  ansible.builtin.file:
+    path: "{{ _acme_cert_dir }}"
+    state: absent
+  when: _acme_state == 'absent'
+
+# ---- PRESENT: issue or renew ----
+
+- name: "acme_sh cert - Ensure deploy dir exists for {{ _acme_primary }}"
+  ansible.builtin.file:
+    path: "{{ _acme_cert_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+  when: _acme_state == 'present'
+
+# Build the -d argument list (primary + SANs)
+- name: "acme_sh cert - Build domain args for {{ _acme_primary }}"
+  ansible.builtin.set_fact:
+    _acme_domain_args: "{{ _acme_domains | map('regex_replace', '^(.*)$', '-d \\1') | join(' ') }}"
+  when: _acme_state == 'present'
+
+# Build the challenge-specific arguments
+- name: "acme_sh cert - Build challenge args for {{ _acme_primary }}"
+  ansible.builtin.set_fact:
+    _acme_challenge_args: >-
+      {% if _cert.challenge == 'dns_cf' %}
+      --dns dns_cf
+      {% elif _cert.challenge == 'standalone' %}
+      --standalone
+      {% elif _cert.challenge == 'webroot' %}
+      --webroot {{ _cert.webroot_path }}
+      {% elif _cert.challenge == 'nginx' %}
+      --nginx
+      {% elif _cert.challenge == 'apache' %}
+      --apache
+      {% endif %}
+  when: _acme_state == 'present'
+
+# Build Cloudflare env vars (only needed for dns_cf)
+- name: "acme_sh cert - Resolve Cloudflare environment for {{ _acme_primary }}"
+  ansible.builtin.set_fact:
+    _acme_cf_env: >-
+      {% if _cert.challenge == 'dns_cf' %}
+      {% if acme_sh_cf_token | length > 0 %}
+      CF_Token={{ acme_sh_cf_token }}
+      {% else %}
+      CF_Key={{ acme_sh_cf_key }} CF_Email={{ acme_sh_cf_email }}
+      {% endif %}
+      {% endif %}
+  when: _acme_state == 'present'
+
+- name: "acme_sh cert - Issue or renew {{ _acme_primary }}"
+  ansible.builtin.shell:
+    cmd: >-
+      {{ _acme_cf_env | default('') | trim }}
+      {{ acme_sh_install_dir }}/acme.sh
+      --issue
+      {{ _acme_domain_args }}
+      {{ _acme_challenge_args | trim }}
+      {% if acme_sh_staging %}--staging{% endif %}
+  environment:
+    TMPDIR: "{{ acme_sh_tmp_dir }}"
+  register: _acme_issue
+  # acme.sh exits 2 when the cert is already valid and not due for renewal
+  failed_when: _acme_issue.rc not in [0, 2]
+  changed_when: _acme_issue.rc == 0
+  no_log: true    # CF credentials appear in the command
+  when: _acme_state == 'present'
+
+- name: "acme_sh cert - Deploy cert files for {{ _acme_primary }}"
+  ansible.builtin.command:
+    cmd: >-
+      {{ acme_sh_install_dir }}/acme.sh
+      --install-cert -d {{ _acme_primary }}
+      --cert-file      {{ _acme_cert_dir }}/cert.pem
+      --key-file       {{ _acme_cert_dir }}/key.pem
+      --fullchain-file {{ _acme_cert_dir }}/fullchain.pem
+      --ca-file        {{ _acme_cert_dir }}/ca.pem
+      {% if _cert.reload_cmd is defined and _cert.reload_cmd | length > 0 %}
+      --reloadcmd "{{ _cert.reload_cmd }}"
+      {% endif %}
+  environment:
+    TMPDIR: "{{ acme_sh_tmp_dir }}"
+  when:
+    - _acme_state == 'present'
+    - _acme_issue.rc == 0    # only deploy when a new/renewed cert was issued
+  changed_when: true

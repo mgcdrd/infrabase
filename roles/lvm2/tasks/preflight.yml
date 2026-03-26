@@ -1,0 +1,144 @@
+---
+
+# =====================
+# Guard: LVM facts must be available
+- name: lvm2 preflight - Assert LVM facts are present
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['lvm'] is defined
+      - ansible_facts['lvm'] is not none
+      - ansible_facts['lvm'] | length > 0
+    fail_msg: >-
+      No LVM configuration found on this host (ansible_facts['lvm'] is empty).
+      Ensure lvm2 is installed and at least one VG exists before running this role.
+
+# =====================
+# lvm_volumes preflight
+
+- name: lvm2 preflight - Assert all lvm_volumes entries have required keys
+  ansible.builtin.assert:
+    that:
+      - item.lv is defined and item.lv | length > 0
+      - item.size is defined and item.size | string | length > 0
+    fail_msg: >-
+      lvm_volumes entry is missing required keys.
+      Each entry must have 'lv' (LV name) and 'size' (e.g. 50G or +10G).
+  loop: "{{ lvm_volumes }}"
+
+- name: lvm2 preflight - Assert threshold entries also define mount
+  ansible.builtin.assert:
+    that:
+      - item.mount is defined
+      - item.mount | length > 0
+    fail_msg: >-
+      lvm_volumes entry '{{ item.lv }}' sets 'threshold' but is missing 'mount'.
+      Set 'mount' to the filesystem mount point (e.g. mount: /home).
+  loop: "{{ lvm_volumes }}"
+  when: item.threshold is defined
+
+- name: lvm2 preflight - Assert target VG exists for each volume
+  ansible.builtin.assert:
+    that:
+      - (item.vg | default(_lvm_os_vg)) in ansible_facts['lvm']['vgs']
+    fail_msg: >-
+      Volume group '{{ item.vg | default(_lvm_os_vg) }}' does not exist on this host.
+      Check lvm_os_vg or set 'vg' explicitly in the lvm_volumes entry for '{{ item.lv }}'.
+  loop: "{{ lvm_volumes }}"
+
+- name: lvm2 preflight - Assert target LV exists (role extends only, does not create)
+  ansible.builtin.assert:
+    that:
+      - item.lv in ansible_facts['lvm']['lvs']
+      - ansible_facts['lvm']['lvs'][item.lv]['vg'] == (item.vg | default(_lvm_os_vg))
+    fail_msg: >-
+      Logical volume '{{ item.lv }}' does not exist in VG '{{ item.vg | default(_lvm_os_vg) }}'.
+      This role only extends existing logical volumes — it does not create new ones.
+  loop: "{{ lvm_volumes }}"
+
+- name: lvm2 preflight - Assert VG has enough free space for relative (+) extensions
+  ansible.builtin.assert:
+    that:
+      - >-
+        (item.size | regex_replace('^\+([0-9.]+)[gG]$', '\1') | float)
+        <= (ansible_facts['lvm']['vgs'][(item.vg | default(_lvm_os_vg))]['free_g'] | float)
+    fail_msg: >-
+      Not enough free space in VG '{{ item.vg | default(_lvm_os_vg) }}'
+      to extend '{{ item.lv }}' by {{ item.size }}.
+      VG free space: {{ ansible_facts['lvm']['vgs'][(item.vg | default(_lvm_os_vg))]['free_g'] }}G.
+  loop: "{{ lvm_volumes }}"
+  when: item.size | string | regex_search('^\+[0-9.]+[gG]$')
+
+- name: lvm2 preflight - Assert absolute size does not exceed current LV + VG free space
+  ansible.builtin.assert:
+    that:
+      - >-
+        (item.size | regex_replace('[gG]$', '') | float)
+        <= (ansible_facts['lvm']['lvs'][item.lv]['size_g'] | float
+            + ansible_facts['lvm']['vgs'][(item.vg | default(_lvm_os_vg))]['free_g'] | float)
+    fail_msg: >-
+      Requested size {{ item.size }} for '{{ item.lv }}' exceeds the maximum possible size.
+      Current LV size: {{ ansible_facts['lvm']['lvs'][item.lv]['size_g'] }}G,
+      VG free space: {{ ansible_facts['lvm']['vgs'][(item.vg | default(_lvm_os_vg))]['free_g'] }}G.
+  loop: "{{ lvm_volumes }}"
+  when: item.size | string | regex_search('^[0-9.]+[gG]$')
+
+- name: lvm2 preflight - Assert absolute size is not a shrink (unless shrink is explicit)
+  ansible.builtin.assert:
+    that:
+      - >-
+        (item.size | regex_replace('[gG]$', '') | float)
+        >= (ansible_facts['lvm']['lvs'][item.lv]['size_g'] | float)
+    fail_msg: >-
+      Requested size {{ item.size }} for '{{ item.lv }}' is smaller than its current size
+      ({{ ansible_facts['lvm']['lvs'][item.lv]['size_g'] }}G).
+      Set 'shrink: true' explicitly to allow shrinking. Note: shrinking can cause data loss.
+  loop: "{{ lvm_volumes }}"
+  when:
+    - item.size | string | regex_search('^[0-9.]+[gG]$')
+    - not (item.shrink | default(false) | bool)
+
+# =====================
+# lvm_vg_extensions preflight
+
+- name: lvm2 preflight - Assert all lvm_vg_extensions entries have required keys
+  ansible.builtin.assert:
+    that:
+      - item.vg is defined and item.vg | length > 0
+      - item.pvs is defined and item.pvs | length > 0
+    fail_msg: >-
+      lvm_vg_extensions entry is missing required keys.
+      Each entry must have 'vg' (VG name) and 'pvs' (list of block devices).
+  loop: "{{ lvm_vg_extensions }}"
+
+- name: lvm2 preflight - Assert PV block devices exist
+  ansible.builtin.stat:
+    path: "{{ dev }}"
+  register: _lvm_pv_stat
+  loop: "{{ lvm_vg_extensions | map(attribute='pvs') | flatten }}"
+  loop_control:
+    loop_var: dev
+
+- name: lvm2 preflight - Fail on missing PV block devices
+  ansible.builtin.assert:
+    that:
+      - item.stat.exists
+      - item.stat.isblk
+    fail_msg: >-
+      Block device '{{ item.dev }}' does not exist or is not a block device.
+      Check the pvs list in lvm_vg_extensions.
+  loop: "{{ _lvm_pv_stat.results }}"
+
+- name: lvm2 preflight - Assert PV devices are not already claimed by another VG
+  ansible.builtin.assert:
+    that:
+      - >-
+        item.1 not in ansible_facts['lvm']['pvs']
+        or ansible_facts['lvm']['pvs'][item.1]['vg'] == item.0.vg
+    fail_msg: >-
+      Block device '{{ item.1 }}' is already a PV in VG
+      '{{ ansible_facts['lvm']['pvs'][item.1]['vg'] | default('unknown') }}'.
+      Cannot add it to '{{ item.0.vg }}'.
+  with_subelements:
+    - "{{ lvm_vg_extensions }}"
+    - pvs
+  when: ansible_facts['lvm']['pvs'] is defined

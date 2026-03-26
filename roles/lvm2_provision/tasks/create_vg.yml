@@ -1,0 +1,11 @@
+---
+
+# community.general.lvg initializes PVs automatically if not already done,
+# so a separate pvcreate step is not needed.
+- name: lvm2_provision create_vg - Create volume groups
+  community.general.lvg:
+    vg: "{{ item.vg }}"
+    pvs: "{{ item.pvs }}"
+    pesize: "{{ item.pesize | default('4') }}"
+    state: present
+  loop: "{{ lvm_provision_vgs }}"

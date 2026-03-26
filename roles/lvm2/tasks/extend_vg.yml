@@ -1,0 +1,8 @@
+---
+
+- name: lvm2 extend_vg - Add physical volumes to volume group
+  community.general.lvg:
+    vg: "{{ item.vg }}"
+    pvs: "{{ item.pvs }}"
+    state: present
+  loop: "{{ lvm_vg_extensions }}"

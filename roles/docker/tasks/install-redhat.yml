@@ -1,0 +1,21 @@
+---
+
+# =====================
+# Rocky / RHEL-based install
+
+- name: docker install - Add Docker CE repository
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/rhel/docker-ce.repo
+    dest: /etc/yum.repos.d/docker-ce.repo
+    mode: '0644'
+
+- name: docker install - Install Docker packages
+  ansible.builtin.dnf:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: latest
+  notify: restart docker

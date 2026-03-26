@@ -1,0 +1,67 @@
+---
+
+- name: acme_sh install - Install dependencies
+  ansible.builtin.package:
+    name: "{{ _acme_sh_packages }}"
+    state: present
+  vars:
+    _acme_sh_packages: >-
+      {{
+        ['wget', 'cronie', 'socat']
+        if ansible_os_family == 'RedHat'
+        else ['wget', 'cron', 'socat']
+      }}
+
+- name: acme_sh install - Ensure temp directory exists
+  ansible.builtin.file:
+    path: "{{ acme_sh_tmp_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: acme_sh install - Check if acme.sh is already installed
+  ansible.builtin.stat:
+    path: "{{ acme_sh_install_dir }}/acme.sh"
+  register: _acme_sh_binary
+
+- name: acme_sh install - Download installer script
+  ansible.builtin.get_url:
+    url: https://get.acme.sh
+    dest: "{{ acme_sh_tmp_dir }}/install_acme.sh"
+    mode: "0755"
+  when: not _acme_sh_binary.stat.exists
+
+- name: acme_sh install - Install acme.sh
+  ansible.builtin.shell:
+    cmd: >-
+      {{ acme_sh_tmp_dir }}/install_acme.sh
+      --home {{ acme_sh_install_dir }}
+      --no-profile
+  environment:
+    TMPDIR: "{{ acme_sh_tmp_dir }}"
+    HOME: "{{ acme_sh_install_dir | dirname }}"
+  register: _acme_sh_install_out
+  changed_when: true
+  when: not _acme_sh_binary.stat.exists
+
+- name: acme_sh install - Show installer output
+  ansible.builtin.debug:
+    var: _acme_sh_install_out.stdout_lines
+  when:
+    - not _acme_sh_binary.stat.exists
+    - _acme_sh_install_out is defined
+
+- name: acme_sh install - Verify acme.sh binary is present after install
+  ansible.builtin.stat:
+    path: "{{ acme_sh_install_dir }}/acme.sh"
+  register: _acme_sh_binary_post
+  failed_when: not _acme_sh_binary_post.stat.exists
+
+- name: acme_sh install - Ensure cert base directory exists
+  ansible.builtin.file:
+    path: "{{ acme_sh_cert_base_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"

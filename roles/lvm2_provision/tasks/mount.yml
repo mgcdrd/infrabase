@@ -1,0 +1,28 @@
+---
+
+# community.general.filesystem is idempotent — skips if a filesystem already exists on the device.
+- name: lvm2_provision mount - Create filesystem on logical volume
+  community.general.filesystem:
+    fstype: "{{ item.fstype | default('ext4') }}"
+    dev: "/dev/{{ item.vg }}/{{ item.lv }}"
+  loop: "{{ lvm_provision_volumes }}"
+  when: item.mount is defined
+
+- name: lvm2_provision mount - Create mount point directory
+  ansible.builtin.file:
+    path: "{{ item.mount }}"
+    state: directory
+    mode: '0755'
+  loop: "{{ lvm_provision_volumes }}"
+  when: item.mount is defined
+
+# state: mounted both mounts the volume now and writes the fstab entry.
+- name: lvm2_provision mount - Mount volume and persist to fstab
+  ansible.builtin.mount:
+    path: "{{ item.mount }}"
+    src: "/dev/{{ item.vg }}/{{ item.lv }}"
+    fstype: "{{ item.fstype | default('ext4') }}"
+    opts: "{{ item.mount_opts | default('defaults') }}"
+    state: mounted
+  loop: "{{ lvm_provision_volumes }}"
+  when: item.mount is defined

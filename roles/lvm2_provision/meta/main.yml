@@ -1,8 +1,9 @@
 galaxy_info:
   author: mgcdrd
   description: >-
-    Safely extends existing LVM logical volumes and volume groups.
-    Supports threshold-based extension for monitoring-driven automation.
+    Provisions LVM storage at system setup time — creates VGs, LVs, filesystems,
+    and mounts. Designed for use once at provisioning, before mgcdrd.infrabase.lvm2
+    takes over ongoing volume management.
 
   license: GPL-3.0-or-later
 
@@ -23,5 +24,6 @@ galaxy_info:
     - lvm
     - storage
     - disk
+    - provisioning
 
 #dependencies: []

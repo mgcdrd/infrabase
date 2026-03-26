@@ -1,0 +1,39 @@
+---
+
+- name: acme_sh account - Assert EAB credentials are set when EAB is enabled
+  ansible.builtin.assert:
+    that:
+      - acme_sh_eab_kid | length > 0
+      - acme_sh_eab_hmac_key | length > 0
+    fail_msg: "acme_sh_eab_kid and acme_sh_eab_hmac_key must be set when acme_sh_eab_enabled is true."
+  when: acme_sh_eab_enabled
+
+- name: acme_sh account - Set default CA
+  ansible.builtin.command:
+    cmd: >-
+      {{ acme_sh_install_dir }}/acme.sh
+      --set-default-ca
+      --server {{ acme_sh_ca }}
+  environment:
+    TMPDIR: "{{ acme_sh_tmp_dir }}"
+  register: _acme_sh_set_ca
+  changed_when: "'Changed' in _acme_sh_set_ca.stdout"
+
+# EAB registers the account with the CA using the provided KID and HMAC key.
+# This is a one-time operation — acme.sh stores the resulting account credentials
+# and reuses them for all subsequent --issue calls without needing the EAB keys again.
+- name: acme_sh account - Register account with EAB
+  ansible.builtin.command:
+    cmd: >-
+      {{ acme_sh_install_dir }}/acme.sh
+      --register-account
+      --server {{ acme_sh_ca }}
+      --eab
+      --kid      {{ acme_sh_eab_kid }}
+      --hmackey  {{ acme_sh_eab_hmac_key }}
+  environment:
+    TMPDIR: "{{ acme_sh_tmp_dir }}"
+  register: _acme_sh_register
+  changed_when: "'Registered' in _acme_sh_register.stdout"
+  no_log: true
+  when: acme_sh_eab_enabled

@@ -1,0 +1,52 @@
+---
+
+# =====================
+# Threshold evaluation
+# For volumes with a threshold set, check current filesystem usage against it.
+# Volumes with no threshold are always extended.
+# Volumes whose mount point cannot be found in facts are always extended (fail-safe).
+- name: lvm2 extend_lv - Evaluate threshold criteria and build work list
+  ansible.builtin.set_fact:
+    _lvm_volumes_to_extend: >-
+      {%- set result = [] -%}
+      {%- for vol in lvm_volumes -%}
+        {%- if vol.threshold is not defined -%}
+          {%- set _ = result.append(vol) -%}
+        {%- else -%}
+          {%- set mounts = ansible_facts['mounts'] | selectattr('mount', 'equalto', vol.mount) | list -%}
+          {%- if mounts | length == 0 -%}
+            {%- set _ = result.append(vol) -%}
+          {%- else -%}
+            {%- set mnt = mounts | first -%}
+            {%- set usage_pct = ((mnt.size_total - mnt.size_available) / mnt.size_total * 100) | int -%}
+            {%- if usage_pct >= vol.threshold -%}
+              {%- set _ = result.append(vol) -%}
+            {%- endif -%}
+          {%- endif -%}
+        {%- endif -%}
+        {%- endfor -%}
+      {{ result }}
+
+# =====================
+# Log skipped volumes so monitoring output is clear
+- name: lvm2 extend_lv - Log volumes skipped due to threshold not met
+  ansible.builtin.debug:
+    msg: >-
+      Skipping '{{ item.lv }}': filesystem at '{{ item.mount }}' usage is below
+      the {{ item.threshold }}% threshold — no action needed.
+  loop: "{{ lvm_volumes }}"
+  when:
+    - item.threshold is defined
+    - item not in _lvm_volumes_to_extend
+
+# =====================
+# Extend
+- name: lvm2 extend_lv - Extend logical volumes
+  community.general.lvol:
+    vg: "{{ item.vg | default(_lvm_os_vg) }}"
+    lv: "{{ item.lv }}"
+    size: "{{ item.size }}"
+    resizefs: "{{ item.resizefs | default(true) }}"
+    shrink: "{{ item.shrink | default(false) }}"
+    state: present
+  loop: "{{ _lvm_volumes_to_extend }}"

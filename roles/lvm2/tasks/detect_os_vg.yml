@@ -1,0 +1,42 @@
+---
+
+# Use findmnt to get the real source device for / (resolves symlinks and dm paths),
+# then ask lvs for the VG name — more reliable than parsing the device mapper name,
+# which escapes hyphens as double-hyphens in non-obvious ways.
+
+- name: lvm2 detect - Get root mount source device
+  ansible.builtin.command:
+    cmd: findmnt -n -o SOURCE /
+  register: _lvm_root_device
+  changed_when: false
+  failed_when: false
+  when: lvm_os_vg | length == 0
+
+- name: lvm2 detect - Get VG name from root device
+  ansible.builtin.command:
+    cmd: lvs --noheadings -o vg_name {{ _lvm_root_device.stdout | trim }}
+  register: _lvm_root_vg_raw
+  changed_when: false
+  failed_when: false
+  when:
+    - lvm_os_vg | length == 0
+    - _lvm_root_device.stdout | default('') | trim | length > 0
+
+- name: lvm2 detect - Set OS VG fact
+  ansible.builtin.set_fact:
+    _lvm_os_vg: >-
+      {{
+        lvm_os_vg if lvm_os_vg | length > 0
+        else (_lvm_root_vg_raw.stdout | trim
+              if (_lvm_root_vg_raw is defined
+                  and _lvm_root_vg_raw.stdout | default('') | trim | length > 0)
+              else '')
+      }}
+
+- name: lvm2 detect - Warn if OS VG could not be determined
+  ansible.builtin.debug:
+    msg: >-
+      WARNING: Could not detect OS volume group from root mount.
+      If any lvm_volumes entries do not specify 'vg', they will fail.
+      Set lvm_os_vg explicitly to suppress this warning.
+  when: _lvm_os_vg | length == 0
