@@ -1,7 +1,7 @@
 ---
 
-- name: docker restart
+- name: podman restart
   ansible.builtin.systemd_service:
-    name:    docker.service
+    name:    podman.socket
     state:   restarted
     enabled: true

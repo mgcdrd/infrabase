@@ -1,15 +1,41 @@
-# docker
+docker
+======
 
-Installs the latest Docker CE from Docker's official repository.
+Installs Docker CE from Docker's official repository and ensures the service
+is enabled and running.
 
-## Supported Platforms
+Tested on: Debian 12/13, Rocky Linux 9/10
 
-| OS              | Versions       |
-|-----------------|----------------|
-| Debian          | 12 (bookworm), 13 (trixie) |
-| Rocky Linux     | 9, 10          |
 
-## Installed Packages
+Requirements
+------------
+
+`become: true` and `gather_facts: true` are required.
+
+
+Role Variables
+--------------
+
+### `docker_apt_arch`
+
+Architecture string for the apt repository URL. Auto-detected from
+`ansible_architecture`. Only relevant on Debian.
+
+| `ansible_architecture` | `docker_apt_arch` |
+|------------------------|-------------------|
+| `x86_64`               | `amd64`           |
+| `aarch64`              | `arm64`           |
+| other                  | passed through    |
+
+Override only if auto-detection produces the wrong value:
+
+```yaml
+docker_apt_arch: amd64
+```
+
+
+Installed Packages
+------------------
 
 - `docker-ce`
 - `docker-ce-cli`
@@ -17,18 +43,38 @@ Installs the latest Docker CE from Docker's official repository.
 - `docker-buildx-plugin`
 - `docker-compose-plugin`
 
-The Docker service is enabled and started automatically.
 
-## Variables
+Dependencies
+------------
 
-| Variable         | Default                                              | Description                              |
-|-----------------|------------------------------------------------------|------------------------------------------|
-| `docker_apt_arch` | `amd64` (x86_64) / `arm64` (aarch64) | Architecture string for the apt repo URL |
+None.
 
-## Example Playbook
+
+Example Playbook
+----------------
 
 ```yaml
-- hosts: all
+- name: Install Docker
+  hosts: container_hosts
+  become: true
   roles:
-    - mgcdrd.infrasvc.docker
+    - role: mgcdrd.infrabase.docker
 ```
+
+Called from another role:
+
+```yaml
+- name: Install container runtime
+  ansible.builtin.include_role:
+    name: mgcdrd.infrabase.docker
+  when: k8s_container_runtime == 'docker'
+```
+
+
+Notes
+-----
+
+- Docker is not CRI-compliant out of the box. Using it with Kubernetes requires
+  the `cri-dockerd` shim, which is not managed by this role.
+- The `docker-compose-plugin` provides `docker compose` (v2). The standalone
+  `docker-compose` (v1) binary is not installed.

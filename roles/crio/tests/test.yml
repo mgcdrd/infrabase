@@ -1,0 +1,9 @@
+---
+
+- name: Test crio role
+  hosts: all
+  become: true
+  roles:
+    - role: mgcdrd.infrabase.crio
+      vars:
+        crio_version: "1.32"

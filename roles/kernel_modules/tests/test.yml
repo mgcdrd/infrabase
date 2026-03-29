@@ -1,0 +1,11 @@
+---
+
+- name: Test kernel_modules role
+  hosts: localhost
+  gather_facts: false
+  roles:
+    - role: mgcdrd.infrabase.kernel_modules
+      vars:
+        kernel_modules_list:
+          - br_netfilter
+          - overlay

@@ -1,0 +1,12 @@
+---
+
+- name: crio restart
+  ansible.builtin.systemd_service:
+    name:    crio.service
+    state:   restarted
+    enabled: true
+
+- name: crio dnf clean
+  ansible.builtin.command:
+    cmd: dnf clean all
+  changed_when: false

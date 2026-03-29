@@ -1,0 +1,14 @@
+---
+
+- name: sysctl main - Deploy sysctl configuration
+  ansible.builtin.template:
+    src:   sysctl.conf.j2
+    dest:  "{{ sysctl_conf_file }}"
+    owner: root
+    group: root
+    mode:  "0644"
+  notify: sysctl reload
+  when: sysctl_params | length > 0
+
+- name: sysctl main - Flush handlers
+  ansible.builtin.meta: flush_handlers

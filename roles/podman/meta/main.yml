@@ -1,8 +1,8 @@
 ---
 galaxy_info:
-  role_name: docker
+  role_name: podman
   author: mgcdrd
-  description: Install Docker CE from the official Docker repository
+  description: Install Podman from base OS repositories
   license: GPL-3.0-or-later
   min_ansible_version: "2.15"
   platforms:

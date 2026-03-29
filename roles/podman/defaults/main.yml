@@ -1,0 +1,4 @@
+---
+
+# No variables required — podman is available in base repos on all
+# supported platforms and needs no external repository configuration.

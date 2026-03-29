@@ -1,0 +1,20 @@
+---
+
+- name: crio install-redhat - Deploy repo file
+  ansible.builtin.template:
+    src:   crio.repo.j2
+    dest:  /etc/yum.repos.d/cri-o.repo
+    owner: root
+    group: root
+    mode:  "0644"
+  notify: crio dnf clean
+
+- name: crio install-redhat - Flush handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: crio install-redhat - Install cri-o
+  ansible.builtin.dnf:
+    name:             cri-o
+    state:            present
+    disable_excludes: cri-o
+  notify: crio restart

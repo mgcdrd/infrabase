@@ -1,0 +1,5 @@
+---
+
+# CRI-O minor version used to form repo URLs (e.g. "1.32").
+# Should match the Kubernetes minor version when used with the k8s role.
+crio_version: ""

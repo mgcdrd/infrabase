@@ -1,0 +1,11 @@
+---
+
+- name: Test sysctl role
+  hosts: localhost
+  gather_facts: false
+  roles:
+    - role: mgcdrd.infrabase.sysctl
+      vars:
+        sysctl_params:
+          - { name: net.ipv4.ip_forward, value: 1 }
+        sysctl_conf_file: /etc/sysctl.d/test-ansible.conf

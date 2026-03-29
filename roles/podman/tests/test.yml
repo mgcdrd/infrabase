@@ -1,0 +1,7 @@
+---
+
+- name: Test podman role
+  hosts: all
+  become: true
+  roles:
+    - role: mgcdrd.infrabase.podman

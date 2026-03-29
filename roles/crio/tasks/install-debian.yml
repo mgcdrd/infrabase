@@ -1,0 +1,21 @@
+---
+
+- name: crio install-debian - Download repo key
+  ansible.builtin.get_url:
+    url:  "https://download.opensuse.org/repositories/isv:/cri-o:/stable:/v{{ crio_version }}/deb/Release.key"
+    dest: /etc/apt/trusted.gpg.d/cri-o-apt-keyring.asc
+    mode: "0644"
+
+- name: crio install-debian - Add apt repository
+  ansible.builtin.apt_repository:
+    repo:         "deb [signed-by=/etc/apt/trusted.gpg.d/cri-o-apt-keyring.asc] https://download.opensuse.org/repositories/isv:/cri-o:/stable:/v{{ crio_version }}/deb/ /"
+    filename:     cri-o
+    state:        present
+    update_cache: true
+
+- name: crio install-debian - Install cri-o
+  ansible.builtin.apt:
+    name:         cri-o
+    state:        present
+    update_cache: true
+  notify: crio restart

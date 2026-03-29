@@ -1,8 +1,8 @@
 ---
 galaxy_info:
-  role_name: docker
+  role_name: sysctl
   author: mgcdrd
-  description: Install Docker CE from the official Docker repository
+  description: Apply sysctl parameters from a variable-driven list
   license: GPL-3.0-or-later
   min_ansible_version: "2.15"
   platforms:

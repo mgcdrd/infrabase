@@ -1,0 +1,13 @@
+---
+
+# List of sysctl parameters to apply.
+# Each entry must have 'name' and 'value' keys.
+# Example:
+#   sysctl_params:
+#     - { name: net.ipv4.ip_forward, value: 1 }
+#     - { name: vm.swappiness,       value: 10 }
+sysctl_params: []
+
+# File written under /etc/sysctl.d/
+# Override per-role to keep configs namespaced.
+sysctl_conf_file: /etc/sysctl.d/ansible-managed.conf

@@ -1,0 +1,8 @@
+---
+
+# List of kernel modules to load and persist across reboots.
+# Example:
+#   kernel_modules_list:
+#     - br_netfilter
+#     - overlay
+kernel_modules_list: []

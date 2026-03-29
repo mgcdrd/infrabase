@@ -15,7 +15,7 @@ license:
 
 #dependencies: {}
 
-#repository: https://gitlab.internal.dev/ansible/collections/
+repository: https://gitlab.example.com/ansible/collections/infrabase
 #documentation: http://docs.example.com
 #homepage: http://example.com
 #issues: http://example.com/issue/tracker

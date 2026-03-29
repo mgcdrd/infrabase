@@ -1,0 +1,16 @@
+---
+
+- name: crio main - Install (Debian)
+  import_tasks: install-debian.yml
+  when: ansible_os_family == 'Debian'
+
+- name: crio main - Install (RedHat)
+  import_tasks: install-redhat.yml
+  when: ansible_os_family == 'RedHat'
+
+- name: crio main - Enable and start crio service
+  ansible.builtin.systemd_service:
+    name:          crio.service
+    state:         started
+    enabled:       true
+    daemon_reload: true

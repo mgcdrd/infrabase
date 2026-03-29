@@ -1,6 +1,7 @@
 ---
 
-- hosts: localhost
-  remote_user: root
+- name: Test docker role
+  hosts: all
+  become: true
   roles:
-    - docker
+    - role: mgcdrd.infrabase.docker

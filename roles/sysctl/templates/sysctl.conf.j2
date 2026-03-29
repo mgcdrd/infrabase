@@ -1,0 +1,4 @@
+# Managed by Ansible — do not edit manually
+{% for item in sysctl_params %}
+{{ item.name }} = {{ item.value }}
+{% endfor %}
