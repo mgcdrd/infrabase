@@ -6,6 +6,15 @@
   import_tasks: install.yml
 
 # =====================
+# Refresh LVM facts unconditionally — bypasses fact cache so the preflight
+# sees current VG free space (e.g. after a swap LV was removed earlier in the play).
+- name: lvm2 main - Refresh hardware facts
+  ansible.builtin.setup:
+    gather_subset:
+      - '!all'
+      - hardware
+
+# =====================
 # Detect the OS volume group from the root mount unless overridden
 - name: lvm2 main - Detect OS volume group
   import_tasks: detect_os_vg.yml
