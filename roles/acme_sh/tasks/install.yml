@@ -25,29 +25,41 @@
     path: "{{ acme_sh_install_dir }}/acme.sh"
   register: _acme_sh_binary
 
-- name: acme_sh install - Download installer script
+- name: acme_sh install - Download source tarball
   ansible.builtin.get_url:
-    url: https://get.acme.sh
-    dest: "{{ acme_sh_tmp_dir }}/install_acme.sh"
-    mode: "0755"
+    url: https://github.com/acmesh-official/acme.sh/archive/master.tar.gz
+    dest: "{{ acme_sh_tmp_dir }}/acme.sh-master.tar.gz"
+    mode: "0600"
+  when: not _acme_sh_binary.stat.exists
+
+- name: acme_sh install - Extract source tarball
+  ansible.builtin.unarchive:
+    src: "{{ acme_sh_tmp_dir }}/acme.sh-master.tar.gz"
+    dest: "{{ acme_sh_tmp_dir }}"
+    remote_src: true
   when: not _acme_sh_binary.stat.exists
 
 - name: acme_sh install - Install acme.sh
   ansible.builtin.shell:
     cmd: >-
-      {{ acme_sh_tmp_dir }}/install_acme.sh
+      bash acme.sh
+      --install
       --home {{ acme_sh_install_dir }}
       --no-profile
+    chdir: "{{ acme_sh_tmp_dir }}/acme.sh-master"
   environment:
     TMPDIR: "{{ acme_sh_tmp_dir }}"
-    HOME: "{{ acme_sh_install_dir | dirname }}"
+    HOME: /root
   register: _acme_sh_install_out
   changed_when: true
+  failed_when: _acme_sh_install_out.rc != 0
   when: not _acme_sh_binary.stat.exists
 
 - name: acme_sh install - Show installer output
   ansible.builtin.debug:
-    var: _acme_sh_install_out.stdout_lines
+    msg:
+      - "stdout: {{ _acme_sh_install_out.stdout_lines | default([]) }}"
+      - "stderr: {{ _acme_sh_install_out.stderr_lines | default([]) }}"
   when:
     - not _acme_sh_binary.stat.exists
     - _acme_sh_install_out is defined

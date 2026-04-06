@@ -6,9 +6,11 @@
 acme_sh_install_dir: /root/.acme.sh
 
 # Temp directory used by the installer download and passed as TMPDIR to all
-# acme.sh invocations. Defaults to a subdirectory of the install dir so it is
-# always on an exec-capable filesystem. Change if /tmp has noexec.
-acme_sh_tmp_dir: "{{ acme_sh_install_dir }}/tmp"
+# acme.sh invocations. Must be on an exec-capable filesystem. Defaults to a
+# sibling of the install dir (same filesystem, not a child) so it never
+# pre-creates the install dir before the installer runs. Avoids /tmp and
+# /var/tmp which are typically noexec under DFARS/STIG hardening.
+acme_sh_tmp_dir: /root/.acme_sh_tmp
 
 # Directory on the managed host where issued certs are deployed.
 # Under this dir the role creates one subdirectory per primary domain.

@@ -208,6 +208,19 @@ Notes
 - Cloudflare credentials appear in the shell command. `no_log: true` is set on
   that task to suppress them from Ansible output.
 
+### DFARS / SELinux noexec environments
+
+On hardened systems (DFARS, STIG) `/tmp`, `/var/tmp`, and home directories are
+mounted `noexec`. The role works around this without touching mount options:
+
+- The installer is downloaded as a **tarball** (`master.tar.gz`) and extracted
+  with `unarchive` — no shell exec of the downloaded file.
+- Installation runs as `bash acme.sh --install` (passing the script as an
+  argument to the already-trusted `bash` binary) rather than `./acme.sh`.
+- The temporary extraction directory (`acme_sh_tmp_dir`, default
+  `/root/.acme_sh_tmp`) is a sibling of the install dir, not inside it, so
+  pre-creating the install directory does not cause the installer to exit early.
+
 
 License
 -------
