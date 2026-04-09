@@ -6,3 +6,14 @@
 #     - br_netfilter
 #     - overlay
 kernel_modules_list: []
+
+# List of kernel modules to blacklist and block from loading.
+# Both 'blacklist' (prevents autoloading) and 'install /bin/false'
+# (prevents manual loading) are written for each entry.
+# Example:
+#   kernel_modules_blacklist:
+#     - dccp
+#     - sctp
+#     - rds
+#     - tipc
+kernel_modules_blacklist: []

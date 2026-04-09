@@ -1,0 +1,7 @@
+---
+
+# Minutes before sudo requires re-authentication. 0 = always prompt.
+sudoers_timestamp_timeout: 5
+
+# Path for sudo command logging.
+sudoers_log_file: /var/log/sudo.log

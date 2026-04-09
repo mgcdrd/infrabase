@@ -1,0 +1,84 @@
+# Managed by Ansible — do not edit manually
+-D
+-b 8192
+--backlog_wait_time 60000
+-f 1
+-e 2
+
+# ---- Permission modification ----
+{% for item in auditd_perm_mod %}
+-a always,exit -F arch=b32 -S {{ item }} -F auid>=1000 -F auid!=unset -F key=perm_mod
+-a always,exit -F arch=b64 -S {{ item }} -F auid>=1000 -F auid!=unset -F key=perm_mod
+{% endfor %}
+{% for item in auditd_perm_mod_root %}
+-a always,exit -F arch=b32 -S {{ item }} -F auid=0 -F key=perm_mod
+-a always,exit -F arch=b64 -S {{ item }} -F auid=0 -F key=perm_mod
+{% endfor %}
+
+# ---- File deletion ----
+{% for item in auditd_file_delete %}
+-a always,exit -F arch=b32 -S {{ item }} -F auid>=1000 -F auid!=unset -F key=delete
+{% if ansible_userspace_bits == 64 %}
+-a always,exit -F arch=b64 -S {{ item }} -F auid>=1000 -F auid!=unset -F key=delete
+{% endif %}
+{% endfor %}
+
+# ---- Unsuccessful file access ----
+{% for item in auditd_file_access %}
+-a always,exit -F arch=b32 -S {{ item }} -F exit=-EACCES -F auid>=1000 -F auid!=unset -F key=access
+-a always,exit -F arch=b32 -S {{ item }} -F exit=-EPERM  -F auid>=1000 -F auid!=unset -F key=access
+{% if ansible_userspace_bits == 64 %}
+-a always,exit -F arch=b64 -S {{ item }} -F exit=-EACCES -F auid>=1000 -F auid!=unset -F key=access
+-a always,exit -F arch=b64 -S {{ item }} -F exit=-EPERM  -F auid>=1000 -F auid!=unset -F key=access
+{% endif %}
+{% endfor %}
+
+# ---- Kernel module operations ----
+{% for item in auditd_kernel_module_syscalls %}
+-a always,exit -F arch=b32 -S {{ item }} -F key=modules
+-a always,exit -F arch=b32 -S {{ item }} -F auid>=1000 -F auid!=unset -F key=modules
+{% if ansible_userspace_bits == 64 %}
+-a always,exit -F arch=b64 -S {{ item }} -F key=modules
+-a always,exit -F arch=b64 -S {{ item }} -F auid>=1000 -F auid!=unset -F key=modules
+{% endif %}
+{% endfor %}
+
+# ---- Mount/export ----
+{% for item in auditd_mount_syscalls %}
+-a always,exit -F arch=b32 -S {{ item }} -F auid>=1000 -F auid!=unset -F key=export
+{% if ansible_userspace_bits == 64 %}
+-a always,exit -F arch=b64 -S {{ item }} -F auid>=1000 -F auid!=unset -F key=export
+{% endif %}
+{% endfor %}
+
+# ---- Time change ----
+{% for item in auditd_time_syscalls %}
+-a always,exit -F arch=b32 -S {{ item.name }} -F {{ item.key }}
+{% if ansible_userspace_bits == 64 %}
+-a always,exit -F arch=b64 -S {{ item.name }} -F {{ item.key }}
+{% endif %}
+{% endfor %}
+-a always,exit -F arch=b32 -S stime -F key=audit_time_rules
+
+# ---- Setuid/setgid execution ----
+-a always,exit -F arch=b32 -S execve -C uid!=euid -F euid=0 -k setuid
+-a always,exit -F arch=b32 -S execve -C gid!=egid -F egid=0 -k setgid
+-a always,exit -F arch=b64 -S execve -C uid!=euid -F euid=0 -k setuid
+-a always,exit -F arch=b64 -S execve -C gid!=egid -F egid=0 -k setgid
+-a always,exit -F arch=b32 -S execve -C euid!=uid -F auid!=unset -k user_emulation
+-a always,exit -F arch=b64 -S execve -C euid!=uid -F auid!=unset -k user_emulation
+
+# ---- Privileged execution ----
+{% for item in auditd_privileged_exec %}
+-a always,exit -F path={{ item }} -F perm=x -F auid>=1000 -F auid!=unset -F key=privileged
+{% endfor %}
+
+# ---- Privileged access ----
+{% for item in auditd_privileged_access %}
+-a always,exit -F path={{ item }} -F auid>=1000 -F auid!=unset -F key=privileged
+{% endfor %}
+
+# ---- Watchpoints ----
+{% for item in auditd_watches %}
+-w {{ item.file }} -p {{ item.perm }} -k {{ item.key }}
+{% endfor %}

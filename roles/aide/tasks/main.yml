@@ -1,0 +1,40 @@
+---
+
+- name: aide main - Install AIDE
+  ansible.builtin.package:
+    name: aide
+    state: present
+
+- name: aide main - Set aide binary path
+  ansible.builtin.set_fact:
+    _aide_bin: "{{ '/usr/bin/aide' if ansible_facts['os_family'] == 'Debian' else '/usr/sbin/aide' }}"
+
+- name: aide main - Deploy aide.conf
+  ansible.builtin.template:
+    src:   aide.conf.j2
+    dest:  /etc/aide.conf
+    owner: root
+    group: root
+    mode:  "0600"
+
+- name: aide main - Check if database exists
+  ansible.builtin.stat:
+    path: /var/lib/aide/aide.db.gz
+  register: _aide_db
+
+- name: aide main - Initialise database
+  ansible.builtin.command: "{{ _aide_bin }} --init"
+  when: not _aide_db.stat.exists
+  changed_when: true
+
+- name: aide main - Move initialised database into place
+  ansible.builtin.command: cp /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
+  when: not _aide_db.stat.exists
+  changed_when: true
+
+- name: aide main - Schedule daily AIDE check
+  ansible.builtin.cron:
+    name:   aide-check
+    minute: "{{ aide_cron_minute }}"
+    hour:   "{{ aide_cron_hour }}"
+    job:    "{{ _aide_bin }} --check"

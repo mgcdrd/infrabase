@@ -16,3 +16,12 @@
   when:
     - kernel_modules_list | length > 0
     - not item.stat.exists
+
+- name: kernel_modules main - Deploy blacklist configuration
+  ansible.builtin.template:
+    src:   blacklist.conf.j2
+    dest:  /etc/modprobe.d/ansible-blacklist.conf
+    owner: root
+    group: root
+    mode:  "0644"
+  when: kernel_modules_blacklist | length > 0

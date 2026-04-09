@@ -1,0 +1,56 @@
+---
+
+# ---- Connection ----
+sshd_port:           22
+sshd_address_family: any
+sshd_listen_addresses: []   # empty = listen on all interfaces
+
+# ---- Authentication ----
+sshd_permit_root_login:        "prohibit-password"
+sshd_max_auth_tries:           4
+sshd_max_sessions:             10
+sshd_pubkey_authentication:    "yes"
+sshd_authorized_keys_file:     ".ssh/authorized_keys"
+sshd_password_authentication:  "no"
+sshd_permit_empty_passwords:   "no"
+sshd_use_pam:                  "yes"
+
+# ---- Access control ----
+# Lists of users/groups to allow or deny. Empty = no restriction applied.
+sshd_allow_users:  []
+sshd_allow_groups: []
+sshd_deny_users:   []
+sshd_deny_groups:  []
+
+# ---- Session behaviour ----
+sshd_login_grace_time:     60
+sshd_client_alive_interval: 300
+sshd_client_alive_count_max: 3
+sshd_allow_tcp_forwarding: "no"
+sshd_x11_forwarding:       "no"
+sshd_print_motd:           "no"
+sshd_banner:               ""  # path to banner file, empty = no banner
+
+# ---- Match blocks ----
+# List of conditional match blocks appended at end of sshd_config.
+# Each entry: { type: "Group|User", targets: [...], options: [...] }
+# Example:
+#   sshd_match_blocks:
+#     - type: Group
+#       targets: [wheel]
+#       options:
+#         - AuthenticationMethods publickey
+sshd_match_blocks: []
+
+# ---- Crypto (written to sshd_config.d/00-crypto.conf) ----
+sshd_ciphers: >-
+  aes256-gcm@openssh.com,aes128-gcm@openssh.com,
+  aes256-ctr,aes192-ctr,aes128-ctr
+
+sshd_kex_algorithms: >-
+  curve25519-sha256,curve25519-sha256@libssh.org,
+  diffie-hellman-group14-sha256,diffie-hellman-group16-sha512
+
+sshd_macs: >-
+  hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,
+  hmac-sha2-512,hmac-sha2-256

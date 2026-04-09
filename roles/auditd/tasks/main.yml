@@ -1,0 +1,50 @@
+---
+
+- name: auditd main - Install auditd
+  ansible.builtin.package:
+    name: "{{ 'auditd' if ansible_facts['os_family'] == 'Debian' else 'audit' }}"
+    state: present
+
+- name: auditd main - Enable auditd
+  ansible.builtin.service:
+    name: auditd
+    enabled: true
+
+- name: auditd main - Remove default audit rules
+  ansible.builtin.file:
+    path: /etc/audit/rules.d/audit.rules
+    state: absent
+  notify: auditd reload rules
+
+- name: auditd main - Deploy audit rules
+  ansible.builtin.template:
+    src:   auditd.rules.j2
+    dest:  /etc/audit/rules.d/00-base.rules
+    owner: root
+    group: root
+    mode:  "0640"
+  notify: auditd reload rules
+
+- name: auditd main - Deploy auditd.conf
+  ansible.builtin.template:
+    src:   auditd.conf.j2
+    dest:  /etc/audit/auditd.conf
+    owner: root
+    group: root
+    mode:  "0640"
+  notify: auditd reload rules
+
+- name: auditd main - Deploy loginuid rules
+  ansible.builtin.copy:
+    src:   11-loginuid.rules
+    dest:  /etc/audit/rules.d/11-loginuid.rules
+    owner: root
+    group: root
+    mode:  "0640"
+  notify: auditd reload rules
+
+- name: auditd main - Enable audit at boot (RedHat only)
+  ansible.builtin.command:
+    cmd: /sbin/grubby --update-kernel=ALL --args="audit=1 audit_backlog_limit=8192"
+  when: ansible_facts['os_family'] == 'RedHat'
+  changed_when: true

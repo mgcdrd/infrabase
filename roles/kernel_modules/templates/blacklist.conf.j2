@@ -1,0 +1,5 @@
+# Managed by Ansible — do not edit manually
+{% for item in kernel_modules_blacklist %}
+blacklist {{ item }}
+install {{ item }} /bin/false
+{% endfor %}

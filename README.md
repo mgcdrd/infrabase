@@ -15,15 +15,20 @@ This collection contains common infrastructure roles used to standardize and aut
 | Role | Description |
 |------|-------------|
 | `acme_sh` | Installs acme.sh and manages ACME certificates (Let's Encrypt, ZeroSSL, EAB) via DNS or HTTP challenges |
+| `aide` | Installs AIDE and configures filesystem integrity monitoring with a daily cron check |
+| `auditd` | Installs auditd with CIS-aligned audit rules — syscall groups, watchpoints, and conf settings are variable-driven |
 | `crio` | Installs CRI-O container runtime, version-pinned to the Kubernetes minor version |
+| `cron` | CIS cron access hardening — removes `cron.deny`, creates `cron.allow` |
 | `docker` | Installs the latest Docker CE (Debian 12/13, Rocky 9/10) |
 | `etc_hosts` | Manages `/etc/hosts` entries |
-| `kernel_modules` | Loads and persists kernel modules via `/etc/modules-load.d/` |
+| `kernel_modules` | Loads and persists kernel modules; optionally blacklists modules via `/etc/modprobe.d/` |
 | `lvm2` | Extends existing LVM logical volumes and volume groups (supports threshold-based automation) |
 | `lvm2_provision` | Provisions LVM storage at setup time — creates VGs, LVs, filesystems, and mounts |
 | `podman` | Installs Podman container runtime |
 | `postfix` | Installs and configures Postfix MTA |
+| `sshd` | Installs and configures sshd with hardened defaults; crypto policy managed via `sshd_config.d/` drop-in |
 | `ssl_scripting` | Deploys SSL certificate scripting utilities |
+| `sudoers` | Hardens `/etc/sudoers` — enforces `timestamp_timeout` and configures a sudo log file |
 | `sysctl` | Writes sysctl parameters to `/etc/sysctl.d/` and applies them |
 
 It is designed for use with:

@@ -14,7 +14,6 @@
 
 - name: crio install-redhat - Install cri-o
   ansible.builtin.dnf:
-    name:             cri-o
-    state:            present
-    disable_excludes: cri-o
+    name:  cri-o
+    state: present
   notify: crio restart

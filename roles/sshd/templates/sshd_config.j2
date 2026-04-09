@@ -1,0 +1,73 @@
+# Managed by Ansible — do not edit manually
+# Drop-ins in /etc/ssh/sshd_config.d/ are loaded below and can override these settings.
+Include /etc/ssh/sshd_config.d/*.conf
+
+# ---- Connection ----
+Port {{ sshd_port }}
+AddressFamily {{ sshd_address_family }}
+{% for addr in sshd_listen_addresses %}
+ListenAddress {{ addr }}
+{% endfor %}
+
+# ---- Logging ----
+SyslogFacility AUTH
+LogLevel INFO
+
+# ---- Authentication ----
+LoginGraceTime {{ sshd_login_grace_time }}
+PermitRootLogin {{ sshd_permit_root_login }}
+StrictModes yes
+MaxAuthTries {{ sshd_max_auth_tries }}
+MaxSessions {{ sshd_max_sessions }}
+
+PubkeyAuthentication {{ sshd_pubkey_authentication }}
+AuthorizedKeysFile {{ sshd_authorized_keys_file }}
+
+HostbasedAuthentication no
+IgnoreUserKnownHosts no
+IgnoreRhosts yes
+
+PasswordAuthentication {{ sshd_password_authentication }}
+PermitEmptyPasswords {{ sshd_permit_empty_passwords }}
+
+KerberosAuthentication no
+GSSAPIAuthentication no
+
+UsePAM {{ sshd_use_pam }}
+
+# ---- Session ----
+AllowTcpForwarding {{ sshd_allow_tcp_forwarding }}
+X11Forwarding {{ sshd_x11_forwarding }}
+PrintMotd {{ sshd_print_motd }}
+ClientAliveInterval {{ sshd_client_alive_interval }}
+ClientAliveCountMax {{ sshd_client_alive_count_max }}
+PermitUserEnvironment no
+Compression no
+{% if sshd_banner %}
+Banner {{ sshd_banner }}
+{% endif %}
+
+# ---- Subsystem ----
+Subsystem sftp {{ _sshd_sftp_server }}
+
+# ---- Access control ----
+{% if sshd_deny_users %}
+DenyUsers {{ sshd_deny_users | join(' ') }}
+{% endif %}
+{% if sshd_allow_users %}
+AllowUsers {{ sshd_allow_users | join(' ') }}
+{% endif %}
+{% if sshd_deny_groups %}
+DenyGroups {{ sshd_deny_groups | join(' ') }}
+{% endif %}
+{% if sshd_allow_groups %}
+AllowGroups {{ sshd_allow_groups | join(' ') }}
+{% endif %}
+
+# ---- Match blocks ----
+{% for block in sshd_match_blocks %}
+Match {{ block.type }} {{ block.targets | join(' ') }}
+{% for opt in block.options %}
+  {{ opt }}
+{% endfor %}
+{% endfor %}

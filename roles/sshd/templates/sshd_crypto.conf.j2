@@ -1,0 +1,5 @@
+# Managed by Ansible — do not edit manually
+# Cryptographic algorithm policy for sshd.
+Ciphers {{ sshd_ciphers | regex_replace('\s+', '') }}
+KexAlgorithms {{ sshd_kex_algorithms | regex_replace('\s+', '') }}
+MACs {{ sshd_macs | regex_replace('\s+', '') }}

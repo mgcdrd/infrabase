@@ -1,0 +1,70 @@
+---
+
+- name: sshd main - Install openssh-server
+  ansible.builtin.package:
+    name: openssh-server
+    state: present
+
+- name: sshd main - Set OS-specific variables
+  ansible.builtin.set_fact:
+    _sshd_service:     "{{ 'ssh'        if ansible_facts['os_family'] == 'Debian' else 'sshd' }}"
+    _sshd_key_group:   "{{ 'ssh'        if ansible_facts['os_family'] == 'Debian' else 'ssh_keys' }}"
+    _sshd_sftp_server: "{{ '/usr/lib/openssh/sftp-server'    if ansible_facts['os_family'] == 'Debian'
+                            else '/usr/libexec/openssh/sftp-server' }}"
+
+- name: sshd main - Enable sshd
+  ansible.builtin.service:
+    name:    "{{ _sshd_service }}"
+    enabled: true
+
+- name: sshd main - Deploy sshd_config
+  ansible.builtin.template:
+    src:   sshd_config.j2
+    dest:  /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode:  "0600"
+    validate: /usr/sbin/sshd -t -f %s
+  notify: sshd restart
+
+- name: sshd main - Ensure sshd_config.d exists
+  ansible.builtin.file:
+    path:  /etc/ssh/sshd_config.d
+    state: directory
+    owner: root
+    group: root
+    mode:  "0700"
+
+- name: sshd main - Deploy crypto policy drop-in
+  ansible.builtin.template:
+    src:   sshd_crypto.conf.j2
+    dest:  /etc/ssh/sshd_config.d/00-crypto.conf
+    owner: root
+    group: root
+    mode:  "0600"
+    validate: /usr/sbin/sshd -t -f %s
+  notify: sshd restart
+
+- name: sshd main - Remove /etc/sysconfig/sshd crypto override (RedHat)
+  ansible.builtin.lineinfile:
+    path:   /etc/sysconfig/sshd
+    regexp: '^\s*CRYPTO_POLICY\s*=.*$'
+    state:  absent
+  when: ansible_facts['os_family'] == 'RedHat'
+  notify: sshd restart
+
+- name: sshd main - Set permissions on host keys
+  ansible.builtin.file:
+    path:  "/etc/ssh/{{ item.file }}"
+    owner: root
+    group: "{{ item.group }}"
+    mode:  "{{ item.mode }}"
+  loop:
+    - { file: "sshd_config",              group: root,                mode: "0600" }
+    - { file: "ssh_host_ed25519_key",     group: "{{ _sshd_key_group }}", mode: "0640" }
+    - { file: "ssh_host_ed25519_key.pub", group: root,                mode: "0644" }
+    - { file: "ssh_host_ecdsa_key",       group: "{{ _sshd_key_group }}", mode: "0640" }
+    - { file: "ssh_host_ecdsa_key.pub",   group: root,                mode: "0644" }
+    - { file: "ssh_host_rsa_key",         group: "{{ _sshd_key_group }}", mode: "0640" }
+    - { file: "ssh_host_rsa_key.pub",     group: root,                mode: "0644" }
+  failed_when: false

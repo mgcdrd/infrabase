@@ -1,0 +1,118 @@
+---
+
+# ---- auditd.conf settings ----
+
+auditd_local_events:           "yes"
+auditd_log_format:             "ENRICHED"
+auditd_name_format:            "hostname"
+auditd_max_log_file_action:    "keep_logs"
+auditd_space_left:             "25"
+auditd_space_left_action:      "email"
+auditd_action_mail_acct:       "root"
+auditd_admin_space_left:       "12"
+auditd_admin_space_left_action: "halt"
+auditd_disk_full_action:       "single"
+auditd_disk_error_action:      "syslog"
+auditd_overflow_action:        "syslog"
+
+# ---- audit rules — syscall groups ----
+# These drive auditd.rules.j2. Override to extend or restrict coverage.
+
+auditd_perm_mod:
+  - chmod
+  - chown
+  - fchmod
+  - fchmodat
+  - fchown
+  - fchownat
+  - fremovexattr
+  - fsetxattr
+  - lchown
+  - lremovexattr
+  - lsetxattr
+  - removexattr
+  - setxattr
+
+auditd_perm_mod_root:
+  - fremovexattr
+  - fsetxattr
+  - lremovexattr
+  - lsetxattr
+  - removexattr
+  - setxattr
+
+auditd_file_delete:
+  - rename
+  - renameat
+  - rmdir
+  - unlink
+  - unlinkat
+
+auditd_file_access:
+  - creat
+  - ftruncate
+  - open
+  - open_by_handle_at
+  - openat
+  - truncate
+
+auditd_kernel_module_syscalls:
+  - delete_module
+  - finit_module
+  - init_module
+  - query_module
+
+auditd_mount_syscalls:
+  - mount
+
+auditd_time_syscalls:
+  - name: adjtimex
+    key:  "key=audit_time_rules"
+  - name: clock_settime
+    key:  "a0=0x0 -F key=time-change"
+  - name: sethostname
+    key:  "key=audit_rules_networkconfig_modification"
+  - name: setdomainname
+    key:  "key=audit_rules_networkconfig_modification"
+  - name: settimeofday
+    key:  "key=audit_time_rules"
+  - name: create_module
+    key:  "key=module-change"
+
+# Paths audited with -F perm=x (privileged execution)
+auditd_privileged_exec:
+  - /usr/bin/chacl
+  - /usr/bin/setfacl
+  - /usr/bin/kmod
+
+# Paths audited for privileged access (no perm filter)
+auditd_privileged_access:
+  - /usr/bin/chage
+  - /usr/bin/chsh
+  - /usr/bin/crontab
+  - /usr/bin/gpasswd
+  - /usr/bin/mount
+  - /usr/bin/newgrp
+  - /usr/bin/passwd
+  - /usr/bin/su
+  - /usr/bin/sudo
+  - /usr/bin/umount
+
+# Watchpoints — file/dir watches (-w)
+auditd_watches:
+  - { file: /etc/sudoers,                       perm: wa, key: actions }
+  - { file: /etc/sudoers.d/,                    perm: wa, key: actions }
+  - { file: /etc/group,                         perm: wa, key: audit_rules_usergroup_modification }
+  - { file: /etc/gshadow,                       perm: wa, key: audit_rules_usergroup_modification }
+  - { file: /etc/passwd,                        perm: wa, key: audit_rules_usergroup_modification }
+  - { file: /etc/shadow,                        perm: wa, key: audit_rules_usergroup_modification }
+  - { file: /etc/security/opasswd,              perm: wa, key: audit_rules_usergroup_modification }
+  - { file: /var/log/lastlog,                   perm: wa, key: logins }
+  - { file: /etc/issue,                         perm: wa, key: audit_rules_networkconfig_modification }
+  - { file: /etc/issue.net,                     perm: wa, key: audit_rules_networkconfig_modification }
+  - { file: /etc/hosts,                         perm: wa, key: audit_rules_networkconfig_modification }
+  - { file: /etc/localtime,                     perm: wa, key: audit_time_rules }
+  - { file: /var/run/utmp,                      perm: wa, key: session }
+  - { file: /var/log/btmp,                      perm: wa, key: session }
+  - { file: /var/log/wtmp,                      perm: wa, key: session }
+  - { file: /usr/bin/kmod,                      perm: x,  key: modules }

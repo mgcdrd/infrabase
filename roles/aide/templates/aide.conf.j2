@@ -1,0 +1,157 @@
+# Managed by Ansible — do not edit manually
+@@define DBDIR /var/lib/aide
+@@define LOGDIR /var/log/aide
+
+database=file:@@{DBDIR}/aide.db.gz
+database_out=file:@@{DBDIR}/aide.db.new.gz
+gzip_dbout=yes
+verbose=5
+report_url=file:@@{LOGDIR}/aide.log
+report_url=stdout
+
+# ---- Rule definitions ----
+ALLXTRAHASHES = sha1+rmd160+sha256+sha512+tiger
+EVERYTHING    = R+ALLXTRAHASHES+acl+xattrs
+NORMAL        = p+i+n+u+g+s+m+c+acl+selinux+xattrs+sha512
+DIR           = p+i+n+u+g+acl+selinux+xattrs
+PERMS         = p+u+g+acl+selinux+xattrs
+LOG           = p+u+g+n+S+acl+selinux+xattrs
+CONTENT       = sha512+ftype+acl+xattrs
+CONTENT_EX    = sha512+ftype+p+u+g+n+acl+selinux+xattrs
+DATAONLY      = p+n+u+g+s+acl+selinux+xattrs+sha512
+FIPSR         = p+i+n+u+g+s+m+c+acl+selinux+xattrs+sha512
+
+# ---- Filesystem coverage ----
+/boot       CONTENT_EX
+/opt        CONTENT
+/root/\..* PERMS
+/root       CONTENT_EX
+!/usr/src
+!/usr/tmp
+/usr        CONTENT_EX
+
+# trusted databases
+/etc/hosts$             CONTENT_EX
+/etc/host.conf$         CONTENT_EX
+/etc/hostname$          CONTENT_EX
+/etc/issue$             CONTENT_EX
+/etc/issue.net$         CONTENT_EX
+/etc/protocols$         CONTENT_EX
+/etc/services$          CONTENT_EX
+/etc/localtime$         CONTENT_EX
+/etc/alternatives       CONTENT_EX
+/etc/mime.types$        CONTENT_EX
+/etc/terminfo           CONTENT_EX
+/etc/exports$           CONTENT_EX
+/etc/fstab$             CONTENT_EX
+/etc/passwd$            CONTENT_EX
+/etc/group$             CONTENT_EX
+/etc/gshadow$           CONTENT_EX
+/etc/shadow$            CONTENT_EX
+/etc/subgid$            CONTENT_EX
+/etc/subuid$            CONTENT_EX
+/etc/security/opasswd$  CONTENT_EX
+/etc/skel               CONTENT_EX
+/etc/machine-id$        CONTENT_EX
+/etc/shells$            CONTENT_EX
+
+# networking
+/etc/hosts.allow$   CONTENT_EX
+/etc/hosts.deny$    CONTENT_EX
+/etc/networks$      CONTENT_EX
+/etc/resolv.conf$   DATAONLY
+/etc/nscd.conf$     CONTENT_EX
+!/etc/NetworkManager/system-connections
+/etc/NetworkManager CONTENT_EX
+/etc/dhcp           CONTENT_EX
+
+# logins and accounts
+/etc/login.defs$   CONTENT_EX
+/etc/libuser.conf$ CONTENT_EX
+/var/log/lastlog$  PERMS
+/etc/pam.d         CONTENT_EX
+/etc/security      CONTENT_EX
+/etc/polkit-1      CONTENT_EX
+/etc/sudo.conf$    CONTENT_EX
+/etc/sudoers$      CONTENT_EX
+/etc/sudoers.d     CONTENT_EX
+
+# shell startup
+/etc/profile$            CONTENT_EX
+/etc/profile.d           CONTENT_EX
+/etc/bashrc$             CONTENT_EX
+/etc/bash_completion.d   CONTENT_EX
+
+# pkg manager (RedHat)
+/etc/dnf          CONTENT_EX
+/etc/yum.conf$    CONTENT_EX
+/etc/yum          CONTENT_EX
+/etc/yum.repos.d  CONTENT_EX
+
+# pkg manager (Debian)
+/etc/apt          CONTENT_EX
+/etc/dpkg         CONTENT_EX
+
+# auditing
+!/var/log/aide.log
+/var/log/audit    PERMS
+/etc/audit        CONTENT_EX
+/etc/libaudit.conf$ CONTENT_EX
+/etc/aide.conf$   CONTENT_EX
+
+# system logs
+/etc/rsyslog.conf$        CONTENT_EX
+/etc/rsyslog.d            CONTENT_EX
+/etc/logrotate.conf$      CONTENT_EX
+/etc/logrotate.d          CONTENT_EX
+/etc/systemd/journald.conf$ CONTENT_EX
+!/var/log/sa
+/var/log          LOG+ANF+ARF
+/var/run/utmp     LOG
+
+# secrets and PKI
+/etc/pki          CONTENT_EX
+/etc/ssl          CONTENT_EX
+/etc/crypto-policies CONTENT_EX
+
+# init / kernel config
+/etc/systemd      CONTENT_EX
+/etc/tmpfiles.d   CONTENT_EX
+/etc/default      CONTENT_EX
+/etc/sysctl.conf$ CONTENT_EX
+/etc/sysctl.d     CONTENT_EX
+/etc/modprobe.d   CONTENT_EX
+/etc/modules-load.d CONTENT_EX
+/etc/udev         CONTENT_EX
+
+# ssh
+/etc/ssh/sshd_config$  CONTENT_EX
+/etc/ssh/ssh_config$   CONTENT_EX
+
+# cron
+/etc/cron.allow$    CONTENT_EX
+/etc/cron.deny$     CONTENT_EX
+/etc/cron.d         CONTENT_EX
+/etc/cron.daily     CONTENT_EX
+/etc/cron.hourly    CONTENT_EX
+/etc/cron.monthly   CONTENT_EX
+/etc/cron.weekly    CONTENT_EX
+/etc/crontab$       CONTENT_EX
+
+# mail
+/etc/aliases$   CONTENT_EX
+/etc/postfix    CONTENT_EX
+
+# catch-all for /etc
+!/etc/.*~
+/etc    PERMS
+
+# ---- Caller-defined additions ----
+{% for item in aide_extra_paths %}
+{{ item.path }}  {{ item.rule }}
+{% endfor %}
+
+# ---- Caller-defined exclusions ----
+{% for item in aide_exclude_paths %}
+!{{ item }}
+{% endfor %}
