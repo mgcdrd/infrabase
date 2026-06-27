@@ -12,11 +12,13 @@
     path: /root/.acme.sh/acme.sh
   register: _acme_sh_binary
 
+# The installer does `cp acme.sh ~/.acme.sh/acme.sh` relative to CWD,
+# so the script must be named acme.sh and run from its own directory.
 - name: acme_sh install - Download acme.sh script
   become: true
   ansible.builtin.get_url:
     url: https://raw.githubusercontent.com/acmesh-official/acme.sh/master/acme.sh
-    dest: /root/.acme_install.sh
+    dest: /root/acme.sh
     mode: "0700"
     force: true
   when: not _acme_sh_binary.stat.exists
@@ -25,18 +27,19 @@
   become: true
   ansible.builtin.command:
     argv:
-      - /root/.acme_install.sh
+      - ./acme.sh
       - --install
       - --no-profile
       - --accountemail
       - "{{ acme_sh_email }}"
+    chdir: /root
   when: not _acme_sh_binary.stat.exists
   changed_when: true
 
 - name: acme_sh install - Remove installer script
   become: true
   ansible.builtin.file:
-    path: /root/.acme_install.sh
+    path: /root/acme.sh
     state: absent
   when: not _acme_sh_binary.stat.exists
 
