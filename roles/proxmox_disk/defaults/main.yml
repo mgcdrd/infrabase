@@ -11,7 +11,7 @@ proxmox_disk_vm_name: "{{ inventory_hostname }}"
 # ---- Disk configuration ----
 proxmox_disk_slot: virtio1        # PVE disk slot — must not already be occupied
 proxmox_disk_storage: ""          # PVE storage backend (e.g. truenas, local-lvm)
-proxmox_disk_size: "400G"
+proxmox_disk_size: "400"
 
 # ---- Operation ----
 # present: add a new disk in proxmox_disk_slot (fails if slot occupied)

@@ -52,7 +52,7 @@ proxmox_disk_vm_name: "{{ inventory_hostname }}"
 
 ```yaml
 proxmox_disk_slot: virtio1    # PVE disk slot — must not already be occupied for 'present'
-proxmox_disk_size: "400G"
+proxmox_disk_size: "400"      # GiB integer, no suffix — for state=resized use "+XG" form
 proxmox_disk_state: present   # present | resized
 proxmox_disk_api_user: "root@pam"
 ```
@@ -128,10 +128,10 @@ Example Playbook — add disk and set up LVM
       vars:
         proxmox_disk_api_host: "pve2.example.com"
         proxmox_disk_api_password: "{{ vault_pve_password }}"
-        proxmox_disk_vm_name: "{{ inventory_hostname | split('.') | first }}"
+        proxmox_disk_vm_name: "{{ inventory_hostname }}"
         proxmox_disk_slot: virtio1
         proxmox_disk_storage: truenas
-        proxmox_disk_size: "400G"
+        proxmox_disk_size: "400"      # GiB integer, no suffix for state=present
         proxmox_disk_state: present
 
 - name: Set up LVM on new disk
@@ -168,7 +168,7 @@ Example Playbook — resize existing disk
         proxmox_disk_api_password: "{{ vault_pve_password }}"
         proxmox_disk_slot: virtio1
         proxmox_disk_storage: truenas
-        proxmox_disk_size: "600G"
+        proxmox_disk_size: "+200G"    # suffix required for state=resized; + means relative
         proxmox_disk_state: resized
         proxmox_disk_resize_device: /dev/vdb
         proxmox_disk_resize_vg: vg_foreman
