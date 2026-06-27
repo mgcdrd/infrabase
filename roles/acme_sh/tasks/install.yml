@@ -6,15 +6,39 @@
     name: "{{ ['wget', 'cronie'] if ansible_os_family == 'RedHat' else ['wget', 'cron'] }}"
     state: present
 
-# Official install method: pipes directly to sh, no intermediate files.
-# The email flag registers it with the installer so acme.sh --list-accounts works.
-# creates: makes this idempotent — skipped if already installed.
-- name: acme_sh install - Install acme.sh
+- name: acme_sh install - Check if acme.sh is already installed
   become: true
-  ansible.builtin.shell:
-    cmd: "wget -O- https://get.acme.sh | sh -s email={{ acme_sh_email }}"
-  args:
-    creates: /root/.acme.sh/acme.sh
+  ansible.builtin.stat:
+    path: /root/.acme.sh/acme.sh
+  register: _acme_sh_binary
+
+- name: acme_sh install - Download acme.sh script
+  become: true
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/acmesh-official/acme.sh/master/acme.sh
+    dest: /root/.acme_install.sh
+    mode: "0700"
+    force: true
+  when: not _acme_sh_binary.stat.exists
+
+- name: acme_sh install - Run acme.sh installer
+  become: true
+  ansible.builtin.command:
+    argv:
+      - /root/.acme_install.sh
+      - --install
+      - --no-profile
+      - --accountemail
+      - "{{ acme_sh_email }}"
+  when: not _acme_sh_binary.stat.exists
+  changed_when: true
+
+- name: acme_sh install - Remove installer script
+  become: true
+  ansible.builtin.file:
+    path: /root/.acme_install.sh
+    state: absent
+  when: not _acme_sh_binary.stat.exists
 
 - name: acme_sh install - Ensure cert base directory exists
   become: true
