@@ -1,6 +1,7 @@
 ---
 
 - name: acme_sh account - Assert EAB credentials are set when EAB is enabled
+  become: false
   ansible.builtin.assert:
     that:
       - acme_sh_eab_kid | length > 0
@@ -9,6 +10,7 @@
   when: acme_sh_eab_enabled
 
 - name: acme_sh account - Set default CA
+  become: true
   ansible.builtin.command:
     cmd: >-
       {{ acme_sh_install_dir }}/acme.sh
@@ -23,6 +25,7 @@
 # This is a one-time operation — acme.sh stores the resulting account credentials
 # and reuses them for all subsequent --issue calls without needing the EAB keys again.
 - name: acme_sh account - Register account with EAB
+  become: true
   ansible.builtin.command:
     cmd: >-
       {{ acme_sh_install_dir }}/acme.sh

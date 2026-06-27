@@ -1,6 +1,7 @@
 ---
 
 - name: acme_sh - Validate required variables
+  become: false
   ansible.builtin.import_tasks: preflight.yml
 
 - name: acme_sh - Install acme.sh

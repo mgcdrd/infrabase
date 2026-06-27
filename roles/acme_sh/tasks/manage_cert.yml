@@ -5,6 +5,7 @@
 # Supports both `domain: example.com` (string) and `domains: [example.com, ...]` (list).
 
 - name: "acme_sh cert - Normalize domain list"
+  become: false
   ansible.builtin.set_fact:
     _acme_domains: >-
       {{
@@ -13,6 +14,7 @@
       }}
 
 - name: "acme_sh cert - Set facts for {{ _acme_domains | first }}"
+  become: false
   ansible.builtin.set_fact:
     _acme_primary:  "{{ _acme_domains | first }}"
     _acme_state:    "{{ _cert.state | default('present') }}"
@@ -21,6 +23,7 @@
 # ---- ABSENT: revoke and remove ----
 
 - name: "acme_sh cert - Revoke and remove {{ _acme_primary }}"
+  become: true
   ansible.builtin.command:
     cmd: >-
       {{ acme_sh_install_dir }}/acme.sh
@@ -31,6 +34,7 @@
   changed_when: true
 
 - name: "acme_sh cert - Remove deployed cert dir for {{ _acme_primary }}"
+  become: true
   ansible.builtin.file:
     path: "{{ _acme_cert_dir }}"
     state: absent
@@ -39,6 +43,7 @@
 # ---- PRESENT: issue or renew ----
 
 - name: "acme_sh cert - Ensure deploy dir exists for {{ _acme_primary }}"
+  become: true
   ansible.builtin.file:
     path: "{{ _acme_cert_dir }}"
     state: directory
@@ -49,12 +54,14 @@
 
 # Build the -d argument list (primary + SANs)
 - name: "acme_sh cert - Build domain args for {{ _acme_primary }}"
+  become: false
   ansible.builtin.set_fact:
     _acme_domain_args: "{{ _acme_domains | map('regex_replace', '^(.*)$', '-d \\1') | join(' ') }}"
   when: _acme_state == 'present'
 
 # Build the challenge-specific arguments
 - name: "acme_sh cert - Build challenge args for {{ _acme_primary }}"
+  become: false
   ansible.builtin.set_fact:
     _acme_challenge_args: >-
       {% if _cert.challenge == 'dns_cf' %}
@@ -72,6 +79,7 @@
 
 # Build Cloudflare env vars (only needed for dns_cf)
 - name: "acme_sh cert - Resolve Cloudflare environment for {{ _acme_primary }}"
+  become: false
   ansible.builtin.set_fact:
     _acme_cf_env: >-
       {% if _cert.challenge == 'dns_cf' %}
@@ -84,6 +92,7 @@
   when: _acme_state == 'present'
 
 - name: "acme_sh cert - Issue or renew {{ _acme_primary }}"
+  become: true
   ansible.builtin.shell:
     cmd: >-
       {{ _acme_cf_env | default('') | trim }}
@@ -102,6 +111,7 @@
   when: _acme_state == 'present'
 
 - name: "acme_sh cert - Deploy cert files for {{ _acme_primary }}"
+  become: true
   ansible.builtin.command:
     cmd: >-
       {{ acme_sh_install_dir }}/acme.sh
