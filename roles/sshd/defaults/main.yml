@@ -1,5 +1,8 @@
 ---
 
+# ---- Package ----
+sshd_manage_package: true   # set false if openssh-server is already installed
+
 # ---- Connection ----
 sshd_port:           22
 sshd_address_family: any

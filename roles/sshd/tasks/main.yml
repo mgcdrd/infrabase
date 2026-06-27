@@ -4,6 +4,7 @@
   ansible.builtin.package:
     name: openssh-server
     state: present
+  when: sshd_manage_package | bool
 
 - name: sshd main - Set OS-specific variables
   ansible.builtin.set_fact:
