@@ -24,6 +24,7 @@
       - '!all'
       - hardware
   when: lvm_provision_vgs | length > 0
+  become: false
 
 # =====================
 # Create LVs
