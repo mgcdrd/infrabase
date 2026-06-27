@@ -1,0 +1,13 @@
+---
+
+- name: hardened_services main - Disable NFS server
+  ansible.builtin.import_tasks: nfs.yml
+  when: hardened_services_disable_nfs
+
+- name: hardened_services main - Require auth for emergency/rescue targets
+  ansible.builtin.import_tasks: emergency.yml
+  when: hardened_services_emergency_auth
+
+- name: hardened_services main - Enforce chronyd unprivileged user
+  ansible.builtin.import_tasks: chronyd.yml
+  when: hardened_services_chronyd_user

@@ -36,3 +36,19 @@
     regexp:   '^\s*Defaults\s.*\blogfile\s*=.*'
     line:     'Defaults logfile={{ sudoers_log_file }}'
     validate: /usr/sbin/visudo -cf %s
+
+- name: sudoers main - Enforce use_pty
+  ansible.builtin.lineinfile:
+    path:     /etc/sudoers
+    regexp:   '^\s*Defaults\s.*\buse_pty\b.*$'
+    line:     'Defaults use_pty'
+    validate: /usr/sbin/visudo -cf %s
+  when: sudoers_use_pty
+
+- name: sudoers main - Disable shared-password escalation flags
+  ansible.builtin.lineinfile:
+    path:     /etc/sudoers
+    regexp:   "^Defaults !{{ item }}$"
+    line:     "Defaults !{{ item }}"
+    validate: /usr/sbin/visudo -cf %s
+  loop: "{{ sudoers_disable_pwflags }}"

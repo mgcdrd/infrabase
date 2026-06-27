@@ -1,0 +1,9 @@
+---
+
+- name: hardened_services nfs - Disable and mask NFS server
+  ansible.builtin.systemd:
+    name:    "{{ 'nfs-kernel-server' if ansible_facts['os_family'] == 'Debian' else 'nfs-server' }}"
+    enabled: false
+    masked:  true
+    state:   stopped
+  failed_when: false

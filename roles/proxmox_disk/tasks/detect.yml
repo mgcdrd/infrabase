@@ -1,0 +1,45 @@
+---
+# Diff block devices before/after to identify the newly added disk.
+# Sets proxmox_disk_device fact (e.g. /dev/vdb) for downstream use.
+
+- name: detect - list block devices after disk add
+  ansible.builtin.command:
+    cmd: lsblk -dn -o NAME,TYPE
+  register: proxmox_disk_devices_after
+  changed_when: false
+  become: true
+
+- name: detect - parse new device names
+  ansible.builtin.set_fact:
+    proxmox_disk_names_after: >-
+      {{
+        proxmox_disk_devices_after.stdout_lines
+        | select('search', ' disk$')
+        | map('split')
+        | map('first')
+        | list
+      }}
+
+- name: detect - identify new disk
+  ansible.builtin.set_fact:
+    proxmox_disk_new_names: >-
+      {{
+        proxmox_disk_names_after | difference(proxmox_disk_names_before)
+      }}
+
+- name: detect - fail if no new disk was detected
+  ansible.builtin.fail:
+    msg: >
+      Disk was added in ProxMox but no new block device appeared in the VM.
+      Before: {{ proxmox_disk_names_before }}
+      After:  {{ proxmox_disk_names_after }}
+      Try running with foreman_expand_storage: true again, or check the PVE console.
+  when: proxmox_disk_new_names | length == 0
+
+- name: detect - set proxmox_disk_device fact
+  ansible.builtin.set_fact:
+    proxmox_disk_device: "/dev/{{ proxmox_disk_new_names | first }}"
+
+- name: detect - report detected device
+  ansible.builtin.debug:
+    msg: "New disk detected: {{ proxmox_disk_device }}"

@@ -1,0 +1,8 @@
+---
+
+- name: password_policy pwquality - Configure /etc/security/pwquality.conf
+  ansible.builtin.lineinfile:
+    path:   /etc/security/pwquality.conf
+    regexp: '^[#\s]*{{ item.key }}\s*[=\s].*'
+    line:   "{{ item.key }} = {{ item.value }}"
+  loop: "{{ password_policy_pwquality }}"

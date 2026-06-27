@@ -30,6 +30,7 @@ This collection contains common infrastructure roles used to standardize and aut
 | `ssl_scripting` | Deploys SSL certificate scripting utilities |
 | `sudoers` | Hardens `/etc/sudoers` — enforces `timestamp_timeout` and configures a sudo log file |
 | `sysctl` | Writes sysctl parameters to `/etc/sysctl.d/` and applies them |
+| `firewalld` | *(planned)* Manage firewalld zones, services, ports, and rich rules idempotently |
 
 It is designed for use with:
 - Ansible Core >= 2.14

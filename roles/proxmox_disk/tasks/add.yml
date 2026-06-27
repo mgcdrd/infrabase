@@ -1,0 +1,33 @@
+---
+- name: add - check disk slot is not already occupied
+  community.general.proxmox_disk:
+    api_host: "{{ proxmox_disk_api_host }}"
+    api_user: "{{ proxmox_disk_api_user }}"
+    api_password: "{{ proxmox_disk_api_password }}"
+    vmid: "{{ proxmox_disk_vmid }}"
+    disk: "{{ proxmox_disk_slot }}"
+    storage: "{{ proxmox_disk_storage }}"
+    size: "{{ proxmox_disk_size }}"
+    state: present
+  delegate_to: localhost
+  register: proxmox_disk_add_result
+
+- name: add - trigger PCI bus rescan inside VM to expose new device
+  ansible.builtin.shell:
+    cmd: echo 1 > /sys/bus/pci/rescan
+  become: true
+  changed_when: false
+  failed_when: false
+
+- name: add - wait up to 15s for new block device to appear
+  ansible.builtin.shell:
+    cmd: lsblk -dn -o NAME,TYPE | grep -q ' disk$'
+  register: proxmox_disk_wait
+  until: >-
+    proxmox_disk_wait.stdout_lines | default([]) | length !=
+    proxmox_disk_names_before | length
+  retries: 15
+  delay: 1
+  changed_when: false
+  become: true
+  failed_when: false

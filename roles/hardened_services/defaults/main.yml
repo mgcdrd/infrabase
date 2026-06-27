@@ -1,0 +1,13 @@
+---
+
+# Disable and mask the NFS server service. Safe to enable on hosts where NFS
+# server is not intentionally running.
+hardened_services_disable_nfs: true
+
+# Require sulogin authentication for emergency and rescue systemd targets via
+# drop-in overrides in /etc/systemd/system/{emergency,rescue}.service.d/.
+hardened_services_emergency_auth: true
+
+# Ensure chronyd runs as an unprivileged user (chrony on RedHat, _chrony on Debian).
+# Set to false on hosts where chrony is not installed.
+hardened_services_chronyd_user: true

@@ -1,0 +1,17 @@
+---
+galaxy_info:
+  role_name: hardened_services
+  author: mgcdrd
+  description: Harden system services — disable NFS server, require auth for emergency/rescue targets, enforce chronyd user
+  license: GPL-3.0-or-later
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+    - name: EL
+      versions:
+        - '9'
+        - '10'
+dependencies: []

@@ -1,0 +1,17 @@
+---
+
+- name: password_policy main - Configure pwquality
+  ansible.builtin.import_tasks: pwquality.yml
+
+- name: password_policy main - Configure login.defs
+  ansible.builtin.import_tasks: login_defs.yml
+
+- name: password_policy main - Configure useradd defaults
+  ansible.builtin.import_tasks: useradd.yml
+
+- name: password_policy main - Configure session environment
+  ansible.builtin.import_tasks: session.yml
+
+- name: password_policy main - Configure faillock (RedHat only)
+  ansible.builtin.import_tasks: faillock.yml
+  when: ansible_facts['os_family'] == 'RedHat'

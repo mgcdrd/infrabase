@@ -1,0 +1,23 @@
+---
+- name: proxmox_disk - discover VM in ProxMox
+  import_tasks: discover.yml
+  tags: [proxmox_disk, storage]
+
+- name: proxmox_disk - snapshot current block devices
+  import_tasks: snapshot.yml
+  tags: [proxmox_disk, storage]
+
+- name: proxmox_disk - add disk
+  import_tasks: add.yml
+  when: proxmox_disk_state == 'present'
+  tags: [proxmox_disk, storage]
+
+- name: proxmox_disk - resize disk
+  import_tasks: resize.yml
+  when: proxmox_disk_state == 'resized'
+  tags: [proxmox_disk, storage]
+
+- name: proxmox_disk - detect new block device
+  import_tasks: detect.yml
+  when: proxmox_disk_state == 'present'
+  tags: [proxmox_disk, storage]

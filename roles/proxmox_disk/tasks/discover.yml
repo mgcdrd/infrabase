@@ -1,0 +1,35 @@
+---
+# Look up the VM by name across all PVE nodes.
+# Sets proxmox_disk_vmid and proxmox_disk_node as host facts.
+# Eliminates the need to hardcode either value in the deployment.
+
+- name: discover - look up VM by name in ProxMox
+  community.general.proxmox_vm_info:
+    api_host: "{{ proxmox_disk_api_host }}"
+    api_user: "{{ proxmox_disk_api_user }}"
+    api_password: "{{ proxmox_disk_api_password }}"
+    name: "{{ proxmox_disk_vm_name }}"
+  register: proxmox_disk_vm_info
+  delegate_to: localhost
+
+- name: discover - fail if VM not found
+  ansible.builtin.fail:
+    msg: "No VM named '{{ proxmox_disk_vm_name }}' found in ProxMox. Check proxmox_disk_vm_name."
+  when: proxmox_disk_vm_info.proxmox_vms | length == 0
+
+- name: discover - fail if multiple VMs match
+  ansible.builtin.fail:
+    msg: >
+      Multiple VMs named '{{ proxmox_disk_vm_name }}' found
+      ({{ proxmox_disk_vm_info.proxmox_vms | map(attribute='vmid') | list }}).
+      Set proxmox_disk_vm_name to a more specific name.
+  when: proxmox_disk_vm_info.proxmox_vms | length > 1
+
+- name: discover - set VMID and node facts
+  ansible.builtin.set_fact:
+    proxmox_disk_vmid: "{{ proxmox_disk_vm_info.proxmox_vms[0].vmid }}"
+    proxmox_disk_node: "{{ proxmox_disk_vm_info.proxmox_vms[0].node }}"
+
+- name: discover - report discovered VM
+  ansible.builtin.debug:
+    msg: "Found VM '{{ proxmox_disk_vm_name }}' — VMID {{ proxmox_disk_vmid }} on node {{ proxmox_disk_node }}"

@@ -1,0 +1,27 @@
+---
+
+- name: hardened_services emergency - Create systemd drop-in directories
+  ansible.builtin.file:
+    path:  "/etc/systemd/system/{{ item }}.d"
+    state: directory
+    owner: root
+    group: root
+    mode:  "0755"
+  loop:
+    - emergency.service
+    - rescue.service
+
+- name: hardened_services emergency - Require sulogin for emergency and rescue targets
+  ansible.builtin.copy:
+    dest:  "/etc/systemd/system/{{ item }}.d/override.conf"
+    owner: root
+    group: root
+    mode:  "0644"
+    content: |
+      [Service]
+      ExecStart=
+      ExecStart=-/bin/sh -c "/usr/sbin/sulogin; /usr/bin/systemctl --fail --no-block default"
+  loop:
+    - emergency.service
+    - rescue.service
+  notify: hardened_services daemon-reload

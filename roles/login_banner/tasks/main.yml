@@ -1,0 +1,17 @@
+---
+
+- name: login_banner main - Deploy /etc/issue
+  ansible.builtin.template:
+    src:   banner.j2
+    dest:  /etc/issue
+    owner: root
+    group: root
+    mode:  "0644"
+
+- name: login_banner main - Deploy /etc/issue.net
+  ansible.builtin.template:
+    src:   banner.j2
+    dest:  /etc/issue.net
+    owner: root
+    group: root
+    mode:  "0644"

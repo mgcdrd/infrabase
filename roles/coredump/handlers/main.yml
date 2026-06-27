@@ -1,0 +1,2 @@
+---
+# No handlers — limits.conf and coredump.conf take effect on next process start.

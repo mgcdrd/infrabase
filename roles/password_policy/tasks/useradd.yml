@@ -1,0 +1,7 @@
+---
+
+- name: password_policy useradd - Set INACTIVE in /etc/default/useradd
+  ansible.builtin.lineinfile:
+    path:          /etc/default/useradd
+    search_string: 'INACTIVE'
+    line:          "INACTIVE={{ password_policy_inactive_days }}"

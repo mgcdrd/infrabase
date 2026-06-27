@@ -1,0 +1,16 @@
+---
+
+- name: password_policy faillock - Configure /etc/security/faillock.conf
+  ansible.builtin.lineinfile:
+    path:   /etc/security/faillock.conf
+    regexp: "^#?{{ item.key }}\\s*=.*"
+    line:   "{{ item.key }} = {{ item.value }}"
+  loop:
+    - { key: deny,        value: "{{ password_policy_faillock_deny }}" }
+    - { key: unlock_time, value: "{{ password_policy_faillock_unlock_time }}" }
+
+- name: password_policy faillock - Configure password history in /etc/security/pwhistory.conf
+  ansible.builtin.lineinfile:
+    path:   /etc/security/pwhistory.conf
+    regexp: '^#?\s*remember\s*=.*'
+    line:   "remember = {{ password_policy_remember }}"

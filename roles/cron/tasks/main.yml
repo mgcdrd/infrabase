@@ -5,6 +5,11 @@
     path:  /etc/cron.deny
     state: absent
 
+- name: cron main - Remove /etc/at.deny
+  ansible.builtin.file:
+    path:  /etc/at.deny
+    state: absent
+
 - name: cron main - Create /etc/cron.allow
   ansible.builtin.file:
     path:              /etc/cron.allow
@@ -14,3 +19,18 @@
     mode:              "0600"
     modification_time: preserve
     access_time:       preserve
+
+- name: cron main - Restrict cron directory and file permissions
+  ansible.builtin.file:
+    path:  "{{ item.path }}"
+    owner: root
+    group: root
+    mode:  "{{ item.mode }}"
+  loop:
+    - { path: /etc/cron.d,       mode: "0700" }
+    - { path: /etc/cron.daily,   mode: "0700" }
+    - { path: /etc/cron.hourly,  mode: "0700" }
+    - { path: /etc/cron.monthly, mode: "0700" }
+    - { path: /etc/cron.weekly,  mode: "0700" }
+    - { path: /etc/crontab,      mode: "0600" }
+  failed_when: false

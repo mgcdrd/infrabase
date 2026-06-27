@@ -1,0 +1,20 @@
+---
+# Record current block devices so detect.yml can diff before/after.
+
+- name: snapshot - list current block devices
+  ansible.builtin.command:
+    cmd: lsblk -dn -o NAME,TYPE
+  register: proxmox_disk_devices_before
+  changed_when: false
+  become: true
+
+- name: snapshot - parse device names into a list
+  ansible.builtin.set_fact:
+    proxmox_disk_names_before: >-
+      {{
+        proxmox_disk_devices_before.stdout_lines
+        | select('search', ' disk$')
+        | map('split')
+        | map('first')
+        | list
+      }}

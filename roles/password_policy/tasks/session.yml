@@ -1,0 +1,19 @@
+---
+
+- name: password_policy session - Set TMOUT in /etc/profile
+  ansible.builtin.lineinfile:
+    path:   /etc/profile
+    regexp: '^[#\s]*TMOUT\s*[=\s].*'
+    line:   "TMOUT={{ password_policy_tmout }}"
+
+- name: password_policy session - Set umask in /etc/profile
+  ansible.builtin.replace:
+    path:    /etc/profile
+    regexp:  '^(\s+)umask\s+.*$'
+    replace: '\1umask {{ password_policy_umask }}'
+
+- name: password_policy session - Set umask in shell rc file
+  ansible.builtin.replace:
+    path:    "{{ '/etc/bash.bashrc' if ansible_facts['os_family'] == 'Debian' else '/etc/bashrc' }}"
+    regexp:  '^(\s+)umask\s+.*$'
+    replace: '\1umask {{ password_policy_umask }}'

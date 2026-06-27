@@ -5,3 +5,12 @@ sudoers_timestamp_timeout: 5
 
 # Path for sudo command logging.
 sudoers_log_file: /var/log/sudo.log
+
+# Restrict sudo invocations to a TTY — prevents background privilege escalation.
+sudoers_use_pty: true
+
+# Prevent password-sharing escalation tricks (targetpw/rootpw/runaspw).
+sudoers_disable_pwflags:
+  - targetpw
+  - rootpw
+  - runaspw

@@ -1,0 +1,25 @@
+---
+# ---- ProxMox API connection ----
+# proxmox_disk_api_host and proxmox_disk_api_password must be set by the caller.
+proxmox_disk_api_user: "root@pam"
+
+# ---- VM targeting ----
+# The role looks up the VM by name to discover its VMID and node automatically.
+# Override proxmox_disk_vm_name if the VM's name in PVE differs from inventory_hostname.
+proxmox_disk_vm_name: "{{ inventory_hostname }}"
+
+# ---- Disk configuration ----
+proxmox_disk_slot: virtio1        # PVE disk slot — must not already be occupied
+proxmox_disk_storage: ""          # PVE storage backend (e.g. truenas, local-lvm)
+proxmox_disk_size: "400G"
+
+# ---- Operation ----
+# present: add a new disk in proxmox_disk_slot (fails if slot occupied)
+# resized: expand an existing disk in proxmox_disk_slot to proxmox_disk_size
+proxmox_disk_state: present
+
+# ---- Result ----
+# After the role runs, proxmox_disk_device is set as a host fact.
+# Example: /dev/vdb
+# Downstream roles (lvm2_provision) reference it as:
+#   pvs: ["{{ proxmox_disk_device }}"]

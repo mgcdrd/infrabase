@@ -1,0 +1,10 @@
+---
+
+- name: secure_mounts main - Apply secure mount options
+  ansible.posix.mount:
+    path:   "{{ item.path }}"
+    src:    "{{ item.src    | default(omit) }}"
+    fstype: "{{ item.fstype | default(omit) }}"
+    opts:   "{{ item.opts }}"
+    state:  mounted
+  loop: "{{ secure_mounts_list }}"

@@ -1,0 +1,10 @@
+---
+
+# Where to store journal data. 'persistent' survives reboots under /var/log/journal/.
+journald_storage: persistent
+
+# Compress journal data on disk.
+journald_compress: "yes"
+
+# Forward journal entries to syslog (required when rsyslog reads from the journal socket).
+journald_forward_syslog: "yes"

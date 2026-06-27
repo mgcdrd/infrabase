@@ -1,0 +1,14 @@
+---
+
+- name: journald main - Configure journald settings
+  community.general.ini_file:
+    path:            /etc/systemd/journald.conf
+    section:         Journal
+    option:          "{{ item.key }}"
+    value:           "{{ item.value }}"
+    no_extra_spaces: true
+  loop:
+    - { key: Storage,         value: "{{ journald_storage }}" }
+    - { key: Compress,        value: "{{ journald_compress }}" }
+    - { key: ForwardToSyslog, value: "{{ journald_forward_syslog }}" }
+  notify: journald restart

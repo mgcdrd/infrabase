@@ -1,0 +1,17 @@
+---
+galaxy_info:
+  role_name: journald
+  author: mgcdrd
+  description: Configure systemd-journald for persistent storage and syslog forwarding
+  license: GPL-3.0-or-later
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+    - name: EL
+      versions:
+        - '9'
+        - '10'
+dependencies: []

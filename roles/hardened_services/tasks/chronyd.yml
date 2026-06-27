@@ -1,0 +1,17 @@
+---
+
+- name: hardened_services chronyd - Set chronyd run user (Debian)
+  ansible.builtin.lineinfile:
+    path:   /etc/default/chrony
+    regexp: '^[^#]?(\s*)OPTIONS(\s*)='
+    line:   'OPTIONS="-u _chrony"'
+  when: ansible_facts['os_family'] == 'Debian'
+  failed_when: false
+
+- name: hardened_services chronyd - Set chronyd run user (RedHat)
+  ansible.builtin.lineinfile:
+    path:   /etc/sysconfig/chronyd
+    regexp: '^[^#]?(\s*)OPTIONS(\s*)='
+    line:   'OPTIONS="-u chrony"'
+  when: ansible_facts['os_family'] == 'RedHat'
+  failed_when: false

@@ -1,0 +1,2 @@
+---
+# No handlers — /etc/issue and /etc/issue.net are read at login time.

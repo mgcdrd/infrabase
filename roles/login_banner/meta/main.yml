@@ -1,0 +1,17 @@
+---
+galaxy_info:
+  role_name: login_banner
+  author: mgcdrd
+  description: Deploy a pre-login warning banner to /etc/issue and /etc/issue.net
+  license: GPL-3.0-or-later
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+    - name: EL
+      versions:
+        - '9'
+        - '10'
+dependencies: []

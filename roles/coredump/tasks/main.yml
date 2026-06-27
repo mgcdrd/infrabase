@@ -1,0 +1,19 @@
+---
+
+- name: coredump main - Disable core dumps in /etc/security/limits.conf
+  ansible.builtin.lineinfile:
+    path:   /etc/security/limits.conf
+    regexp: '^\*\s+hard\s+core\b'
+    line:   '*    hard    core    0'
+    create: true
+
+- name: coredump main - Configure systemd coredump storage
+  community.general.ini_file:
+    path:            /etc/systemd/coredump.conf
+    section:         Coredump
+    option:          "{{ item.key }}"
+    value:           "{{ item.value }}"
+    no_extra_spaces: true
+  loop:
+    - { key: Storage,        value: none }
+    - { key: ProcessSizeMax, value: "0"  }

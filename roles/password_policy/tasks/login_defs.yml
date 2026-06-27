@@ -1,0 +1,8 @@
+---
+
+- name: password_policy login_defs - Configure /etc/login.defs
+  ansible.builtin.replace:
+    path:    /etc/login.defs
+    regexp:  '^{{ item.key }}\s+.*$'
+    replace: "{{ item.key }}   {{ item.value }}"
+  loop: "{{ password_policy_login_defs }}"

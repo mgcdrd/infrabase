@@ -1,0 +1,40 @@
+---
+
+# pwquality.conf settings — applied on all OS families via libpwquality.
+# credit values: negative = minimum count required, positive = bonus points cap.
+password_policy_pwquality:
+  - { key: lcredit,        value: "-1" }
+  - { key: ucredit,        value: "-1" }
+  - { key: dcredit,        value: "-1" }
+  - { key: ocredit,        value: "-1" }
+  - { key: difok,          value: "8"  }
+  - { key: minclass,       value: "4"  }
+  - { key: maxrepeat,      value: "3"  }
+  - { key: maxclassrepeat, value: "4"  }
+  - { key: minlen,         value: "15" }
+
+# /etc/login.defs settings.
+password_policy_login_defs:
+  - { key: PASS_MAX_DAYS, value: "60" }
+  - { key: PASS_MIN_DAYS, value: "7"  }
+  - { key: PASS_MIN_LEN,  value: "15" }
+  - { key: UMASK,         value: "027" }
+  - { key: FAIL_DELAY,    value: "4"  }
+
+# Days before an account is locked after its password expires.
+password_policy_inactive_days: 30
+
+# Shell session idle timeout in seconds (written to TMOUT in /etc/profile).
+password_policy_tmout: 900
+
+# Default umask for interactive shells (/etc/profile and /etc/bashrc|bash.bashrc).
+password_policy_umask: "027"
+
+# Maximum consecutive failed logins before lockout (RedHat only — faillock.conf).
+password_policy_faillock_deny: 3
+
+# Seconds before a locked account is automatically unlocked (RedHat only).
+password_policy_faillock_unlock_time: 900
+
+# Number of previous passwords to remember (RedHat only — pwhistory.conf).
+password_policy_remember: 5

@@ -1,0 +1,2 @@
+---
+# No handlers — all managed files are read at login/PAM evaluation time.
