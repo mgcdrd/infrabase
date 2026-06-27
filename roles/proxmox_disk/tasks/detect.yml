@@ -7,6 +7,7 @@
     cmd: lsblk -dn -o NAME,TYPE
   register: proxmox_disk_devices_after
   changed_when: false
+  become: false
 
 - name: detect - parse new device names
   ansible.builtin.set_fact:
