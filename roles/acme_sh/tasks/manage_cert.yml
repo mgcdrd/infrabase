@@ -29,6 +29,20 @@
     - _acme_state == 'present'
     - _cert.challenge == 'dns_cf'
 
+# acme.sh reads SAVED_CF_Token from account.conf before deciding which mode to
+# use, so a stale token takes precedence over CF_Key/CF_Email in the environment.
+# Clear it explicitly when we are in CF_Key mode.
+- name: "acme_sh cert - Clear stale SAVED_CF_Token when using CF_Key mode"
+  become: true
+  ansible.builtin.lineinfile:
+    path: /root/.acme.sh/account.conf
+    regexp: '^SAVED_CF_Token='
+    state: absent
+  when:
+    - _acme_state == 'present'
+    - _cert.challenge == 'dns_cf'
+    - acme_sh_cf_token | trim | length == 0
+
 # ---- ABSENT: revoke and remove ----
 
 - name: "acme_sh cert - Revoke and remove {{ _acme_primary }}"
