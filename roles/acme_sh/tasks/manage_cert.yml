@@ -83,11 +83,39 @@
     chdir: /root/.acme.sh
   environment: "{{ _acme_env }}"
   register: _acme_issue
-  # exit 2 = cert already valid and not due for renewal
-  failed_when: _acme_issue.rc not in [0, 2]
+  # exit 2 = cert already valid and not due for renewal; capture all
+  # failures here so we can show the log before failing the task
+  failed_when: false
   changed_when: _acme_issue.rc == 0
   no_log: true
   when: _acme_state == 'present'
+
+# acme.sh writes a full log to ~/.acme.sh/acme.sh.log — read it on failure
+# so we can diagnose without exposing credentials in task output.
+- name: "acme_sh cert - Show acme.sh log on issue failure"
+  become: true
+  ansible.builtin.command:
+    argv: [tail, "-80", /root/.acme.sh/acme.sh.log]
+  register: _acme_log
+  changed_when: false
+  failed_when: false
+  when:
+    - _acme_state == 'present'
+    - _acme_issue.rc not in [0, 2]
+
+- name: "acme_sh cert - Print acme.sh log"
+  ansible.builtin.debug:
+    var: _acme_log.stdout_lines
+  when:
+    - _acme_state == 'present'
+    - _acme_issue.rc not in [0, 2]
+
+- name: "acme_sh cert - Fail on issue error"
+  ansible.builtin.fail:
+    msg: "acme.sh --issue failed for {{ _acme_primary }} (rc={{ _acme_issue.rc }}) — see log above"
+  when:
+    - _acme_state == 'present'
+    - _acme_issue.rc not in [0, 2]
 
 - name: "acme_sh cert - Deploy cert files for {{ _acme_primary }}"
   become: true
