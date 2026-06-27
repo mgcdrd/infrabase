@@ -20,10 +20,10 @@ Requirements
 - The Ansible controller must be able to reach the PVE API host on port 8006.
 - `community.general` collection must be installed (provides `proxmox_vm_info`
   and `proxmox_disk` modules).
-- **`proxmoxer` must be installed on the Ansible controller** — it is a Python
-  dependency of the `community.general` ProxMox modules. Install it with:
-  - Debian/Ubuntu: `apt install python3-proxmoxer`
-  - RPM: `pip3 install proxmoxer`
+- **`proxmoxer >= 2.3` must be installed on the Ansible controller** — it is a
+  Python dependency of the `community.general` ProxMox modules. Install it with:
+  - Debian/Ubuntu: `apt install python3-proxmoxer` (verify version — use pip if too old)
+  - RPM / pip: `pip3 install 'proxmoxer>=2.3'`
 - For `proxmox_disk_state: resized`, the disk must already be a PV in an LVM
   VG managed on the host. Set `proxmox_disk_resize_device`,
   `proxmox_disk_resize_vg`, and `proxmox_disk_resize_lvs`.
