@@ -30,6 +30,7 @@
       - ./acme.sh
       - --install
       - --no-profile
+      - --log
       - --accountemail
       - "{{ acme_sh_email }}"
     chdir: /root
