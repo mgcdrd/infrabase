@@ -22,8 +22,9 @@ Requirements
   and `proxmox_disk` modules).
 - **`proxmoxer >= 2.3` must be installed on the Ansible controller** — it is a
   Python dependency of the `community.general` ProxMox modules. Install it with:
-  - Debian/Ubuntu: `apt install python3-proxmoxer` (verify version — use pip if too old)
-  - RPM / pip: `pip3 install 'proxmoxer>=2.3'`
+  - RPM: `pip3 install 'proxmoxer>=2.3'`
+  - Debian 12+ (system Ansible): `pip3 install 'proxmoxer>=2.3' --break-system-packages`
+  - Debian 12+ (Ansible in a venv): `pip3 install 'proxmoxer>=2.3'` inside the venv
 - For `proxmox_disk_state: resized`, the disk must already be a PV in an LVM
   VG managed on the host. Set `proxmox_disk_resize_device`,
   `proxmox_disk_resize_vg`, and `proxmox_disk_resize_lvs`.
