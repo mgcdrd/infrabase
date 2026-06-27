@@ -1,5 +1,24 @@
 ---
 
+- name: lvm2_provision create_lv - Get existing logical volumes
+  ansible.builtin.command:
+    cmd: lvs --noheadings -o lv_name,vg_name
+  register: _lvm_existing_lvs
+  changed_when: false
+  failed_when: false
+  become: true
+
+# Remove stale device mapper nodes (vg_name-lv_name format) that block lvcreate
+# activation when a previous run was interrupted mid-creation.
+- name: lvm2_provision create_lv - Remove stale device mapper nodes
+  ansible.builtin.command:
+    cmd: dmsetup remove {{ item.vg }}-{{ item.lv }}
+  loop: "{{ lvm_provision_volumes }}"
+  when: item.lv not in (_lvm_existing_lvs.stdout_lines | map('trim') | map('split') | map('first') | list)
+  failed_when: false
+  changed_when: false
+  become: true
+
 - name: lvm2_provision create_lv - Create logical volumes
   community.general.lvol:
     vg: "{{ item.vg }}"
@@ -8,3 +27,5 @@
     shrink: false
     state: present
   loop: "{{ lvm_provision_volumes }}"
+  when: item.lv not in (_lvm_existing_lvs.stdout_lines | map('trim') | map('split') | map('first') | list)
+  become: true
