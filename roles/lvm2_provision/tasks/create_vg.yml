@@ -13,9 +13,19 @@
   failed_when: false
   become: true
 
+# Remove stale device mapper nodes that block vgcreate. These are left behind
+# when a previous vgcreate run was interrupted before LVM metadata was written.
+- name: lvm2_provision create_vg - Remove stale device mapper nodes
+  ansible.builtin.command:
+    cmd: dmsetup remove {{ item.vg }}
+  loop: "{{ lvm_provision_vgs }}"
+  when:
+    - item.vg not in (_lvm_existing_vgs.stdout_lines | map('trim') | list)
+  failed_when: false
+  changed_when: false
+  become: true
+
 # community.general.lvg initializes PVs automatically if not already done.
-# ignore_errors handles stale device mapper nodes from previous failed runs.
-# The verify step below catches any genuine creation failure.
 - name: lvm2_provision create_vg - Create volume groups
   community.general.lvg:
     vg: "{{ item.vg }}"
@@ -24,7 +34,6 @@
     state: present
   loop: "{{ lvm_provision_vgs }}"
   when: item.vg not in (_lvm_existing_vgs.stdout_lines | map('trim') | list)
-  ignore_errors: true
   become: true
 
 - name: lvm2_provision create_vg - Verify all volume groups exist
