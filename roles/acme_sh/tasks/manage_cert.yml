@@ -24,11 +24,7 @@
 - name: "acme_sh cert - Set Cloudflare credentials for {{ _acme_primary }}"
   become: false
   ansible.builtin.set_fact:
-    _acme_env: >-
-      {{
-        {'CF_Token': acme_sh_cf_token} if acme_sh_cf_token | length > 0
-        else {'CF_Key': acme_sh_cf_key, 'CF_Email': acme_sh_cf_email}
-      }}
+    _acme_env: "{{ {'CF_Token': acme_sh_cf_token} if acme_sh_cf_token | length > 0 else {'CF_Key': acme_sh_cf_key, 'CF_Email': acme_sh_cf_email} }}"
   when:
     - _acme_state == 'present'
     - _cert.challenge == 'dns_cf'
