@@ -1,14 +1,21 @@
 ---
 
+- name: lvm2_provision create_vg - Refresh LVM device cache
+  ansible.builtin.command: vgscan
+  changed_when: false
+  become: true
+
 - name: lvm2_provision create_vg - Get existing volume groups
   ansible.builtin.command:
     cmd: vgs --noheadings -o vg_name
   register: _lvm_existing_vgs
   changed_when: false
+  failed_when: false
   become: true
 
 # community.general.lvg initializes PVs automatically if not already done,
 # so a separate pvcreate step is not needed.
+# failed_when guards against the device node already existing (partial prior run).
 - name: lvm2_provision create_vg - Create volume groups
   community.general.lvg:
     vg: "{{ item.vg }}"
@@ -17,3 +24,7 @@
     state: present
   loop: "{{ lvm_provision_vgs }}"
   when: item.vg not in _lvm_existing_vgs.stdout
+  register: _lvg_result
+  failed_when:
+    - _lvg_result.failed | default(false)
+    - "'already exists' not in (_lvg_result.msg | default(''))"
