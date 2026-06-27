@@ -14,12 +14,36 @@
     _acme_state:    "{{ _cert.state | default('present') }}"
     _acme_cert_dir: "{{ acme_sh_cert_base_dir }}/{{ _acme_domains | first }}"
 
+# Reset every iteration so credentials don't bleed from a dns_cf cert
+# into a subsequent cert that uses a different challenge.
+- name: "acme_sh cert - Reset credential environment"
+  become: false
+  ansible.builtin.set_fact:
+    _acme_env: {}
+
+- name: "acme_sh cert - Set Cloudflare credentials for {{ _acme_primary }}"
+  become: false
+  ansible.builtin.set_fact:
+    _acme_env: >-
+      {{
+        {'CF_Token': acme_sh_cf_token} if acme_sh_cf_token | length > 0
+        else {'CF_Key': acme_sh_cf_key, 'CF_Email': acme_sh_cf_email}
+      }}
+  when:
+    - _acme_state == 'present'
+    - _cert.challenge == 'dns_cf'
+
 # ---- ABSENT: revoke and remove ----
 
 - name: "acme_sh cert - Revoke and remove {{ _acme_primary }}"
   become: true
   ansible.builtin.command:
-    cmd: "/root/.acme.sh/acme.sh --revoke -d {{ _acme_primary }} --remove"
+    argv:
+      - /root/.acme.sh/acme.sh
+      - --revoke
+      - -d
+      - "{{ _acme_primary }}"
+      - --remove
   when: _acme_state == 'absent'
   failed_when: false
   changed_when: true
@@ -43,33 +67,21 @@
     mode: "0750"
   when: _acme_state == 'present'
 
-- name: "acme_sh cert - Build Cloudflare environment for {{ _acme_primary }}"
-  become: false
-  ansible.builtin.set_fact:
-    _acme_cf_env: >-
-      {{
-        {'CF_Token': acme_sh_cf_token} if acme_sh_cf_token | length > 0
-        else {'CF_Key': acme_sh_cf_key, 'CF_Email': acme_sh_cf_email}
-      }}
-  when:
-    - _acme_state == 'present'
-    - _cert.challenge == 'dns_cf'
-
 - name: "acme_sh cert - Issue or renew {{ _acme_primary }}"
   become: true
   ansible.builtin.shell:
     cmd: >-
-      /root/.acme.sh/acme.sh
-      --issue
+      /root/.acme.sh/acme.sh --issue
       {{ _acme_domains | map('regex_replace', '^(.*)$', '-d \1') | join(' ') }}
       {% if _cert.challenge == 'dns_cf' %}--dns dns_cf
       {% elif _cert.challenge == 'standalone' %}--standalone
-      {% elif _cert.challenge == 'webroot' %}--webroot {{ _cert.webroot_path }}
+      {% elif _cert.challenge == 'webroot' %}--webroot {{ _cert.webroot_path | default('') }}
       {% elif _cert.challenge == 'nginx' %}--nginx
       {% elif _cert.challenge == 'apache' %}--apache
       {% endif %}
-      {% if acme_sh_staging %}--staging{% endif %}
-  environment: "{{ _acme_cf_env | default({}) }}"
+      {% if acme_sh_staging | bool %}--staging{% endif %}
+    chdir: /root/.acme.sh
+  environment: "{{ _acme_env }}"
   register: _acme_issue
   # exit 2 = cert already valid and not due for renewal
   failed_when: _acme_issue.rc not in [0, 2]
@@ -79,17 +91,17 @@
 
 - name: "acme_sh cert - Deploy cert files for {{ _acme_primary }}"
   become: true
-  ansible.builtin.command:
+  ansible.builtin.shell:
     cmd: >-
-      /root/.acme.sh/acme.sh
-      --install-cert -d {{ _acme_primary }}
+      /root/.acme.sh/acme.sh --install-cert -d {{ _acme_primary }}
       --cert-file      {{ _acme_cert_dir }}/cert.pem
       --key-file       {{ _acme_cert_dir }}/key.pem
       --fullchain-file {{ _acme_cert_dir }}/fullchain.pem
       --ca-file        {{ _acme_cert_dir }}/ca.pem
-      {% if _cert.reload_cmd is defined and _cert.reload_cmd | length > 0 %}
-      --reloadcmd "{{ _cert.reload_cmd }}"
+      {% if _cert.reload_cmd | default('') | length > 0 %}
+      --reloadcmd '{{ _cert.reload_cmd }}'
       {% endif %}
+    chdir: /root/.acme.sh
   when:
     - _acme_state == 'present'
     - _acme_issue.rc == 0

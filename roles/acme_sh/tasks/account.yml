@@ -3,24 +3,35 @@
 - name: acme_sh account - Set default CA
   become: true
   ansible.builtin.command:
-    cmd: >-
-      /root/.acme.sh/acme.sh
-      --set-default-ca
-      --server {{ acme_sh_ca }}
+    argv:
+      - /root/.acme.sh/acme.sh
+      - --set-default-ca
+      - --server
+      - "{{ acme_sh_ca }}"
   register: _acme_sh_set_ca
   changed_when: "'Changed' in _acme_sh_set_ca.stdout"
 
+# EAB is a one-time registration per CA account. acme.sh stores the result
+# in ~/.acme.sh/<ca>/account.json. If already registered, --register-account
+# returns non-zero, so we guard with creates:.
 - name: acme_sh account - Register account with EAB
   become: true
   ansible.builtin.command:
-    cmd: >-
-      /root/.acme.sh/acme.sh
-      --register-account
-      --server {{ acme_sh_ca }}
-      --eab
-      --kid     {{ acme_sh_eab_kid }}
-      --hmackey {{ acme_sh_eab_hmac_key }}
+    argv:
+      - /root/.acme.sh/acme.sh
+      - --register-account
+      - --server
+      - "{{ acme_sh_ca }}"
+      - --eab
+      - --kid
+      - "{{ acme_sh_eab_kid }}"
+      - --hmackey
+      - "{{ acme_sh_eab_hmac_key }}"
   register: _acme_sh_register
   changed_when: "'Registered' in _acme_sh_register.stdout"
+  failed_when: >-
+    _acme_sh_register.rc != 0 and
+    'already registered' not in _acme_sh_register.stderr | lower and
+    'already registered' not in _acme_sh_register.stdout | lower
   no_log: true
-  when: acme_sh_eab_enabled
+  when: acme_sh_eab_enabled | bool
