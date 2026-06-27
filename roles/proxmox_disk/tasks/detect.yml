@@ -26,14 +26,41 @@
         proxmox_disk_names_after | difference(proxmox_disk_names_before)
       }}
 
+# If the add was a no-op (disk already in slot from a previous run), fall back
+# to finding the pre-existing data disk by excluding known boot devices.
+- name: detect - find pre-existing data disk (idempotent re-run)
+  when:
+    - proxmox_disk_new_names | length == 0
+    - not proxmox_disk_add_result.changed
+  block:
+    - name: detect - identify candidate pre-existing disks
+      ansible.builtin.set_fact:
+        _proxmox_disk_candidates: >-
+          {{ proxmox_disk_names_before | difference(proxmox_disk_boot_devices) }}
+
+    - name: detect - fail if pre-existing disk is ambiguous
+      ansible.builtin.fail:
+        msg: >
+          The disk slot {{ proxmox_disk_slot }} was already occupied (idempotent run)
+          but could not determine which block device it is.
+          Non-boot disks found: {{ _proxmox_disk_candidates }}.
+          Set proxmox_disk_device explicitly if there are multiple data disks.
+      when: _proxmox_disk_candidates | length != 1
+
+    - name: detect - set device from pre-existing disk
+      ansible.builtin.set_fact:
+        proxmox_disk_new_names: "{{ _proxmox_disk_candidates }}"
+
 - name: detect - fail if no new disk was detected
   ansible.builtin.fail:
     msg: >
       Disk was added in ProxMox but no new block device appeared in the VM.
       Before: {{ proxmox_disk_names_before }}
       After:  {{ proxmox_disk_names_after }}
-      Try running with foreman_expand_storage: true again, or check the PVE console.
-  when: proxmox_disk_new_names | length == 0
+      Check the PVE console or try re-running.
+  when:
+    - proxmox_disk_new_names | length == 0
+    - proxmox_disk_add_result.changed
 
 - name: detect - set proxmox_disk_device fact
   ansible.builtin.set_fact:

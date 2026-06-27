@@ -23,3 +23,9 @@ proxmox_disk_state: present
 # Example: /dev/vdb
 # Downstream roles (lvm2_provision) reference it as:
 #   pvs: ["{{ proxmox_disk_device }}"]
+
+# ---- Boot device exclusion ----
+# Used when the disk was already attached (idempotent re-run) to find the
+# pre-existing data disk by excluding known boot devices from the before list.
+proxmox_disk_boot_devices:
+  - sda
