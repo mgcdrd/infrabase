@@ -3,7 +3,7 @@
 - name: acme_sh install - Install dependencies
   become: true
   ansible.builtin.package:
-    name: "{{ ['wget', 'cronie'] if ansible_os_family == 'RedHat' else ['wget', 'cron'] }}"
+    name: "{{ ['git', 'cronie'] if ansible_os_family == 'RedHat' else ['git', 'cron'] }}"
     state: present
 
 - name: acme_sh install - Check if acme.sh is already installed
@@ -12,15 +12,15 @@
     path: /root/.acme.sh/acme.sh
   register: _acme_sh_binary
 
-# The installer does `cp acme.sh ~/.acme.sh/acme.sh` relative to CWD,
-# so the script must be named acme.sh and run from its own directory.
-- name: acme_sh install - Download acme.sh script
+# Clone the full repo so the dnsapi/ plugin directory is present when
+# the installer runs. A shallow clone keeps the download small.
+- name: acme_sh install - Clone acme.sh source
   become: true
-  ansible.builtin.get_url:
-    url: https://raw.githubusercontent.com/acmesh-official/acme.sh/master/acme.sh
-    dest: /root/acme.sh
-    mode: "0700"
-    force: true
+  ansible.builtin.git:
+    repo: https://github.com/acmesh-official/acme.sh.git
+    dest: /root/.acme_src
+    version: master
+    depth: 1
   when: not _acme_sh_binary.stat.exists
 
 - name: acme_sh install - Run acme.sh installer
@@ -33,14 +33,14 @@
       - --log
       - --accountemail
       - "{{ acme_sh_email }}"
-    chdir: /root
+    chdir: /root/.acme_src
   when: not _acme_sh_binary.stat.exists
   changed_when: true
 
-- name: acme_sh install - Remove installer script
+- name: acme_sh install - Remove source clone
   become: true
   ansible.builtin.file:
-    path: /root/acme.sh
+    path: /root/.acme_src
     state: absent
   when: not _acme_sh_binary.stat.exists
 
