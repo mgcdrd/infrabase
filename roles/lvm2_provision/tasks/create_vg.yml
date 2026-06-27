@@ -1,5 +1,12 @@
 ---
 
+- name: lvm2_provision create_vg - Get existing volume groups
+  ansible.builtin.command:
+    cmd: vgs --noheadings -o vg_name
+  register: _lvm_existing_vgs
+  changed_when: false
+  become: true
+
 # community.general.lvg initializes PVs automatically if not already done,
 # so a separate pvcreate step is not needed.
 - name: lvm2_provision create_vg - Create volume groups
@@ -9,3 +16,4 @@
     pesize: "{{ item.pesize | default('4') }}"
     state: present
   loop: "{{ lvm_provision_vgs }}"
+  when: item.vg not in _lvm_existing_vgs.stdout
