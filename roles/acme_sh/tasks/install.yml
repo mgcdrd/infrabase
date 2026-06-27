@@ -3,80 +3,18 @@
 - name: acme_sh install - Install dependencies
   become: true
   ansible.builtin.package:
-    name: "{{ _acme_sh_packages }}"
+    name: "{{ ['wget', 'cronie'] if ansible_os_family == 'RedHat' else ['wget', 'cron'] }}"
     state: present
-  vars:
-    _acme_sh_packages: >-
-      {{
-        ['wget', 'cronie', 'socat']
-        if ansible_os_family == 'RedHat'
-        else ['wget', 'cron', 'socat']
-      }}
 
-- name: acme_sh install - Ensure temp directory exists
-  become: true
-  ansible.builtin.file:
-    path: "{{ acme_sh_tmp_dir }}"
-    state: directory
-    owner: root
-    group: root
-    mode: "0700"
-
-- name: acme_sh install - Check if acme.sh is already installed
-  become: false
-  ansible.builtin.stat:
-    path: "{{ acme_sh_install_dir }}/acme.sh"
-  register: _acme_sh_binary
-
-- name: acme_sh install - Download source tarball
-  become: true
-  ansible.builtin.get_url:
-    url: https://github.com/acmesh-official/acme.sh/archive/master.tar.gz
-    dest: "{{ acme_sh_tmp_dir }}/acme.sh-master.tar.gz"
-    mode: "0600"
-  when: not _acme_sh_binary.stat.exists
-
-- name: acme_sh install - Extract source tarball
-  become: true
-  ansible.builtin.unarchive:
-    src: "{{ acme_sh_tmp_dir }}/acme.sh-master.tar.gz"
-    dest: "{{ acme_sh_tmp_dir }}"
-    remote_src: true
-  when: not _acme_sh_binary.stat.exists
-
+# Official install method: pipes directly to sh, no intermediate files.
+# The email flag registers it with the installer so acme.sh --list-accounts works.
+# creates: makes this idempotent — skipped if already installed.
 - name: acme_sh install - Install acme.sh
   become: true
   ansible.builtin.shell:
-    cmd: >-
-      bash acme.sh
-      --install
-      --home {{ acme_sh_install_dir }}
-      --no-profile
-    chdir: "{{ acme_sh_tmp_dir }}/acme.sh-master"
-  environment:
-    TMPDIR: "{{ acme_sh_tmp_dir }}"
-    HOME: /root
-  register: _acme_sh_install_out
-  changed_when: true
-  failed_when: _acme_sh_install_out.rc != 0
-  when: not _acme_sh_binary.stat.exists
-
-- name: acme_sh install - Show installer output
-  become: false
-  ansible.builtin.debug:
-    msg:
-      - "stdout: {{ _acme_sh_install_out.stdout_lines | default([]) }}"
-      - "stderr: {{ _acme_sh_install_out.stderr_lines | default([]) }}"
-  when:
-    - not _acme_sh_binary.stat.exists
-    - _acme_sh_install_out is defined
-
-- name: acme_sh install - Verify acme.sh binary is present after install
-  become: false
-  ansible.builtin.stat:
-    path: "{{ acme_sh_install_dir }}/acme.sh"
-  register: _acme_sh_binary_post
-  failed_when: not _acme_sh_binary_post.stat.exists
+    cmd: "wget -O- https://get.acme.sh | sh -s email={{ acme_sh_email }}"
+  args:
+    creates: /root/.acme.sh/acme.sh
 
 - name: acme_sh install - Ensure cert base directory exists
   become: true

@@ -2,17 +2,7 @@
 
 # ---- INSTALLATION ----
 
-# Where acme.sh installs itself (the install script puts everything here)
-acme_sh_install_dir: /root/.acme.sh
-
-# Temp directory used by the installer download and passed as TMPDIR to all
-# acme.sh invocations. Must be on an exec-capable filesystem. Defaults to a
-# sibling of the install dir (same filesystem, not a child) so it never
-# pre-creates the install dir before the installer runs. Avoids /tmp and
-# /var/tmp which are typically noexec under DFARS/STIG hardening.
-acme_sh_tmp_dir: /root/.acme_sh_tmp
-
-# Directory on the managed host where issued certs are deployed.
+# Directory where issued certs are deployed.
 # Under this dir the role creates one subdirectory per primary domain.
 acme_sh_cert_base_dir: /etc/ssl/acme
 
@@ -21,45 +11,35 @@ acme_sh_cert_base_dir: /etc/ssl/acme
 acme_sh_email: ""    # ACME account registration email — required
 
 # CA to use: letsencrypt, zerossl, buypass, sslcom
-# Full ACME directory URLs are also accepted, e.g.:
-#   https://acme.sectigo.com/v2/DV
-#   https://acme.sectigo.com/v2/OV
+# Full ACME directory URLs are also accepted.
 acme_sh_ca: letsencrypt
 
 # Set true to use the CA's staging endpoint (no rate limits, untrusted certs).
-# Useful for testing before committing to production.
 acme_sh_staging: false
 
 # ---- CLOUDFLARE DNS (dns_cf challenge) ----
 # Use CF_Token (API Token — recommended, scoped to DNS:Edit).
 # Legacy alternative: CF_Key (Global API Key) + CF_Email.
-# Leave unused variables empty.
 
-acme_sh_cf_token: ""     # Cloudflare API Token
-acme_sh_cf_key: ""       # Cloudflare Global API Key (legacy)
-acme_sh_cf_email: ""     # Cloudflare account email (required with cf_key)
+acme_sh_cf_token: ""
+acme_sh_cf_key: ""
+acme_sh_cf_email: ""
 
 # ---- EAB (External Account Binding) ----
 # Required by some commercial CAs (Sectigo, DigiCert, etc.).
-# Obtain the KID and HMAC key from your CA's portal after creating an ACME account.
-# EAB is bound at account registration — it applies to all certs issued under this account.
-# Only used when acme_sh_eab_enabled is true.
 
 acme_sh_eab_enabled:  false
-acme_sh_eab_kid:      ""   # Key Identifier from CA portal
-acme_sh_eab_hmac_key: ""   # HMAC key from CA portal
+acme_sh_eab_kid:      ""
+acme_sh_eab_hmac_key: ""
 
 # ---- CERTIFICATES ----
 
-# List of certificates to issue/renew.
-#
 # acme_sh_certs:
 #   - domains:
-#       - "example.com"         # primary domain (CN)
-#       - "*.example.com"       # additional SANs (optional)
-#     challenge: dns_cf         # dns_cf | standalone | webroot | nginx | apache
-#     webroot_path: ""          # path to webroot doc root (webroot challenge only)
-#     reload_cmd: ""            # shell command to run after cert install/renew
-#                               # e.g. "systemctl reload nginx"
-#     state: present            # present (default) | absent
+#       - "example.com"
+#       - "*.example.com"     # SANs (optional)
+#     challenge: dns_cf       # dns_cf | standalone | webroot | nginx | apache
+#     webroot_path: ""        # webroot challenge only
+#     reload_cmd: ""          # e.g. "systemctl reload nginx"
+#     state: present          # present (default) | absent
 acme_sh_certs: []
