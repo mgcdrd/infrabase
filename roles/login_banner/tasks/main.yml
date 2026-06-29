@@ -1,17 +1,12 @@
 ---
 
-- name: login_banner main - Deploy /etc/issue
+- name: login_banner main - Deploy login banners
   ansible.builtin.template:
     src:   banner.j2
-    dest:  /etc/issue
+    dest:  "{{ item }}"
     owner: root
     group: root
     mode:  "0644"
-
-- name: login_banner main - Deploy /etc/issue.net
-  ansible.builtin.template:
-    src:   banner.j2
-    dest:  /etc/issue.net
-    owner: root
-    group: root
-    mode:  "0644"
+  loop:
+    - /etc/issue
+    - /etc/issue.net

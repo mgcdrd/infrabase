@@ -1,21 +1,12 @@
 ---
 
-- name: kernel_modules main - Check which modules are already loaded
-  ansible.builtin.stat:
-    path: "/sys/module/{{ item | replace('-', '_') }}"
-  register: _kernel_module_stat
-  loop: "{{ kernel_modules_list }}"
-  when: kernel_modules_list | length > 0
-
 - name: kernel_modules main - Load and persist kernel modules
   community.general.modprobe:
-    name:       "{{ item.item }}"
+    name:       "{{ item }}"
     state:      present
     persistent: present
-  loop: "{{ _kernel_module_stat.results }}"
-  when:
-    - kernel_modules_list | length > 0
-    - not item.stat.exists
+  loop: "{{ kernel_modules_list }}"
+  when: kernel_modules_list | length > 0
 
 - name: kernel_modules main - Deploy blacklist configuration
   ansible.builtin.template:
