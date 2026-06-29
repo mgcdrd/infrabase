@@ -181,9 +181,3 @@ lvm_volumes:
     size: +10G
     threshold: 90
 ```
-
-
-License
--------
-
-GPL-3.0-or-later

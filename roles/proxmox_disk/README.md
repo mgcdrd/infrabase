@@ -195,9 +195,3 @@ Notes
   resolve the naming conflict in PVE.
 - **XFS resize**: XFS filesystems can be grown online while mounted.
   Shrinking is not supported by XFS or this role.
-
-
-License
--------
-
-GPL-3.0-or-later

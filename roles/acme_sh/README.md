@@ -32,9 +32,10 @@ Role Variables
 ### Installation
 
 ```yaml
-acme_sh_install_dir:  /root/.acme.sh   # where acme.sh installs itself
 acme_sh_cert_base_dir: /etc/ssl/acme   # where issued certs are deployed
 ```
+
+acme.sh itself always installs to `/root/.acme.sh` (set by the upstream installer).
 
 ### Account
 
@@ -205,24 +206,6 @@ Notes
 - The `--install-cert` step (deploy to `acme_sh_cert_base_dir`) only runs when a
   new or renewed cert is issued. The `reload_cmd` is registered regardless so
   acme.sh will call it on future automatic renewals.
-- Cloudflare credentials appear in the shell command. `no_log: true` is set on
-  that task to suppress them from Ansible output.
-
-### DFARS / SELinux noexec environments
-
-On hardened systems (DFARS, STIG) `/tmp`, `/var/tmp`, and home directories are
-mounted `noexec`. The role works around this without touching mount options:
-
-- The installer is downloaded as a **tarball** (`master.tar.gz`) and extracted
-  with `unarchive` — no shell exec of the downloaded file.
-- Installation runs as `bash acme.sh --install` (passing the script as an
-  argument to the already-trusted `bash` binary) rather than `./acme.sh`.
-- The temporary extraction directory (`acme_sh_tmp_dir`, default
-  `/root/.acme_sh_tmp`) is a sibling of the install dir, not inside it, so
-  pre-creating the install directory does not cause the installer to exit early.
-
-
-License
--------
-
-GPL-3.0-or-later
+- Cloudflare credentials are passed via environment variables to the acme.sh
+  command, not on the command line, so they do not appear in process listings
+  or Ansible output.

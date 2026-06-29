@@ -2,8 +2,8 @@ journald
 ========
 
 Configures `systemd-journald` for CIS-aligned persistent logging and syslog
-forwarding. Uses `community.general.ini_file` to manage individual settings in
-`/etc/systemd/journald.conf` without touching unmanaged options.
+forwarding. Manages `/etc/systemd/journald.conf` via template and restarts
+the service on any change.
 
 Tested on: Debian 12/13, Rocky Linux 9/10
 
@@ -12,9 +12,6 @@ Requirements
 ------------
 
 `become: true` is required. `gather_facts` is not required.
-
-The `community.general` collection must be installed (included in
-`ansible-base-ee`).
 
 
 Role Variables

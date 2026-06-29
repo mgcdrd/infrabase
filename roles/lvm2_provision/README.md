@@ -137,9 +137,3 @@ lvm_provision_volumes:
   roles:
     - mgcdrd.infrabase.lvm2
 ```
-
-
-License
--------
-
-GPL-3.0-or-later
