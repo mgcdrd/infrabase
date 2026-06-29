@@ -5,13 +5,13 @@
 
 - name: resize - expand disk in ProxMox to new size
   community.general.proxmox_disk:
-    api_host: "{{ proxmox_disk_api_host }}"
-    api_user: "{{ proxmox_disk_api_user }}"
+    api_host:     "{{ proxmox_disk_api_host }}"
+    api_user:     "{{ proxmox_disk_api_user }}"
     api_password: "{{ proxmox_disk_api_password }}"
-    vmid: "{{ proxmox_disk_vmid }}"
-    disk: "{{ proxmox_disk_slot }}"
-    size: "{{ proxmox_disk_size }}"
-    state: resized
+    vmid:         "{{ proxmox_disk_vmid }}"
+    disk:         "{{ proxmox_disk_slot }}"
+    size:         "{{ proxmox_disk_size }}"
+    state:        resized
   delegate_to: localhost
 
 - name: resize - trigger PCI bus rescan to see enlarged disk
@@ -26,28 +26,28 @@
     seconds: 3
 
 - name: resize - re-read partition table on disk
-  ansible.builtin.shell:
+  ansible.builtin.command:
     cmd: "partprobe {{ proxmox_disk_resize_device }}"
   become: true
   changed_when: false
   when: proxmox_disk_resize_device is defined
 
 - name: resize - expand PV to fill disk
-  ansible.builtin.shell:
+  ansible.builtin.command:
     cmd: "pvresize {{ proxmox_disk_resize_device }}"
   become: true
   changed_when: true
   when: proxmox_disk_resize_device is defined
 
 - name: resize - extend logical volumes
-  ansible.builtin.shell:
+  ansible.builtin.command:
     cmd: "lvextend -L {{ item.size }} /dev/{{ proxmox_disk_resize_vg }}/{{ item.lv }}"
   become: true
   changed_when: true
   loop: "{{ proxmox_disk_resize_lvs | default([]) }}"
 
 - name: resize - grow XFS filesystems online
-  ansible.builtin.shell:
+  ansible.builtin.command:
     cmd: "xfs_growfs {{ item.mount }}"
   become: true
   changed_when: true

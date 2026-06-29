@@ -3,6 +3,7 @@
 - name: acme_sh preflight - Assert required variables
   become: false
   ansible.builtin.assert:
+    quiet: true
     that:
       - acme_sh_email | length > 0
     fail_msg: "acme_sh_email must be set to register an ACME account."
@@ -10,6 +11,7 @@
 - name: acme_sh preflight - Assert EAB credentials present when enabled
   become: false
   ansible.builtin.assert:
+    quiet: true
     that:
       - acme_sh_eab_kid | length > 0
       - acme_sh_eab_hmac_key | length > 0
@@ -19,6 +21,7 @@
 - name: acme_sh preflight - Assert Cloudflare credentials for dns_cf certs
   become: false
   ansible.builtin.assert:
+    quiet: true
     that:
       - >-
         acme_sh_cf_token | length > 0
@@ -31,6 +34,7 @@
 - name: acme_sh preflight - Assert webroot_path set for webroot certs
   become: false
   ansible.builtin.assert:
+    quiet: true
     that:
       - _wrcert.webroot_path is defined
       - _wrcert.webroot_path | length > 0
