@@ -2,16 +2,16 @@
 
 - name: restart postfix
   ansible.builtin.systemd_service:
-    name: postfix.service
-    state: restarted
+    name:    postfix.service
+    state:   restarted
     enabled: true
 
 - name: postmap sasl_passwd
   ansible.builtin.command:
     cmd: postmap /etc/postfix/sasl_passwd
-  listen: postmap sasl_passwd
+  changed_when: true
 
 - name: run newaliases
   ansible.builtin.command:
     cmd: newaliases
-  listen: run newaliases
+  changed_when: true

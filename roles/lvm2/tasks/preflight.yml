@@ -4,6 +4,7 @@
 # Guard: LVM facts must be available
 - name: lvm2 preflight - Assert LVM facts are present
   ansible.builtin.assert:
+    quiet: true
     that:
       - ansible_facts['lvm'] is defined
       - ansible_facts['lvm'] is not none
@@ -17,6 +18,7 @@
 
 - name: lvm2 preflight - Assert all lvm_volumes entries have required keys
   ansible.builtin.assert:
+    quiet: true
     that:
       - item.lv is defined and item.lv | length > 0
       - item.size is defined and item.size | string | length > 0
@@ -27,6 +29,7 @@
 
 - name: lvm2 preflight - Assert threshold entries also define mount
   ansible.builtin.assert:
+    quiet: true
     that:
       - item.mount is defined
       - item.mount | length > 0
@@ -38,6 +41,7 @@
 
 - name: lvm2 preflight - Assert target VG exists for each volume
   ansible.builtin.assert:
+    quiet: true
     that:
       - (item.vg | default(_lvm_os_vg)) in ansible_facts['lvm']['vgs']
     fail_msg: >-
@@ -47,6 +51,7 @@
 
 - name: lvm2 preflight - Assert target LV exists (role extends only, does not create)
   ansible.builtin.assert:
+    quiet: true
     that:
       - item.lv in ansible_facts['lvm']['lvs']
       - ansible_facts['lvm']['lvs'][item.lv]['vg'] == (item.vg | default(_lvm_os_vg))
@@ -57,6 +62,7 @@
 
 - name: lvm2 preflight - Assert VG has enough free space for relative (+) extensions
   ansible.builtin.assert:
+    quiet: true
     that:
       - >-
         (item.size | regex_replace('^\+([0-9.]+)[gG]$', '\1') | float)
@@ -70,6 +76,7 @@
 
 - name: lvm2 preflight - Assert absolute size does not exceed current LV + VG free space
   ansible.builtin.assert:
+    quiet: true
     that:
       - >-
         (item.size | regex_replace('[gG]$', '') | float)
@@ -84,6 +91,7 @@
 
 - name: lvm2 preflight - Assert absolute size is not a shrink (unless shrink is explicit)
   ansible.builtin.assert:
+    quiet: true
     that:
       - >-
         (item.size | regex_replace('[gG]$', '') | float)
@@ -102,6 +110,7 @@
 
 - name: lvm2 preflight - Assert all lvm_vg_extensions entries have required keys
   ansible.builtin.assert:
+    quiet: true
     that:
       - item.vg is defined and item.vg | length > 0
       - item.pvs is defined and item.pvs | length > 0
@@ -120,6 +129,7 @@
 
 - name: lvm2 preflight - Fail on missing PV block devices
   ansible.builtin.assert:
+    quiet: true
     that:
       - item.stat.exists
       - item.stat.isblk
@@ -130,6 +140,7 @@
 
 - name: lvm2 preflight - Assert PV devices are not already claimed by another VG
   ansible.builtin.assert:
+    quiet: true
     that:
       - >-
         item.1 not in ansible_facts['lvm']['pvs']

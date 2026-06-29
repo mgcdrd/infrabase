@@ -5,6 +5,7 @@
 
 - name: lvm2_provision preflight - Assert all lvm_provision_vgs entries have required keys
   ansible.builtin.assert:
+    quiet: true
     that:
       - item.vg is defined and item.vg | length > 0
       - item.pvs is defined and item.pvs | length > 0
@@ -25,6 +26,7 @@
 
 - name: lvm2_provision preflight - Fail on missing or non-block PV devices
   ansible.builtin.assert:
+    quiet: true
     that:
       - item.stat.exists
       - item.stat.isblk
@@ -36,6 +38,7 @@
 
 - name: lvm2_provision preflight - Assert PV devices are not claimed by a different VG
   ansible.builtin.assert:
+    quiet: true
     that:
       - >-
         item.1 not in (ansible_facts['lvm']['pvs'] | default({}))
@@ -55,6 +58,7 @@
 
 - name: lvm2_provision preflight - Assert all lvm_provision_volumes entries have required keys
   ansible.builtin.assert:
+    quiet: true
     that:
       - item.lv is defined and item.lv | length > 0
       - item.vg is defined and item.vg | length > 0
