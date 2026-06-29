@@ -1,0 +1,21 @@
+---
+
+# Permissions for log files created by rsyslog (CIS 4.2.1.3).
+rsyslog_file_create_mode: "0640"
+
+# Remote syslog host to forward all messages to. Leave empty to skip forwarding.
+rsyslog_remote_host: ""
+
+# Remote syslog port.
+rsyslog_remote_port: 514
+
+# Protocol for remote forwarding: tcp or udp. TCP is preferred (reliable delivery).
+rsyslog_remote_protocol: tcp
+
+# Enable this host as a syslog receiver (log server role).
+# When true, rsyslog listens for incoming messages from other hosts.
+rsyslog_receiver_enable: false
+
+# Receiver listen ports (only used when rsyslog_receiver_enable: true).
+rsyslog_receiver_tcp_port: 514
+rsyslog_receiver_udp_port: 514

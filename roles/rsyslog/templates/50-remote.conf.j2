@@ -1,0 +1,7 @@
+# Managed by Ansible — do not edit manually
+# CIS 4.2.1.5 — forward all messages to remote syslog host
+
+*.* action(type="omfwd"
+           target="{{ rsyslog_remote_host }}"
+           port="{{ rsyslog_remote_port }}"
+           protocol="{{ rsyslog_remote_protocol }}")

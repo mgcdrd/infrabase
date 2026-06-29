@@ -1,0 +1,7 @@
+---
+
+- name: rsyslog main - Install and enable rsyslog
+  ansible.builtin.import_tasks: install.yml
+
+- name: rsyslog main - Configure rsyslog
+  ansible.builtin.import_tasks: configure.yml

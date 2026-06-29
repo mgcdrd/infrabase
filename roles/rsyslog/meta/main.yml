@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  author: mgcdrd
+  description: rsyslog install, file permissions, remote forwarding, and optional receiver
+  role_name: rsyslog
+
+  license: GPL-3.0-or-later
+
+  min_ansible_version: '2.14'
+
+  galaxy_tags:
+    - mgcdrd
+
+collections: []

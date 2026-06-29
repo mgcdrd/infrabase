@@ -1,0 +1,44 @@
+---
+
+- name: rsyslog configure - Set log file creation mode (CIS 4.2.1.3)
+  ansible.builtin.template:
+    src:   10-file-mode.conf.j2
+    dest:  /etc/rsyslog.d/10-file-mode.conf
+    owner: root
+    group: root
+    mode:  "0640"
+  notify: restart rsyslog
+
+- name: rsyslog configure - Deploy remote forwarding config
+  ansible.builtin.template:
+    src:   50-remote.conf.j2
+    dest:  /etc/rsyslog.d/50-remote.conf
+    owner: root
+    group: root
+    mode:  "0640"
+  notify: restart rsyslog
+  when: rsyslog_remote_host | length > 0
+
+- name: rsyslog configure - Remove remote forwarding config when host is unset
+  ansible.builtin.file:
+    path:  /etc/rsyslog.d/50-remote.conf
+    state: absent
+  notify: restart rsyslog
+  when: rsyslog_remote_host | length == 0
+
+- name: rsyslog configure - Deploy receiver config
+  ansible.builtin.template:
+    src:   90-receive.conf.j2
+    dest:  /etc/rsyslog.d/90-receive.conf
+    owner: root
+    group: root
+    mode:  "0640"
+  notify: restart rsyslog
+  when: rsyslog_receiver_enable
+
+- name: rsyslog configure - Remove receiver config when disabled
+  ansible.builtin.file:
+    path:  /etc/rsyslog.d/90-receive.conf
+    state: absent
+  notify: restart rsyslog
+  when: not rsyslog_receiver_enable

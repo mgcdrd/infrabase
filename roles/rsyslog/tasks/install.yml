@@ -1,0 +1,18 @@
+---
+
+- name: rsyslog install - Update apt cache (Debian)
+  ansible.builtin.apt:
+    update_cache:     true
+    cache_valid_time: 3600
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: rsyslog install - Install rsyslog
+  ansible.builtin.package:
+    name:  rsyslog
+    state: present
+
+- name: rsyslog install - Enable and start rsyslog
+  ansible.builtin.systemd_service:
+    name:    rsyslog
+    state:   started
+    enabled: true

@@ -1,0 +1,8 @@
+# Managed by Ansible — do not edit manually
+# CIS 4.2.1.6 — accept remote syslog messages (log server role)
+
+module(load="imtcp")
+input(type="imtcp" port="{{ rsyslog_receiver_tcp_port }}")
+
+module(load="imudp")
+input(type="imudp" port="{{ rsyslog_receiver_udp_port }}")
