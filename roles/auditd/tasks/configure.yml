@@ -1,0 +1,49 @@
+---
+
+- name: auditd configure - Remove default audit rules
+  ansible.builtin.file:
+    path:  /etc/audit/rules.d/audit.rules
+    state: absent
+  notify: auditd reload rules
+
+- name: auditd configure - Deploy base audit rules
+  ansible.builtin.template:
+    src:   auditd.rules.j2
+    dest:  /etc/audit/rules.d/00-base.rules
+    owner: root
+    group: root
+    mode:  "0640"
+  notify: auditd reload rules
+
+- name: auditd configure - Deploy loginuid immutability rule
+  ansible.builtin.copy:
+    src:   11-loginuid.rules
+    dest:  /etc/audit/rules.d/11-loginuid.rules
+    owner: root
+    group: root
+    mode:  "0640"
+  notify: auditd reload rules
+
+- name: auditd configure - Deploy auditd.conf
+  ansible.builtin.template:
+    src:   auditd.conf.j2
+    dest:  /etc/audit/auditd.conf
+    owner: root
+    group: root
+    mode:  "0640"
+  notify: auditd restart
+
+- name: auditd configure - Check current boot args (RedHat only)
+  ansible.builtin.command:
+    cmd: grubby --info=DEFAULT
+  register: _grubby_info
+  changed_when: false
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: auditd configure - Enable audit at boot (RedHat only)
+  ansible.builtin.command:
+    cmd: /sbin/grubby --update-kernel=ALL --args="audit=1 audit_backlog_limit=8192"
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - "'audit=1' not in _grubby_info.stdout"
+  changed_when: true

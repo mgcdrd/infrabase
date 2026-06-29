@@ -19,9 +19,6 @@ Requirements
 
 `become: true` is required. `gather_facts` is not required.
 
-The `community.general` collection must be installed (included in
-`ansible-base-ee`).
-
 
 Role Variables
 --------------
@@ -52,7 +49,8 @@ Notes
 
 - Changes to `limits.conf` apply to new PAM sessions. Existing sessions are
   unaffected until the user logs out and back in.
-- Changes to `coredump.conf` apply immediately — no restart required.
+- `coredump.conf` is read by systemd-coredump at event time — no restart
+  required for it to take effect.
 - This role does not set `fs.suid_dumpable`. To disable SUID core dumps via
   sysctl, add `{ name: fs.suid_dumpable, value: 0 }` to your `sysctl` role
   invocation.

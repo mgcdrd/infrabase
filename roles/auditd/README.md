@@ -7,7 +7,7 @@ syscall groups, watchpoints, and conf settings are variable-driven so callers
 can extend or narrow coverage without forking the role.
 
 On RedHat family hosts, also enables the audit kernel parameter at boot via
-`grubby`.
+`grubby` (idempotent — skipped if the args are already present).
 
 Tested on: Debian 12/13, Rocky Linux 9/10
 
@@ -91,12 +91,16 @@ Extending watches:
 Notes
 -----
 
-- `augenrules --load` is used to compile and load rules after any change.
-  This is available on both Debian and RedHat via the `auditd` / `audit`
-  package.
-- The `grubby` boot-time audit flag task only runs on RedHat family. Debian
+- Rules changes (base rules, loginuid) trigger `augenrules --load` via handler.
+  `auditd.conf` changes trigger a full daemon restart instead — `augenrules`
+  does not reload daemon configuration.
+- `augenrules --load` is available on both Debian and RedHat via the
+  `auditd` / `audit` package.
+- The `grubby` boot-time audit flag task only runs on RedHat family and is
+  skipped if `audit=1` is already present in the default kernel args. Debian
   manages this via GRUB configuration separately.
 - Rule paths that don't exist on the target (e.g. SELinux paths on Debian)
   are silently ignored by auditd.
-- The role uses `gather_facts: true` to correctly emit b32/b64 rules based on
-  `ansible_userspace_bits`.
+- The role uses `ansible_userspace_bits` to correctly emit b32/b64 rules.
+- The base ruleset sets `-e 2` (immutable mode) — audit config cannot be
+  changed without a reboot once rules are loaded.

@@ -1,2 +1,3 @@
 ---
-# No handlers — limits.conf and coredump.conf take effect on next process start.
+# No handlers — limits.conf takes effect on next PAM session;
+# coredump.conf is read by systemd-coredump at event time.

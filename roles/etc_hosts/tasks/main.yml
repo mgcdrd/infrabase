@@ -8,6 +8,7 @@
       - etc_hosts_group in groups
     fail_msg: >-
       etc_hosts_group '{{ etc_hosts_group }}' does not exist in the inventory.
+    quiet: true
   when: etc_hosts_group | length > 0
 
 - name: etc_hosts - Resolve target host list

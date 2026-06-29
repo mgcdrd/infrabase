@@ -145,8 +145,3 @@ etc_hosts_entries:
 etc_hosts_group: k8s_nodes
 ```
 
-
-License
--------
-
-GPL-3.0-or-later
