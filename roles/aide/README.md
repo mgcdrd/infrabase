@@ -10,6 +10,9 @@ and cron. Both RedHat-family and Debian-family package paths are included.
 Callers can extend coverage with `aide_extra_paths` or suppress specific paths
 with `aide_exclude_paths`.
 
+If `aide.conf` changes on a subsequent run, the database is automatically
+rebuilt so the baseline stays consistent with the active configuration.
+
 Tested on: Debian 12/13, Rocky Linux 9/10
 
 
@@ -21,7 +24,7 @@ the correct AIDE binary path).
 
 The initial database build (`aide --init`) can take several minutes on the
 first run, depending on filesystem size. Subsequent runs are fast (no-op if
-the database already exists).
+the database already exists and the configuration has not changed).
 
 
 Role Variables
@@ -29,6 +32,8 @@ Role Variables
 
 | Variable | Default | Description |
 |---|---|---|
+| `aide_db_dir` | `/var/lib/aide` | Directory for the AIDE database files |
+| `aide_log_dir` | `/var/log/aide` | Directory for AIDE check reports |
 | `aide_cron_hour` | `4` | Hour to run the daily check |
 | `aide_cron_minute` | `5` | Minute to run the daily check |
 | `aide_extra_paths` | `[]` | Additional paths to monitor. Each entry: `{path, rule}` |
@@ -87,8 +92,11 @@ With custom paths:
 Notes
 -----
 
-- The database is only initialised if `/var/lib/aide/aide.db.gz` does not
+- The database is only initialised if `{{ aide_db_dir }}/aide.db.gz` does not
   exist. To force a rebuild, remove that file and re-run the role.
+- If `aide.conf` is redeployed with changes, the handler rebuilds the database
+  automatically at the end of the play. This re-establishes the baseline
+  against the new configuration.
 - AIDE binary path is `/usr/bin/aide` on Debian and `/usr/sbin/aide` on
   RedHat. This is resolved at runtime.
 - Rules referencing paths that don't exist (e.g. `/etc/dnf` on Debian) are

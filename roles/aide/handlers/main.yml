@@ -1,0 +1,19 @@
+---
+
+- name: aide reinit - Reinitialise database after config change
+  ansible.builtin.command:
+    cmd: "{{ _aide_bin }} --config /etc/aide.conf --init"
+  when: _aide_db is defined and _aide_db.stat.exists
+  changed_when: true
+  listen: aide reinit
+
+- name: aide reinit - Move reinitialised database into place
+  ansible.builtin.copy:
+    src:        "{{ aide_db_dir }}/aide.db.new.gz"
+    dest:       "{{ aide_db_dir }}/aide.db.gz"
+    remote_src: true
+    owner: root
+    group: root
+    mode:  "0600"
+  when: _aide_db is defined and _aide_db.stat.exists
+  listen: aide reinit

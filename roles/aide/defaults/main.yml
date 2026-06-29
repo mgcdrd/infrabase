@@ -1,17 +1,18 @@
 ---
 
-# Cron schedule for the daily integrity check
+aide_db_dir:  /var/lib/aide
+aide_log_dir: /var/log/aide
+
 aide_cron_hour:   "4"
 aide_cron_minute: "5"
 
-# Paths to include in the AIDE database, beyond the built-in set.
-# Each entry requires 'path' and 'rule' keys.
+# Additional paths to monitor. Each entry requires 'path' and 'rule' keys.
 # Example:
 #   aide_extra_paths:
 #     - { path: /opt/myapp, rule: CONTENT_EX }
 aide_extra_paths: []
 
-# Paths to explicitly exclude from monitoring (prepended with !).
+# Paths to exclude from monitoring (prepended with !).
 # Example:
 #   aide_exclude_paths:
 #     - /var/log/myapp

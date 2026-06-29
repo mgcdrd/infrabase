@@ -1,6 +1,6 @@
 # Managed by Ansible — do not edit manually
-@@define DBDIR /var/lib/aide
-@@define LOGDIR /var/log/aide
+@@define DBDIR {{ aide_db_dir }}
+@@define LOGDIR {{ aide_log_dir }}
 
 database=file:@@{DBDIR}/aide.db.gz
 database_out=file:@@{DBDIR}/aide.db.new.gz
@@ -10,7 +10,7 @@ report_url=file:@@{LOGDIR}/aide.log
 report_url=stdout
 
 # ---- Rule definitions ----
-ALLXTRAHASHES = sha1+rmd160+sha256+sha512+tiger
+ALLXTRAHASHES = sha256+sha512
 EVERYTHING    = R+ALLXTRAHASHES+acl+xattrs
 NORMAL        = p+i+n+u+g+s+m+c+acl+selinux+xattrs+sha512
 DIR           = p+i+n+u+g+acl+selinux+xattrs
@@ -93,7 +93,7 @@ FIPSR         = p+i+n+u+g+s+m+c+acl+selinux+xattrs+sha512
 /etc/dpkg         CONTENT_EX
 
 # auditing
-!/var/log/aide.log
+!{{ aide_log_dir }}
 /var/log/audit    PERMS
 /etc/audit        CONTENT_EX
 /etc/libaudit.conf$ CONTENT_EX

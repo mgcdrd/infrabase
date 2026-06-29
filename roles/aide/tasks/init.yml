@@ -1,0 +1,22 @@
+---
+
+- name: aide init - Check if database exists
+  ansible.builtin.stat:
+    path: "{{ aide_db_dir }}/aide.db.gz"
+  register: _aide_db
+
+- name: aide init - Initialise database
+  ansible.builtin.command:
+    cmd: "{{ _aide_bin }} --config /etc/aide.conf --init"
+  when: not _aide_db.stat.exists
+  changed_when: true
+
+- name: aide init - Move initialised database into place
+  ansible.builtin.copy:
+    src:        "{{ aide_db_dir }}/aide.db.new.gz"
+    dest:       "{{ aide_db_dir }}/aide.db.gz"
+    remote_src: true
+    owner: root
+    group: root
+    mode:  "0600"
+  when: not _aide_db.stat.exists

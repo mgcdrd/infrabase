@@ -1,0 +1,14 @@
+---
+
+- name: aide configure - Set aide binary path
+  ansible.builtin.set_fact:
+    _aide_bin: "{{ '/usr/bin/aide' if ansible_facts['os_family'] == 'Debian' else '/usr/sbin/aide' }}"
+
+- name: aide configure - Deploy aide.conf
+  ansible.builtin.template:
+    src:   aide.conf.j2
+    dest:  /etc/aide.conf
+    owner: root
+    group: root
+    mode:  "0600"
+  notify: aide reinit

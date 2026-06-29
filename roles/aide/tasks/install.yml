@@ -1,0 +1,22 @@
+---
+
+- name: aide install - Install AIDE
+  ansible.builtin.package:
+    name: aide
+    state: present
+
+- name: aide install - Ensure database directory exists
+  ansible.builtin.file:
+    path: "{{ aide_db_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: aide install - Ensure log directory exists
+  ansible.builtin.file:
+    path: "{{ aide_log_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"

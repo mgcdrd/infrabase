@@ -1,0 +1,8 @@
+---
+
+- name: aide schedule - Schedule daily integrity check
+  ansible.builtin.cron:
+    name:   aide-check
+    minute: "{{ aide_cron_minute }}"
+    hour:   "{{ aide_cron_hour }}"
+    job:    "{{ _aide_bin }} --config /etc/aide.conf --check >> {{ aide_log_dir }}/aide-check.log 2>&1"
