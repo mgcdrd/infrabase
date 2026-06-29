@@ -1,0 +1,29 @@
+---
+
+- name: firewall install - Install firewalld (RedHat)
+  ansible.builtin.dnf:
+    name:  firewalld
+    state: present
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: firewall install - Install nftables (Debian)
+  ansible.builtin.apt:
+    name:             nftables
+    state:            present
+    update_cache:     true
+    cache_valid_time: 3600
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: firewall install - Enable and start firewalld (RedHat)
+  ansible.builtin.systemd_service:
+    name:    firewalld
+    state:   started
+    enabled: true
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: firewall install - Enable and start nftables (Debian)
+  ansible.builtin.systemd_service:
+    name:    nftables
+    state:   started
+    enabled: true
+  when: ansible_facts['os_family'] == 'Debian'

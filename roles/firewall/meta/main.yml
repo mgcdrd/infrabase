@@ -1,0 +1,15 @@
+---
+galaxy_info:
+  author: mgcdrd
+  description: Host-based firewall — firewalld on RedHat, nftables on Debian
+  role_name: firewall
+
+  license: GPL-3.0-or-later
+
+  min_ansible_version: '2.14'
+
+  galaxy_tags:
+    - mgcdrd
+
+collections:
+  - ansible.posix

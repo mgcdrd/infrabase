@@ -1,0 +1,7 @@
+---
+
+- name: firewall main - Install and enable firewall
+  ansible.builtin.import_tasks: install.yml
+
+- name: firewall main - Apply firewall rules
+  ansible.builtin.import_tasks: configure.yml

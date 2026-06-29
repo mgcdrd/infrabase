@@ -1,0 +1,16 @@
+---
+
+# TCP ports to allow inbound. Applied on both OS families.
+# Default allows SSH only — add every port this host needs explicitly.
+firewall_allowed_tcp_ports:
+  - 22
+
+# UDP ports to allow inbound.
+firewall_allowed_udp_ports: []
+
+# RedHat only — firewalld named services (e.g. ssh, http, https, cockpit).
+# Use alongside or instead of firewall_allowed_tcp_ports on RHEL targets.
+firewall_allowed_services: []
+
+# RedHat only — firewalld zone to configure.
+firewall_default_zone: public

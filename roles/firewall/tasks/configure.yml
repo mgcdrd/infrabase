@@ -1,0 +1,56 @@
+---
+
+# --- RedHat: firewalld ---
+
+- name: firewall configure - Set default zone (RedHat)
+  ansible.builtin.command:
+    cmd: "firewall-cmd --set-default-zone={{ firewall_default_zone }}"
+  register: _firewall_zone
+  changed_when: "'ALREADY_SET' not in _firewall_zone.stdout"
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: firewall configure - Allow TCP ports (RedHat)
+  ansible.posix.firewalld:
+    port:      "{{ item }}/tcp"
+    zone:      "{{ firewall_default_zone }}"
+    state:     enabled
+    permanent: true
+    immediate: true
+  loop: "{{ firewall_allowed_tcp_ports }}"
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: firewall configure - Allow UDP ports (RedHat)
+  ansible.posix.firewalld:
+    port:      "{{ item }}/udp"
+    zone:      "{{ firewall_default_zone }}"
+    state:     enabled
+    permanent: true
+    immediate: true
+  loop: "{{ firewall_allowed_udp_ports }}"
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - firewall_allowed_udp_ports | length > 0
+
+- name: firewall configure - Allow named services (RedHat)
+  ansible.posix.firewalld:
+    service:   "{{ item }}"
+    zone:      "{{ firewall_default_zone }}"
+    state:     enabled
+    permanent: true
+    immediate: true
+  loop: "{{ firewall_allowed_services }}"
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - firewall_allowed_services | length > 0
+
+# --- Debian: nftables ---
+
+- name: firewall configure - Deploy nftables ruleset (Debian)
+  ansible.builtin.template:
+    src:   nftables.conf.j2
+    dest:  /etc/nftables.conf
+    owner: root
+    group: root
+    mode:  "0640"
+  notify: reload nftables
+  when: ansible_facts['os_family'] == 'Debian'
