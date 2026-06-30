@@ -1,12 +1,9 @@
 # Managed by Ansible — do not edit manually
-@@define DBDIR {{ aide_db_dir }}
-@@define LOGDIR {{ aide_log_dir }}
 
-database=file:@@{DBDIR}/aide.db.gz
-database_out=file:@@{DBDIR}/aide.db.new.gz
+database_in=file:{{ aide_db_dir }}/aide.db.gz
+database_out=file:{{ aide_db_dir }}/aide.db.new.gz
 gzip_dbout=yes
-verbose=5
-report_url=file:@@{LOGDIR}/aide.log
+report_url=file:{{ aide_log_dir }}/aide.log
 report_url=stdout
 
 # ---- Rule definitions ----
