@@ -119,42 +119,48 @@ auditd_privileged_access:
 # CIS 4.1.3.2, 4.1.3.4, 4.1.3.7, 4.1.3.10, 4.1.3.11, 4.1.3.16 — watchpoints
 auditd_watches:
   # Sudoers changes (actions)
-  - { file: /etc/sudoers,                            perm: wa, key: actions }
-  - { file: /etc/sudoers.d/,                         perm: wa, key: actions }
-  - { file: /var/log/sudo.log,                       perm: wa, key: actions }
+  - { file: /etc/sudoers,           perm: wa, key: actions }
+  - { file: /etc/sudoers.d/,        perm: wa, key: actions }
+  - { file: /var/log/sudo.log,      perm: wa, key: actions }
 
   # User/group identity (identity)
-  - { file: /etc/group,                              perm: wa, key: identity }
-  - { file: /etc/gshadow,                            perm: wa, key: identity }
-  - { file: /etc/passwd,                             perm: wa, key: identity }
-  - { file: /etc/shadow,                             perm: wa, key: identity }
-  - { file: /etc/security/opasswd,                   perm: wa, key: identity }
-  - { file: /etc/nsswitch.conf,                      perm: wa, key: identity }
-  - { file: /etc/pam.conf,                           perm: wa, key: identity }
-  - { file: /etc/pam.d/,                             perm: wa, key: identity }
+  - { file: /etc/group,             perm: wa, key: identity }
+  - { file: /etc/gshadow,           perm: wa, key: identity }
+  - { file: /etc/passwd,            perm: wa, key: identity }
+  - { file: /etc/shadow,            perm: wa, key: identity }
+  - { file: /etc/security/opasswd,  perm: wa, key: identity }
+  - { file: /etc/nsswitch.conf,     perm: wa, key: identity }
+  - { file: /etc/pam.conf,          perm: wa, key: identity }
+  - { file: /etc/pam.d/,            perm: wa, key: identity }
 
   # Login/logout events (logins)
-  - { file: /var/log/lastlog,                        perm: wa, key: logins }
-  - { file: /var/run/utmp,                           perm: wa, key: logins }
-  - { file: /var/log/btmp,                           perm: wa, key: logins }
-  - { file: /var/log/wtmp,                           perm: wa, key: logins }
-  - { file: /var/run/faillock,                       perm: wa, key: logins }
+  - { file: /var/log/lastlog,       perm: wa, key: logins }
+  - { file: /var/run/utmp,          perm: wa, key: logins }
+  - { file: /var/log/btmp,          perm: wa, key: logins }
+  - { file: /var/log/wtmp,          perm: wa, key: logins }
 
   # Network configuration (system-locale)
-  - { file: /etc/hosts,                              perm: wa, key: system-locale }
-  - { file: /etc/hostname,                           perm: wa, key: system-locale }
-  - { file: /etc/issue,                              perm: wa, key: system-locale }
-  - { file: /etc/issue.net,                          perm: wa, key: system-locale }
-  - { file: /etc/sysconfig/network-scripts/,         perm: wa, key: system-locale }
-  - { file: /etc/NetworkManager/,                    perm: wa, key: system-locale }
+  - { file: /etc/hosts,             perm: wa, key: system-locale }
+  - { file: /etc/hostname,          perm: wa, key: system-locale }
+  - { file: /etc/issue,             perm: wa, key: system-locale }
+  - { file: /etc/issue.net,         perm: wa, key: system-locale }
 
   # Time (time-change)
-  - { file: /etc/localtime,                          perm: wa, key: time-change }
-
-  # MAC policy / SELinux (MAC-policy)
-  - { file: /etc/selinux/,                           perm: wa, key: MAC-policy }
-  - { file: /usr/share/selinux/,                     perm: wa, key: MAC-policy }
+  - { file: /etc/localtime,         perm: wa, key: time-change }
 
   # Kernel module configuration (modules)
-  - { file: /etc/modprobe.d/,                        perm: wa, key: modules }
-  - { file: /usr/bin/kmod,                           perm: x,  key: modules }
+  - { file: /etc/modprobe.d/,       perm: wa, key: modules }
+  - { file: /usr/bin/kmod,          perm: x,  key: modules }
+
+# Red Hat-only watch paths (faillock, sysconfig, SELinux, NetworkManager)
+auditd_watches_redhat:
+  - { file: /var/run/faillock,               perm: wa, key: logins }
+  - { file: /etc/sysconfig/network-scripts/, perm: wa, key: system-locale }
+  - { file: /etc/NetworkManager/,            perm: wa, key: system-locale }
+  - { file: /etc/selinux/,                   perm: wa, key: MAC-policy }
+  - { file: /usr/share/selinux/,             perm: wa, key: MAC-policy }
+
+# Debian-only watch paths (AppArmor)
+auditd_watches_debian:
+  - { file: /etc/apparmor/,    perm: wa, key: MAC-policy }
+  - { file: /etc/apparmor.d/,  perm: wa, key: MAC-policy }

@@ -106,3 +106,12 @@
 {% for item in auditd_watches %}
 -w {{ item.file }} -p {{ item.perm }} -k {{ item.key }}
 {% endfor %}
+{% if ansible_facts['os_family'] == 'RedHat' %}
+{% for item in auditd_watches_redhat %}
+-w {{ item.file }} -p {{ item.perm }} -k {{ item.key }}
+{% endfor %}
+{% elif ansible_facts['os_family'] == 'Debian' %}
+{% for item in auditd_watches_debian %}
+-w {{ item.file }} -p {{ item.perm }} -k {{ item.key }}
+{% endfor %}
+{% endif %}
