@@ -1,0 +1,18 @@
+---
+
+- name: pam authselect - Get current profile
+  ansible.builtin.command: authselect current
+  register: _pam_current
+  changed_when: false
+  failed_when: false
+
+- name: pam authselect - Apply profile and features
+  ansible.builtin.command: >-
+    authselect select {{ pam_authselect_profile }}
+    {{ pam_authselect_features | join(' ') }} --force
+  changed_when: true
+  when: >-
+    _pam_current.rc != 0
+    or ('Profile ID: ' + pam_authselect_profile) not in _pam_current.stdout
+    or (pam_authselect_features | sort | join(',')) !=
+       (_pam_current.stdout | regex_findall('- (\\S+)') | sort | join(','))

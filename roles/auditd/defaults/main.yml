@@ -16,8 +16,20 @@ auditd_disk_error_action:      "syslog"
 auditd_overflow_action:        "syslog"
 
 # ---- audit rules — syscall groups ----
-# These drive auditd.rules.j2. Override to extend or restrict coverage.
+# Keys match what OpenSCAP/SSG CIS content expects.
 
+# CIS 4.1.3.3 — time modification
+auditd_time_syscalls:
+  - { name: adjtimex,      key: "key=time-change" }
+  - { name: clock_settime, key: "a0=0x0 -F key=time-change" }
+  - { name: settimeofday,  key: "key=time-change" }
+
+# CIS 4.1.3.4 — network configuration
+auditd_network_syscalls:
+  - sethostname
+  - setdomainname
+
+# CIS 4.1.3.5 — permission modification
 auditd_perm_mod:
   - chmod
   - chown
@@ -41,13 +53,7 @@ auditd_perm_mod_root:
   - removexattr
   - setxattr
 
-auditd_file_delete:
-  - rename
-  - renameat
-  - rmdir
-  - unlink
-  - unlinkat
-
+# CIS 4.1.3.6 — unsuccessful file access
 auditd_file_access:
   - creat
   - ftruncate
@@ -56,36 +62,35 @@ auditd_file_access:
   - openat
   - truncate
 
+# CIS 4.1.3.9 — file deletion
+auditd_file_delete:
+  - rename
+  - renameat
+  - rmdir
+  - unlink
+  - unlinkat
+
+# CIS 4.1.3.15 — kernel module operations
 auditd_kernel_module_syscalls:
+  - create_module
   - delete_module
   - finit_module
   - init_module
   - query_module
 
+# CIS 4.1.3.12/14 — mount/export
 auditd_mount_syscalls:
   - mount
 
-auditd_time_syscalls:
-  - name: adjtimex
-    key:  "key=audit_time_rules"
-  - name: clock_settime
-    key:  "a0=0x0 -F key=time-change"
-  - name: sethostname
-    key:  "key=audit_rules_networkconfig_modification"
-  - name: setdomainname
-    key:  "key=audit_rules_networkconfig_modification"
-  - name: settimeofday
-    key:  "key=audit_time_rules"
-  - name: create_module
-    key:  "key=module-change"
-
-# Paths audited with -F perm=x (privileged execution)
+# CIS 4.1.3.13 — privileged execution (setuid/setgid binaries, perm=x)
 auditd_privileged_exec:
   - /usr/bin/chacl
+  - /usr/bin/chcon
   - /usr/bin/setfacl
   - /usr/bin/kmod
+  - /usr/sbin/usermod
 
-# Paths audited for privileged access (no perm filter)
+# Privileged access (no perm filter — watched for any access)
 auditd_privileged_access:
   - /usr/bin/chage
   - /usr/bin/chsh
@@ -98,21 +103,45 @@ auditd_privileged_access:
   - /usr/bin/sudo
   - /usr/bin/umount
 
-# Watchpoints — file/dir watches (-w)
+# CIS 4.1.3.2, 4.1.3.4, 4.1.3.7, 4.1.3.10, 4.1.3.11, 4.1.3.16 — watchpoints
 auditd_watches:
-  - { file: /etc/sudoers,                       perm: wa, key: actions }
-  - { file: /etc/sudoers.d/,                    perm: wa, key: actions }
-  - { file: /etc/group,                         perm: wa, key: audit_rules_usergroup_modification }
-  - { file: /etc/gshadow,                       perm: wa, key: audit_rules_usergroup_modification }
-  - { file: /etc/passwd,                        perm: wa, key: audit_rules_usergroup_modification }
-  - { file: /etc/shadow,                        perm: wa, key: audit_rules_usergroup_modification }
-  - { file: /etc/security/opasswd,              perm: wa, key: audit_rules_usergroup_modification }
-  - { file: /var/log/lastlog,                   perm: wa, key: logins }
-  - { file: /etc/issue,                         perm: wa, key: audit_rules_networkconfig_modification }
-  - { file: /etc/issue.net,                     perm: wa, key: audit_rules_networkconfig_modification }
-  - { file: /etc/hosts,                         perm: wa, key: audit_rules_networkconfig_modification }
-  - { file: /etc/localtime,                     perm: wa, key: audit_time_rules }
-  - { file: /var/run/utmp,                      perm: wa, key: session }
-  - { file: /var/log/btmp,                      perm: wa, key: session }
-  - { file: /var/log/wtmp,                      perm: wa, key: session }
-  - { file: /usr/bin/kmod,                      perm: x,  key: modules }
+  # Sudoers changes (actions)
+  - { file: /etc/sudoers,                            perm: wa, key: actions }
+  - { file: /etc/sudoers.d/,                         perm: wa, key: actions }
+  - { file: /var/log/sudo.log,                       perm: wa, key: actions }
+
+  # User/group identity (identity)
+  - { file: /etc/group,                              perm: wa, key: identity }
+  - { file: /etc/gshadow,                            perm: wa, key: identity }
+  - { file: /etc/passwd,                             perm: wa, key: identity }
+  - { file: /etc/shadow,                             perm: wa, key: identity }
+  - { file: /etc/security/opasswd,                   perm: wa, key: identity }
+  - { file: /etc/nsswitch.conf,                      perm: wa, key: identity }
+  - { file: /etc/pam.conf,                           perm: wa, key: identity }
+  - { file: /etc/pam.d/,                             perm: wa, key: identity }
+
+  # Login/logout events (logins)
+  - { file: /var/log/lastlog,                        perm: wa, key: logins }
+  - { file: /var/run/utmp,                           perm: wa, key: logins }
+  - { file: /var/log/btmp,                           perm: wa, key: logins }
+  - { file: /var/log/wtmp,                           perm: wa, key: logins }
+  - { file: /var/run/faillock,                       perm: wa, key: logins }
+
+  # Network configuration (system-locale)
+  - { file: /etc/hosts,                              perm: wa, key: system-locale }
+  - { file: /etc/hostname,                           perm: wa, key: system-locale }
+  - { file: /etc/issue,                              perm: wa, key: system-locale }
+  - { file: /etc/issue.net,                          perm: wa, key: system-locale }
+  - { file: /etc/sysconfig/network-scripts/,         perm: wa, key: system-locale }
+  - { file: /etc/NetworkManager/,                    perm: wa, key: system-locale }
+
+  # Time (time-change)
+  - { file: /etc/localtime,                          perm: wa, key: time-change }
+
+  # MAC policy / SELinux (MAC-policy)
+  - { file: /etc/selinux/,                           perm: wa, key: MAC-policy }
+  - { file: /usr/share/selinux/,                     perm: wa, key: MAC-policy }
+
+  # Kernel module configuration (modules)
+  - { file: /etc/modprobe.d/,                        perm: wa, key: modules }
+  - { file: /usr/bin/kmod,                           perm: x,  key: modules }

@@ -1,0 +1,14 @@
+---
+
+# RedHat: authselect profile to select.
+# Changing this away from 'sssd' on IPA-enrolled hosts will break LDAP auth.
+pam_authselect_profile: sssd
+
+# Features to enable on the selected profile.
+# 'with-faillock' and 'with-pwhistory' wire pam_faillock and pam_pwhistory
+# into the PAM stack — the conf files set by password_policy take effect here.
+pam_authselect_features:
+  - with-mkhomedir
+  - with-sudo
+  - with-faillock
+  - with-pwhistory

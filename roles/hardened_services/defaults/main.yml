@@ -11,3 +11,8 @@ hardened_services_emergency_auth: true
 # Ensure chronyd runs as an unprivileged user (chrony on RedHat, _chrony on Debian).
 # Set to false on hosts where chrony is not installed.
 hardened_services_chronyd_user: true
+
+# Disable and mask unused services. Each only acts if the service is present on the host.
+hardened_services_disable_bluetooth: true
+hardened_services_disable_autofs:    true
+hardened_services_disable_rpcbind:   true

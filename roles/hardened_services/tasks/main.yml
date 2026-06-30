@@ -11,3 +11,6 @@
 - name: hardened_services main - Enforce chronyd unprivileged user
   ansible.builtin.import_tasks: chronyd.yml
   when: hardened_services_chronyd_user
+
+- name: hardened_services main - Disable unused services
+  ansible.builtin.import_tasks: services.yml

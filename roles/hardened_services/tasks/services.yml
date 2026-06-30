@@ -1,0 +1,40 @@
+---
+
+- name: hardened_services services - Gather service facts
+  ansible.builtin.service_facts:
+
+- name: hardened_services services - Disable and mask bluetooth
+  ansible.builtin.systemd_service:
+    name:    bluetooth.service
+    enabled: false
+    masked:  true
+  when:
+    - hardened_services_disable_bluetooth
+    - "'bluetooth.service' in ansible_facts.services"
+
+- name: hardened_services services - Disable and mask autofs
+  ansible.builtin.systemd_service:
+    name:    autofs.service
+    enabled: false
+    masked:  true
+  when:
+    - hardened_services_disable_autofs
+    - "'autofs.service' in ansible_facts.services"
+
+- name: hardened_services services - Disable and mask rpcbind
+  ansible.builtin.systemd_service:
+    name:    rpcbind.service
+    enabled: false
+    masked:  true
+  when:
+    - hardened_services_disable_rpcbind
+    - "'rpcbind.service' in ansible_facts.services"
+
+- name: hardened_services services - Disable and mask nftables (RedHat uses firewalld)
+  ansible.builtin.systemd_service:
+    name:    nftables.service
+    enabled: false
+    masked:  true
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - "'nftables.service' in ansible_facts.services"

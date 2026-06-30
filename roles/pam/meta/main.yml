@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  author: mgcdrd
+  description: PAM stack configuration via authselect (RedHat) or pam-auth-update (Debian)
+  role_name: pam
+
+  license: GPL-3.0-or-later
+
+  min_ansible_version: '2.14'
+
+  galaxy_tags:
+    - mgcdrd
+
+collections: []
