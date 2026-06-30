@@ -12,6 +12,10 @@ policy. Addresses CIS Benchmark 3.4 (RHEL) and 3.5 (Debian).
 Default policy: drop inbound, accept outbound, accept established/related,
 accept loopback, accept ICMP.
 
+Multiple interfaces are supported: each zone in `firewall_zones` can specify
+which interfaces it applies to. On RHEL, this maps directly to firewalld zone
+assignment. On Debian, nftables rules are scoped with `iifname { ... }`.
+
 Tested on: Debian 12/13, Rocky Linux 9/10
 
 
@@ -26,15 +30,39 @@ Requirements
 Role Variables
 --------------
 
-| Variable | Default | Description |
-|---|---|---|
-| `firewall_allowed_tcp_ports` | `[22]` | TCP ports to allow inbound. Applied on both OS families. |
-| `firewall_allowed_udp_ports` | `[]` | UDP ports to allow inbound. |
-| `firewall_allowed_services` | `[]` | firewalld named services to allow (e.g. `http`, `https`). **RedHat only.** |
-| `firewall_default_zone` | `public` | firewalld zone to configure. **RedHat only.** |
+### `firewall_default_zone`
 
-On Debian, `firewall_allowed_services` is ignored — use ports only for
-cross-platform playbooks.
+The firewalld default zone. Traffic on interfaces not explicitly assigned to
+a zone falls into this zone. **RedHat only.** Default: `public`.
+
+### `firewall_zones`
+
+List of zone definitions. Each zone controls which interfaces it applies to
+and what traffic it permits.
+
+| Key | Required | Description |
+|-----|----------|-------------|
+| `name` | yes | firewalld zone name (RedHat) or logical label (Debian) |
+| `interfaces` | no | Interface names to assign to this zone. Empty = no explicit assignment (default zone). |
+| `allowed_tcp_ports` | no | TCP ports to allow inbound on this zone's interfaces. |
+| `allowed_udp_ports` | no | UDP ports to allow inbound on this zone's interfaces. |
+| `allowed_services` | no | firewalld named services to allow (e.g. `http`, `https`). **RedHat only.** |
+
+Default (single-interface, SSH only):
+
+```yaml
+firewall_zones:
+  - name: public
+    interfaces: []
+    allowed_tcp_ports:
+      - 22
+    allowed_udp_ports: []
+    allowed_services: []
+```
+
+On Debian, zones with an empty `interfaces` list apply their rules to all
+interfaces. On RedHat, the zone must be set as default (via `firewall_default_zone`)
+or assigned interfaces explicitly for its rules to take effect.
 
 
 Dependencies
@@ -46,7 +74,7 @@ Dependencies
 Example Playbook
 ----------------
 
-Basic server — SSH only:
+**Single interface — SSH only (default):**
 
 ```yaml
 - name: Apply host firewall
@@ -57,68 +85,91 @@ Basic server — SSH only:
     - role: mgcdrd.infrabase.firewall
 ```
 
-Web server — SSH, HTTP, HTTPS:
+**Single interface — web server:**
 
 ```yaml
-- name: Apply host firewall
-  hosts: web_servers
-  become: true
-  gather_facts: true
-  roles:
-    - role: mgcdrd.infrabase.firewall
-      vars:
-        firewall_allowed_tcp_ports: [22, 80, 443]
+firewall_zones:
+  - name: public
+    interfaces: []
+    allowed_tcp_ports: [22, 80, 443]
 ```
 
-Kubernetes API node (port-based, works on both OS families):
+**Multi-interface — management + public-facing:**
 
 ```yaml
-firewall_allowed_tcp_ports:
-  - 22
-  - 6443    # kube-apiserver
-  - 2379    # etcd client
-  - 2380    # etcd peer
-  - 10250   # kubelet
+firewall_default_zone: public
+
+firewall_zones:
+  - name: mgmt
+    interfaces: [eth0]
+    allowed_tcp_ports:
+      - 22     # SSH
+      - 9100   # Prometheus node_exporter
+  - name: public
+    interfaces: [eth1]
+    allowed_tcp_ports:
+      - 80
+      - 443
+    allowed_services:   # RedHat only
+      - http
+      - https
 ```
 
-Keycloak cluster (RedHat, using named services + ports):
+**Kubernetes node (multi-interface, cross-platform):**
 
 ```yaml
-firewall_allowed_tcp_ports:
-  - 22
-  - 8080
-  - 8443
-  - 7800    # JGroups cluster communication
-firewall_allowed_services:
-  - http
-  - https
+firewall_zones:
+  - name: mgmt
+    interfaces: [eth0]
+    allowed_tcp_ports:
+      - 22
+  - name: k8s
+    interfaces: [eth1]
+    allowed_tcp_ports:
+      - 6443    # kube-apiserver
+      - 10250   # kubelet
+      - 2379    # etcd client
+      - 2380    # etcd peer
+    allowed_udp_ports:
+      - 8472    # Flannel VXLAN
 ```
 
-Custom zone (RedHat only):
+**Global rule + interface-scoped rule (Debian mix):**
 
 ```yaml
-firewall_default_zone: dmz
-firewall_allowed_tcp_ports: [22, 443]
+# SSH allowed on all interfaces; web traffic only on eth1
+firewall_zones:
+  - name: base
+    interfaces: []
+    allowed_tcp_ports: [22]
+  - name: web
+    interfaces: [eth1]
+    allowed_tcp_ports: [80, 443]
 ```
 
 
 Notes
 -----
 
-- **RedHat / additive behaviour**: `ansible.posix.firewalld` adds ports and
-  services but does not remove ones that were previously configured. If you
-  remove a port from `firewall_allowed_tcp_ports`, run `firewall-cmd
-  --remove-port=<port>/tcp --permanent` manually or re-run with an explicit
-  revoke task.
+- **RedHat / additive behaviour**: `ansible.posix.firewalld` adds ports,
+  interfaces, and services but does not remove previously configured ones.
+  To revoke a rule, use `firewall-cmd --remove-port=<port>/tcp --permanent`
+  manually, or extend the role with explicit revoke tasks.
 - **Debian / atomic behaviour**: The nftables ruleset is fully replaced from
-  the template on every run. Removing a port from the list takes effect
-  immediately on the next play.
-- **SSH lockout**: The default `firewall_allowed_tcp_ports: [22]` keeps SSH
-  open. If your `sshd_port` differs from 22, override this list or you will
-  lose access when the firewall applies.
-- **firewalld zones**: The role configures the default zone. If your host has
-  interfaces in multiple zones, manage those zones separately via
-  `ansible.posix.firewalld` in a wrapper playbook.
+  the template on every run. Removing a zone or port takes effect on the next
+  play.
+- **SSH lockout**: The default zone includes port 22. If your `sshd_port`
+  differs from 22, update `firewall_zones` before applying or you will lose
+  SSH access when nftables reloads.
+- **K8s forward chain**: The nftables forward chain defaults to `policy drop`.
+  This will break Kubernetes pod networking, which needs forwarding between
+  the node and CNI interfaces. Either set the forward policy to `accept` in a
+  wrapper or manage K8s nodes with firewalld (RHEL) where masquerade handles
+  this.
 - **nftables on RHEL**: firewalld uses nftables as its backend on RHEL 8+.
-  Do not install a separate nftables ruleset alongside firewalld on RHEL — the
-  two will conflict.
+  Do not deploy a standalone nftables ruleset alongside firewalld on RHEL —
+  the two will conflict.
+- **firewalld zones on RHEL**: Zones must exist in firewalld before interfaces
+  can be assigned to them. The built-in zones (`public`, `internal`, `dmz`,
+  `trusted`, etc.) are always available. Custom zones require additional
+  configuration outside this role.

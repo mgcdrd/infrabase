@@ -1,16 +1,22 @@
 ---
 
-# TCP ports to allow inbound. Applied on both OS families.
-# Default allows SSH only — add every port this host needs explicitly.
-firewall_allowed_tcp_ports:
-  - 22
-
-# UDP ports to allow inbound.
-firewall_allowed_udp_ports: []
-
-# RedHat only — firewalld named services (e.g. ssh, http, https, cockpit).
-# Use alongside or instead of firewall_allowed_tcp_ports on RHEL targets.
-firewall_allowed_services: []
-
-# RedHat only — firewalld zone to configure.
+# RedHat only — firewalld default zone for interfaces not explicitly assigned.
 firewall_default_zone: public
+
+# Zone definitions. Each zone controls which interfaces it applies to and what
+# traffic it permits. On RedHat, name maps to a firewalld zone. On Debian,
+# name is a label only — interface scoping and port rules are applied via nftables.
+#
+# interfaces:         list of interface names to assign to this zone.
+#                     Empty list = no explicit assignment (traffic hits the default zone).
+# allowed_tcp_ports:  TCP ports to allow inbound on this zone's interfaces.
+# allowed_udp_ports:  UDP ports to allow inbound on this zone's interfaces.
+# allowed_services:   firewalld named services (e.g. http, https). RedHat only.
+#
+firewall_zones:
+  - name: public
+    interfaces: []
+    allowed_tcp_ports:
+      - 22
+    allowed_udp_ports: []
+    allowed_services: []

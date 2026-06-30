@@ -9,39 +9,45 @@
   changed_when: "'ALREADY_SET' not in _firewall_zone.stdout"
   when: ansible_facts['os_family'] == 'RedHat'
 
-- name: firewall configure - Allow TCP ports (RedHat)
+- name: firewall configure - Assign interfaces to zones (RedHat)
   ansible.posix.firewalld:
-    port:      "{{ item }}/tcp"
-    zone:      "{{ firewall_default_zone }}"
+    zone:      "{{ item.0.name }}"
+    interface: "{{ item.1 }}"
     state:     enabled
     permanent: true
     immediate: true
-  loop: "{{ firewall_allowed_tcp_ports }}"
+  loop: "{{ firewall_zones | subelements('interfaces', skip_missing=True) }}"
   when: ansible_facts['os_family'] == 'RedHat'
 
-- name: firewall configure - Allow UDP ports (RedHat)
+- name: firewall configure - Allow TCP ports per zone (RedHat)
   ansible.posix.firewalld:
-    port:      "{{ item }}/udp"
-    zone:      "{{ firewall_default_zone }}"
+    zone:      "{{ item.0.name }}"
+    port:      "{{ item.1 }}/tcp"
     state:     enabled
     permanent: true
     immediate: true
-  loop: "{{ firewall_allowed_udp_ports }}"
-  when:
-    - ansible_facts['os_family'] == 'RedHat'
-    - firewall_allowed_udp_ports | length > 0
+  loop: "{{ firewall_zones | subelements('allowed_tcp_ports', skip_missing=True) }}"
+  when: ansible_facts['os_family'] == 'RedHat'
 
-- name: firewall configure - Allow named services (RedHat)
+- name: firewall configure - Allow UDP ports per zone (RedHat)
   ansible.posix.firewalld:
-    service:   "{{ item }}"
-    zone:      "{{ firewall_default_zone }}"
+    zone:      "{{ item.0.name }}"
+    port:      "{{ item.1 }}/udp"
     state:     enabled
     permanent: true
     immediate: true
-  loop: "{{ firewall_allowed_services }}"
-  when:
-    - ansible_facts['os_family'] == 'RedHat'
-    - firewall_allowed_services | length > 0
+  loop: "{{ firewall_zones | subelements('allowed_udp_ports', skip_missing=True) }}"
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: firewall configure - Allow named services per zone (RedHat)
+  ansible.posix.firewalld:
+    zone:      "{{ item.0.name }}"
+    service:   "{{ item.1 }}"
+    state:     enabled
+    permanent: true
+    immediate: true
+  loop: "{{ firewall_zones | subelements('allowed_services', skip_missing=True) }}"
+  when: ansible_facts['os_family'] == 'RedHat'
 
 # --- Debian: nftables ---
 
