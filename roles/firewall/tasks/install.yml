@@ -21,9 +21,8 @@
     enabled: true
   when: ansible_facts['os_family'] == 'RedHat'
 
-- name: firewall install - Enable and start nftables (Debian)
+- name: firewall install - Enable nftables (Debian)
   ansible.builtin.systemd_service:
     name:    nftables
-    state:   started
     enabled: true
   when: ansible_facts['os_family'] == 'Debian'
