@@ -10,6 +10,12 @@
     group: root
     mode:  "0644"
 
+- name: password_policy session - Remove stale TMOUT line from /etc/profile
+  ansible.builtin.lineinfile:
+    path:   /etc/profile
+    regexp: '^TMOUT='
+    state:  absent
+
 - name: password_policy session - Set umask in /etc/profile
   ansible.builtin.blockinfile:
     path:   /etc/profile
