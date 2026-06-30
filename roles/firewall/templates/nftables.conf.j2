@@ -20,29 +20,29 @@ table inet filter {
     ip6 nexthdr  icmpv6 accept
 
 {% for zone in firewall_zones %}
-{%- set ifaces = zone.interfaces | default([]) %}
-{%- set tcp    = zone.allowed_tcp_ports | default([]) %}
-{%- set udp    = zone.allowed_udp_ports | default([]) %}
-{%- if tcp | length > 0 or udp | length > 0 %}
+{% set ifaces = zone.interfaces | default([]) %}
+{% set tcp    = zone.allowed_tcp_ports | default([]) %}
+{% set udp    = zone.allowed_udp_ports | default([]) %}
+{% if tcp | length > 0 or udp | length > 0 %}
     # {{ zone.name }}{% if ifaces | length > 0 %} ({{ ifaces | join(', ') }}){% else %} (all interfaces){% endif %}
 
-{%- if ifaces | length > 0 %}
-{%- if tcp | length > 0 %}
+{% if ifaces | length > 0 %}
+{% if tcp | length > 0 %}
     iifname { {{ ifaces | map('tojson') | join(', ') }} } tcp dport { {{ tcp | join(', ') }} } accept
-{%- endif %}
-{%- if udp | length > 0 %}
-    iifname { {{ ifaces | map('tojson') | join(', ') }} } udp dport { {{ udp | join(', ') }} } accept
-{%- endif %}
-{%- else %}
-{%- if tcp | length > 0 %}
-    tcp dport { {{ tcp | join(', ') }} } accept
-{%- endif %}
-{%- if udp | length > 0 %}
-    udp dport { {{ udp | join(', ') }} } accept
-{%- endif %}
-{%- endif %}
 {% endif %}
-{%- endfor %}
+{% if udp | length > 0 %}
+    iifname { {{ ifaces | map('tojson') | join(', ') }} } udp dport { {{ udp | join(', ') }} } accept
+{% endif %}
+{% else %}
+{% if tcp | length > 0 %}
+    tcp dport { {{ tcp | join(', ') }} } accept
+{% endif %}
+{% if udp | length > 0 %}
+    udp dport { {{ udp | join(', ') }} } accept
+{% endif %}
+{% endif %}
+{% endif %}
+{% endfor %}
   }
 
   chain forward {
