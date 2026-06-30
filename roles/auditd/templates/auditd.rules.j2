@@ -8,18 +8,14 @@
 # ---- Time change (CIS 4.1.3.3) ----
 {% for item in auditd_time_syscalls %}
 -a always,exit -F arch=b32 -S {{ item.name }} -F {{ item.key }}
-{% if ansible_userspace_bits == 64 %}
 -a always,exit -F arch=b64 -S {{ item.name }} -F {{ item.key }}
-{% endif %}
 {% endfor %}
 -a always,exit -F arch=b32 -S stime -F key=time-change
 
 # ---- Network configuration (CIS 4.1.3.4) ----
 {% for item in auditd_network_syscalls %}
 -a always,exit -F arch=b32 -S {{ item }} -F key=system-locale
-{% if ansible_userspace_bits == 64 %}
 -a always,exit -F arch=b64 -S {{ item }} -F key=system-locale
-{% endif %}
 {% endfor %}
 
 # ---- Permission modification (CIS 4.1.3.5) ----
@@ -36,34 +32,26 @@
 {% for item in auditd_file_access %}
 -a always,exit -F arch=b32 -S {{ item }} -F exit=-EACCES -F auid>=1000 -F auid!=unset -F key=access
 -a always,exit -F arch=b32 -S {{ item }} -F exit=-EPERM  -F auid>=1000 -F auid!=unset -F key=access
-{% if ansible_userspace_bits == 64 %}
 -a always,exit -F arch=b64 -S {{ item }} -F exit=-EACCES -F auid>=1000 -F auid!=unset -F key=access
 -a always,exit -F arch=b64 -S {{ item }} -F exit=-EPERM  -F auid>=1000 -F auid!=unset -F key=access
-{% endif %}
 {% endfor %}
 
 # ---- File deletion (CIS 4.1.3.9) ----
 {% for item in auditd_file_delete %}
 -a always,exit -F arch=b32 -S {{ item }} -F auid>=1000 -F auid!=unset -F key=delete
-{% if ansible_userspace_bits == 64 %}
 -a always,exit -F arch=b64 -S {{ item }} -F auid>=1000 -F auid!=unset -F key=delete
-{% endif %}
 {% endfor %}
 
 # ---- Kernel module operations (CIS 4.1.3.15) ----
 {% for item in auditd_kernel_module_syscalls %}
 -a always,exit -F arch=b32 -S {{ item }} -F key=modules
-{% if ansible_userspace_bits == 64 %}
 -a always,exit -F arch=b64 -S {{ item }} -F key=modules
-{% endif %}
 {% endfor %}
 
 # ---- Mount and export (CIS 4.1.3.12/14) ----
 {% for item in auditd_mount_syscalls %}
 -a always,exit -F arch=b32 -S {{ item }} -F auid>=1000 -F auid!=unset -F key=export
-{% if ansible_userspace_bits == 64 %}
 -a always,exit -F arch=b64 -S {{ item }} -F auid>=1000 -F auid!=unset -F key=export
-{% endif %}
 {% endfor %}
 
 # ---- Setuid/setgid execution (CIS 4.1.3.13) ----

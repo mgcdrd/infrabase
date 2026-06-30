@@ -3,6 +3,6 @@
 - name: password_policy pwquality - Configure /etc/security/pwquality.conf
   ansible.builtin.lineinfile:
     path:   /etc/security/pwquality.conf
-    regexp: '^[#\s]*{{ item.key }}\s*[=\s].*'
-    line:   "{{ item.key }} = {{ item.value }}"
+    regexp: '^[#\s]*{{ item.key }}\b.*'
+    line:   "{{ item.key }}{{ ' = ' + item.value if item.value | length > 0 else '' }}"
   loop: "{{ password_policy_pwquality }}"

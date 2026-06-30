@@ -9,8 +9,22 @@
     - { key: deny,        value: "{{ password_policy_faillock_deny }}" }
     - { key: unlock_time, value: "{{ password_policy_faillock_unlock_time }}" }
 
+- name: password_policy faillock - Enable even_deny_root
+  ansible.builtin.lineinfile:
+    path:   /etc/security/faillock.conf
+    regexp: '^#?\s*even_deny_root\b.*'
+    line:   "even_deny_root"
+  when: password_policy_faillock_even_deny_root
+
 - name: password_policy faillock - Configure password history in /etc/security/pwhistory.conf
   ansible.builtin.lineinfile:
     path:   /etc/security/pwhistory.conf
     regexp: '^#?\s*remember\s*=.*'
     line:   "remember = {{ password_policy_remember }}"
+
+- name: password_policy faillock - Enforce pwhistory for root
+  ansible.builtin.lineinfile:
+    path:   /etc/security/pwhistory.conf
+    regexp: '^#?\s*enforce_for_root\b.*'
+    line:   "enforce_for_root"
+  when: password_policy_pwhistory_enforce_root

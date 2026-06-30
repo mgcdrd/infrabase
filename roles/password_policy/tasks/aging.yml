@@ -1,0 +1,20 @@
+---
+
+- name: password_policy aging - Get regular user accounts needing age update
+  ansible.builtin.shell: |
+    awk -F: 'NR==FNR { uid[$1]=$3; next }
+      ($1 in uid) && (uid[$1]+0 >= 1000) && (uid[$1]+0 < 65534) &&
+      ($5 != "{{ password_policy_pass_max_days }}" || $4 != "{{ password_policy_pass_min_days }}")
+      { print $1 }
+    ' /etc/passwd /etc/shadow
+  register: _pp_aging_needed
+  changed_when: false
+
+- name: password_policy aging - Apply max and min password age to existing accounts
+  ansible.builtin.command:
+    cmd: >
+      chage
+      -M {{ password_policy_pass_max_days }}
+      -m {{ password_policy_pass_min_days }}
+      {{ item }}
+  loop: "{{ _pp_aging_needed.stdout_lines }}"

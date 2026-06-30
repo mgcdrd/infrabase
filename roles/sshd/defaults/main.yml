@@ -9,7 +9,7 @@ sshd_address_family: any
 sshd_listen_addresses: []   # empty = listen on all interfaces
 
 # ---- Authentication ----
-sshd_permit_root_login:        "prohibit-password"
+sshd_permit_root_login:        "no"
 sshd_max_auth_tries:           4
 sshd_max_sessions:             10
 sshd_pubkey_authentication:    "yes"
@@ -29,10 +29,13 @@ sshd_deny_groups:  []
 sshd_login_grace_time:     60
 sshd_client_alive_interval: 300
 sshd_client_alive_count_max: 3
-sshd_allow_tcp_forwarding: "no"
-sshd_x11_forwarding:       "no"
-sshd_print_motd:           "no"
-sshd_banner:               ""  # path to banner file, empty = no banner
+sshd_log_level:                      "VERBOSE"
+sshd_allow_tcp_forwarding:           "no"
+sshd_allow_stream_local_forwarding:  "no"
+sshd_x11_forwarding:                 "no"
+sshd_print_motd:                     "no"
+sshd_max_startups:                   "10:30:60"
+sshd_banner:                         ""  # path to banner file, empty = no banner
 
 # ---- Match blocks ----
 # List of conditional match blocks appended at end of sshd_config.

@@ -1,19 +1,23 @@
 ---
 
-- name: password_policy session - Set TMOUT in /etc/profile
-  ansible.builtin.lineinfile:
-    path:   /etc/profile
-    regexp: '^[#\s]*TMOUT\s*[=\s].*'
-    line:   "TMOUT={{ password_policy_tmout }}"
+- name: password_policy session - Deploy TMOUT to /etc/profile.d/tmout.sh
+  ansible.builtin.copy:
+    content: |
+      # Managed by Ansible — do not edit manually
+      declare -xr TMOUT={{ password_policy_tmout }}
+    dest:  /etc/profile.d/tmout.sh
+    owner: root
+    group: root
+    mode:  "0644"
 
 - name: password_policy session - Set umask in /etc/profile
-  ansible.builtin.replace:
-    path:    /etc/profile
-    regexp:  '^(\s+)umask\s+.*$'
-    replace: '\1umask {{ password_policy_umask }}'
+  ansible.builtin.blockinfile:
+    path:   /etc/profile
+    block:  "umask {{ password_policy_umask }}"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - umask"
 
 - name: password_policy session - Set umask in shell rc file
-  ansible.builtin.replace:
-    path:    "{{ '/etc/bash.bashrc' if ansible_facts['os_family'] == 'Debian' else '/etc/bashrc' }}"
-    regexp:  '^(\s+)umask\s+.*$'
-    replace: '\1umask {{ password_policy_umask }}'
+  ansible.builtin.blockinfile:
+    path:   "{{ '/etc/bash.bashrc' if ansible_facts['os_family'] == 'Debian' else '/etc/bashrc' }}"
+    block:  "umask {{ password_policy_umask }}"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - umask"

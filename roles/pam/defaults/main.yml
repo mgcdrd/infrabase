@@ -12,3 +12,7 @@ pam_authselect_features:
   - with-sudo
   - with-faillock
   - with-pwhistory
+
+# Group that pam_wheel uses to gate su access.
+# Left empty by default — no regular users can su; add members explicitly.
+pam_su_group: sugroup

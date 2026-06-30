@@ -1,5 +1,10 @@
 ---
 
+- name: journald main - Install systemd-journal-remote
+  ansible.builtin.package:
+    name:  systemd-journal-remote
+    state: present
+
 - name: journald main - Deploy journald configuration
   ansible.builtin.template:
     src:   journald.conf.j2

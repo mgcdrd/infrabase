@@ -3,3 +3,7 @@
 - name: pam main - Configure PAM stack (RedHat)
   ansible.builtin.import_tasks: authselect.yml
   when: ansible_facts['os_family'] == 'RedHat'
+
+- name: pam main - Configure su access via pam_wheel (RedHat)
+  ansible.builtin.import_tasks: su.yml
+  when: ansible_facts['os_family'] == 'RedHat'

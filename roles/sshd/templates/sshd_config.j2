@@ -11,7 +11,7 @@ ListenAddress {{ addr }}
 
 # ---- Logging ----
 SyslogFacility AUTH
-LogLevel INFO
+LogLevel {{ sshd_log_level }}
 
 # ---- Authentication ----
 LoginGraceTime {{ sshd_login_grace_time }}
@@ -37,7 +37,9 @@ UsePAM {{ sshd_use_pam }}
 
 # ---- Session ----
 AllowTcpForwarding {{ sshd_allow_tcp_forwarding }}
+AllowStreamLocalForwarding {{ sshd_allow_stream_local_forwarding }}
 X11Forwarding {{ sshd_x11_forwarding }}
+MaxStartups {{ sshd_max_startups }}
 PrintMotd {{ sshd_print_motd }}
 ClientAliveInterval {{ sshd_client_alive_interval }}
 ClientAliveCountMax {{ sshd_client_alive_count_max }}
