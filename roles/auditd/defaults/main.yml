@@ -30,20 +30,24 @@ auditd_network_syscalls:
   - setdomainname
 
 # CIS 4.1.3.5 — permission modification
+# Syscalls present on all supported architectures.
 auditd_perm_mod:
-  - chmod
-  - chown
   - fchmod
   - fchmodat
   - fchown
   - fchownat
   - fremovexattr
   - fsetxattr
-  - lchown
   - lremovexattr
   - lsetxattr
   - removexattr
   - setxattr
+
+# x86_64-only: chmod/chown/lchown were removed from the aarch64 syscall table.
+auditd_perm_mod_x86_only:
+  - chmod
+  - chown
+  - lchown
 
 auditd_perm_mod_root:
   - fremovexattr
@@ -54,8 +58,11 @@ auditd_perm_mod_root:
   - setxattr
 
 # CIS 4.1.3.6 — unsuccessful file access
-auditd_file_access:
+# creat is x86_64-only; on aarch64 it was removed (use open with O_CREAT).
+auditd_file_access_x86_only:
   - creat
+
+auditd_file_access:
   - ftruncate
   - open
   - open_by_handle_at

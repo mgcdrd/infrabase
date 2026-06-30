@@ -23,12 +23,26 @@
 -a always,exit -F arch=b32 -S {{ item }} -F auid>=1000 -F auid!=unset -F key=perm_mod
 -a always,exit -F arch=b64 -S {{ item }} -F auid>=1000 -F auid!=unset -F key=perm_mod
 {% endfor %}
+{% if ansible_architecture == 'x86_64' %}
+{% for item in auditd_perm_mod_x86_only %}
+-a always,exit -F arch=b32 -S {{ item }} -F auid>=1000 -F auid!=unset -F key=perm_mod
+-a always,exit -F arch=b64 -S {{ item }} -F auid>=1000 -F auid!=unset -F key=perm_mod
+{% endfor %}
+{% endif %}
 {% for item in auditd_perm_mod_root %}
 -a always,exit -F arch=b32 -S {{ item }} -F auid=0 -F key=perm_mod
 -a always,exit -F arch=b64 -S {{ item }} -F auid=0 -F key=perm_mod
 {% endfor %}
 
 # ---- Unsuccessful file access (CIS 4.1.3.6) ----
+{% if ansible_architecture == 'x86_64' %}
+{% for item in auditd_file_access_x86_only %}
+-a always,exit -F arch=b32 -S {{ item }} -F exit=-EACCES -F auid>=1000 -F auid!=unset -F key=access
+-a always,exit -F arch=b32 -S {{ item }} -F exit=-EPERM  -F auid>=1000 -F auid!=unset -F key=access
+-a always,exit -F arch=b64 -S {{ item }} -F exit=-EACCES -F auid>=1000 -F auid!=unset -F key=access
+-a always,exit -F arch=b64 -S {{ item }} -F exit=-EPERM  -F auid>=1000 -F auid!=unset -F key=access
+{% endfor %}
+{% endif %}
 {% for item in auditd_file_access %}
 -a always,exit -F arch=b32 -S {{ item }} -F exit=-EACCES -F auid>=1000 -F auid!=unset -F key=access
 -a always,exit -F arch=b32 -S {{ item }} -F exit=-EPERM  -F auid>=1000 -F auid!=unset -F key=access
