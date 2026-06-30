@@ -61,10 +61,10 @@ auditd_perm_mod_root:
 # creat is x86_64-only; on aarch64 it was removed (use open with O_CREAT).
 auditd_file_access_x86_only:
   - creat
+  - open
 
 auditd_file_access:
   - ftruncate
-  - open
   - open_by_handle_at
   - openat
   - truncate
