@@ -2,8 +2,8 @@
 
 - name: crypto-policies configure - Deploy CIS policy modules
   ansible.builtin.template:
-    src:   {{ item.src }}
-    dest:  {{ item.dst }}
+    src:   "{{ item.src }}"
+    dest:  "{{ item.dst }}"
     owner: root
     group: root
     mode:  "0640"
@@ -23,8 +23,8 @@
 
 - name: crypto-policies configure - Deploy custom policy modules
   ansible.builtin.template:
-    src:   {{ item.src }}
-    dest:  {{ item.dst }}
+    src:   "{{ item.src }}"
+    dest:  "{{ item.dst }}"
     owner: root
     group: root
     mode:  "0640"
