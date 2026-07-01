@@ -1,0 +1,12 @@
+---
+
+crypto_policies_cis: true
+
+# Additional paths to monitor. Each entry requires 'path' and 'rule' keys.
+# Example:
+#   crypto_policies_additional:
+#     - { file_name: no-temp , target: cipher@SSH , rule_string: '-*-CBC' }
+#     - file_name: no-example
+#       target: mac@SSH
+#       rule_string: '-3DES-CBC -AES-128-CBC -AES-192-CBC -AES-256-CBC -CHACHA20-POLY1305'
+crypto_policies_additional: []

@@ -1,0 +1,8 @@
+---
+
+- name: aide install - Install AIDE
+  ansible.builtin.package:
+    name:
+      - crypto-policies
+      - crypto-policies-scripts
+    state: present

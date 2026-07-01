@@ -1,0 +1,31 @@
+---
+
+- name: crypto-policies configure - Deploy CIS policy modules
+  ansible.builtin.template:
+    src:   {{ item.src }}
+    dest:  {{ item.dst }}
+    owner: root
+    group: root
+    mode:  "0640"
+  when: crypto_policies_cis | bool
+  loop:
+  - src: NO-SSHCBC.pmod.j2
+    dst: /etc/crypto-policies/policies/modules/NO-SSHCBC.pmod
+  - src: NO-SSHWEAKCIPHERS.pmod.j2
+    dst: /etc/crypto-policies/policies/modules/NO-SSHWEAKCIPHERS.pmod
+  - src: NO-SSHWEAKMACS.pmod.j2
+    dst: /etc/crypto-policies/policies/modules/NO-SSHWEAKMACS.pmod
+  - src: NO-WEAKMAC.pmod.j2
+    dst: /etc/crypto-policies/policies/modules/NO-WEAKMAC.pmod
+  - src: NO-RPMSHA1.pmod.j2
+    dst: /etc/crypto-policies/policies/modules/NO-RPMSHA1.pmod
+
+
+- name: crypto-policies configure - Deploy custom policy modules
+  ansible.builtin.template:
+    src:   {{ item.src }}
+    dest:  {{ item.dst }}
+    owner: root
+    group: root
+    mode:  "0640"
+  loop: "{{ crypto_policies_additional if crypto_policies_additional is iterable and crypto_policies_additional is not string else [] }}"
