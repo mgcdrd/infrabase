@@ -91,10 +91,10 @@ FIPSR         = p+i+n+u+g+s+m+c+acl+selinux+xattrs+sha512
 
 # auditing
 !{{ aide_log_dir }}
-/var/log/audit    PERMS
-/etc/audit        CONTENT_EX
+/var/log/audit      PERMS
+/etc/audit          CONTENT_EX
 /etc/libaudit.conf$ CONTENT_EX
-/etc/aide.conf$   CONTENT_EX
+/etc/aide.conf$     CONTENT_EX
 
 # system logs
 /etc/rsyslog.conf$        CONTENT_EX
@@ -142,6 +142,16 @@ FIPSR         = p+i+n+u+g+s+m+c+acl+selinux+xattrs+sha512
 # catch-all for /etc
 !/etc/.*~
 /etc    PERMS
+
+# audit binaries
+/usr/sbin/auditctl   p+i+n+u+g+s+b+acl+xattrs+sha512
+/usr/sbin/auditd     p+i+n+u+g+s+b+acl+xattrs+sha512
+/usr/sbin/ausearch   p+i+n+u+g+s+b+acl+xattrs+sha512
+/usr/sbin/aureport   p+i+n+u+g+s+b+acl+xattrs+sha512
+/usr/sbin/autrace    p+i+n+u+g+s+b+acl+xattrs+sha512
+/usr/sbin/augenrules p+i+n+u+g+s+b+acl+xattrs+sha512
+/usr/sbin/rsyslogd   p+i+n+u+g+s+b+acl+xattrs+sha512
+
 
 # ---- Caller-defined additions ----
 {% for item in aide_extra_paths %}
