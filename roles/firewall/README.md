@@ -173,3 +173,8 @@ Notes
   can be assigned to them. The built-in zones (`public`, `internal`, `dmz`,
   `trusted`, etc.) are always available. Custom zones require additional
   configuration outside this role.
+- **Loopback hardening (RHEL, CIS 3.4.2.6/3.4.2.7)**: `lo` is assigned to the
+  `trusted` zone, and `firewall_default_zone` gets rich rules dropping any
+  packet claiming a `127.0.0.0/8`/`::1` source that didn't actually arrive via
+  `lo` (anti-spoofing). Not needed on Debian — the nftables template already
+  accepts loopback traffic directly.

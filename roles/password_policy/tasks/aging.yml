@@ -18,3 +18,23 @@
       -m {{ password_policy_pass_min_days }}
       {{ item }}
   loop: "{{ _pp_aging_needed.stdout_lines }}"
+
+- name: password_policy aging - Get local accounts with password last-change date in the future
+  # CIS: last-change date (shadow field 3, days since epoch) must not be
+  # later than today — catches clock skew or manually-set shadow entries
+  # from provisioning. IPA/LDAP accounts aren't in /etc/shadow, so this only
+  # ever touches genuinely local accounts.
+  ansible.builtin.shell: |
+    today=$(( $(date +%s) / 86400 ))
+    awk -F: -v today="$today" 'NR==FNR { uid[$1]=$3; next }
+      ($1 in uid) && (uid[$1]+0 >= 1000) && (uid[$1]+0 < 65534) &&
+      ($3 ~ /^[0-9]+$/) && ($3+0 > today)
+      { print $1 }
+    ' /etc/passwd /etc/shadow
+  register: _pp_future_change
+  changed_when: false
+
+- name: password_policy aging - Reset last-change date for accounts set in the future
+  ansible.builtin.command:
+    cmd: "chage -d {{ ansible_date_time.date }} {{ item }}"
+  loop: "{{ _pp_future_change.stdout_lines }}"

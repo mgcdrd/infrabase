@@ -49,6 +49,30 @@
   loop: "{{ firewall_zones | subelements('allowed_services', skip_missing=True) }}"
   when: ansible_facts['os_family'] == 'RedHat'
 
+- name: firewall configure - Assign loopback interface to trusted zone (RedHat)
+  ansible.posix.firewalld:
+    zone:      trusted
+    interface: lo
+    state:     enabled
+    permanent: true
+    immediate: true
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: firewall configure - Drop spoofed loopback-sourced traffic (RedHat)
+  # CIS: reject packets claiming a 127.0.0.0/8 or ::1 source that didn't
+  # actually arrive via lo (lo traffic is handled by the trusted-zone rule
+  # above and never reaches this zone).
+  ansible.posix.firewalld:
+    zone:       "{{ firewall_default_zone }}"
+    rich_rule:  "{{ item }}"
+    state:      enabled
+    permanent:  true
+    immediate:  true
+  loop:
+    - 'rule family="ipv4" source address="127.0.0.0/8" destination not address="127.0.0.0/8" drop'
+    - 'rule family="ipv6" source address="::1" destination not address="::1" drop'
+  when: ansible_facts['os_family'] == 'RedHat'
+
 # --- Debian: nftables ---
 
 - name: firewall configure - Deploy nftables ruleset (Debian)

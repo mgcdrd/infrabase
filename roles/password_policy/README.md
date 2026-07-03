@@ -115,7 +115,15 @@ Notes
   authentication. Configure those via `pam-auth-update` or a site-specific
   PAM role.
 - `login.defs` changes only affect **new** accounts. Existing account aging
-  must be updated with `chage` if required.
+  must be updated with `chage` if required — the role already does this for
+  local accounts (UID 1000–65533): it applies `PASS_MAX_DAYS`/`PASS_MIN_DAYS`
+  and resets any last-change date (shadow field 3) that's set in the future
+  (CIS `accounts_password_last_change_is_in_past`, usually clock skew or a
+  hand-provisioned account). IPA/LDAP accounts aren't in `/etc/shadow` so
+  they're untouched.
+- On RedHat, `/root/.local/bin` and `/root/bin` are created if missing — the
+  stock `/root/.bashrc` prepends them to `PATH` unconditionally, and CIS
+  `root_path_all_dirs` requires every `PATH` entry to be a real directory.
 - `TMOUT=0` disables idle timeout. Set `password_policy_tmout: 0` to skip.
 - The `replace` module is used for `login.defs` and shell rc files — lines that
   do not match the regexp are left unchanged. If your `login.defs` has a

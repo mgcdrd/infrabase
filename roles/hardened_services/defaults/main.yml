@@ -16,3 +16,23 @@ hardened_services_chronyd_user: true
 hardened_services_disable_bluetooth: true
 hardened_services_disable_autofs:    true
 hardened_services_disable_rpcbind:   true
+
+# chmod 0600 /boot/grub2/user.cfg (GRUB password file). RedHat only — no-op
+# if the file doesn't exist (e.g. no GRUB password configured).
+hardened_services_fix_grub_user_cfg: true
+
+# Scan real (non-pseudo) local filesystems for files with no owning user or
+# group and chown them to root:root. CIS: file_permissions_ungroupowned,
+# no_files_unowned_by_user. Off by default — a full filesystem walk is
+# expensive and this can mask genuine orphaned-file problems if left silent;
+# enable per-host once you've reviewed what it would touch.
+hardened_services_fix_unowned_files: false
+
+# Local filesystem types to include in the unowned-file scan above. Excludes
+# network/pseudo filesystems (nfs, tmpfs, proc, sysfs, overlay, ...) so the
+# scan never touches NFS-mounted or container-managed content.
+hardened_services_local_fstypes:
+  - xfs
+  - ext4
+  - ext3
+  - btrfs

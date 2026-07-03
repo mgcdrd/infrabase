@@ -1,0 +1,16 @@
+---
+
+# RHEL/Rocky 9's stock /root/.bashrc prepends $HOME/.local/bin:$HOME/bin to
+# PATH unconditionally, even though neither exists on a fresh install. CIS
+# root_path_all_dirs requires every PATH entry to be a real directory.
+- name: password_policy root_path - Ensure root's PATH entries exist as directories
+  ansible.builtin.file:
+    path:  "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode:  "0700"
+  loop:
+    - /root/.local/bin
+    - /root/bin
+  when: ansible_facts['os_family'] == 'RedHat'

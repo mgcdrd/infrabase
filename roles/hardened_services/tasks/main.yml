@@ -14,3 +14,6 @@
 
 - name: hardened_services main - Disable unused services
   ansible.builtin.import_tasks: services.yml
+
+- name: hardened_services main - Filesystem permission checks
+  ansible.builtin.import_tasks: filesystem.yml

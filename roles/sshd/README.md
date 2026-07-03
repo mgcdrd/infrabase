@@ -42,7 +42,7 @@ Role Variables
 
 | Variable | Default | Description |
 |---|---|---|
-| `sshd_permit_root_login` | `prohibit-password` | Root login policy |
+| `sshd_permit_root_login` | `no` | Root login policy |
 | `sshd_max_auth_tries` | `4` | Max authentication attempts per connection |
 | `sshd_max_sessions` | `10` | Max multiplexed sessions per connection |
 | `sshd_pubkey_authentication` | `yes` | Enable public key auth |
@@ -60,6 +60,10 @@ Role Variables
 | `sshd_deny_users` | `[]` | Blacklist of users |
 | `sshd_deny_groups` | `[]` | Blacklist of groups |
 
+On IPA-enrolled hosts, access control is normally left to IPA HBAC rather
+than `sshd_allow_groups` — see the CIS-Rocky9-ScanFindings wiki page for the
+accepted-risk rationale on `sshd_limit_user_access`.
+
 ### Session
 
 | Variable | Default | Description |
@@ -68,6 +72,7 @@ Role Variables
 | `sshd_client_alive_interval` | `300` | Keepalive interval in seconds |
 | `sshd_client_alive_count_max` | `3` | Keepalives before disconnect |
 | `sshd_allow_tcp_forwarding` | `no` | TCP port forwarding |
+| `sshd_allow_agent_forwarding` | `no` | SSH agent forwarding |
 | `sshd_x11_forwarding` | `no` | X11 forwarding |
 | `sshd_print_motd` | `no` | Print MOTD on login |
 | `sshd_banner` | `""` | Path to banner file; empty = no banner |
@@ -139,5 +144,15 @@ Notes
   present on the host (e.g. no RSA key), the task skips without failing.
 - The `CRYPTO_POLICY` removal task only runs on RedHat family. On Debian this
   file does not exist.
-- The crypto drop-in is written to `00-crypto.conf` so it loads first and can
-  be overridden by higher-numbered drop-ins if needed.
+- The crypto drop-in is written to `00-crypto.conf` so it loads first among
+  drop-ins and can be overridden by higher-numbered ones if needed.
+- `Include /etc/ssh/sshd_config.d/*.conf` is placed at the *end* of the
+  managed config, not the top. `sshd_config` uses first-obtained-value-wins,
+  so this keeps every directive above authoritative even when a drop-in
+  outside Ansible's control (RPM package defaults, `ipa-client-install`,
+  Anaconda) sets the same key. Drop-ins still supply anything this file
+  doesn't set (e.g. IPA's `AuthorizedKeysCommand`).
+- On RedHat family, the Anaconda-generated
+  `/etc/ssh/sshd_config.d/01-permitrootlogin.conf` is removed — it exists
+  only to let root log in during/after kickstart and has no purpose once
+  this role manages the host.

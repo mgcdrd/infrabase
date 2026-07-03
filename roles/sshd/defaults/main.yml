@@ -31,6 +31,7 @@ sshd_client_alive_interval: 300
 sshd_client_alive_count_max: 3
 sshd_log_level:                      "VERBOSE"
 sshd_allow_tcp_forwarding:           "no"
+sshd_allow_agent_forwarding:         "no"
 sshd_allow_stream_local_forwarding:  "no"
 sshd_x11_forwarding:                 "no"
 sshd_print_motd:                     "no"

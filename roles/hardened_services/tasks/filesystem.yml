@@ -1,0 +1,38 @@
+---
+
+- name: hardened_services filesystem - Check for GRUB user.cfg (RedHat)
+  ansible.builtin.stat:
+    path: /boot/grub2/user.cfg
+  register: _hs_grub_user_cfg
+  when:
+    - hardened_services_fix_grub_user_cfg
+    - ansible_facts['os_family'] == 'RedHat'
+
+- name: hardened_services filesystem - Set GRUB user.cfg permissions (RedHat)
+  ansible.builtin.file:
+    path:  /boot/grub2/user.cfg
+    owner: root
+    group: root
+    mode:  "0600"
+  when:
+    - hardened_services_fix_grub_user_cfg
+    - ansible_facts['os_family'] == 'RedHat'
+    - _hs_grub_user_cfg.stat.exists
+
+- name: hardened_services filesystem - Find files with no owning user or group
+  ansible.builtin.shell: |
+    findmnt -rn -o TARGET -t {{ hardened_services_local_fstypes | join(',') }} \
+      | xargs -I{} find {} -xdev \( -nouser -o -nogroup \) 2>/dev/null
+  register: _hs_orphan_files
+  changed_when: false
+  when: hardened_services_fix_unowned_files
+
+- name: hardened_services filesystem - Chown orphaned files to root:root
+  ansible.builtin.file:
+    path:  "{{ item }}"
+    owner: root
+    group: root
+  loop: "{{ _hs_orphan_files.stdout_lines }}"
+  when:
+    - hardened_services_fix_unowned_files
+    - _hs_orphan_files.stdout_lines is defined

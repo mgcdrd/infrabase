@@ -1,6 +1,9 @@
 # Managed by Ansible — do not edit manually
-# Drop-ins in /etc/ssh/sshd_config.d/ are loaded below and can override these settings.
-Include /etc/ssh/sshd_config.d/*.conf
+# Include is placed at the end of this file (see bottom) rather than the top:
+# sshd_config uses first-obtained-value-wins, so drop-ins in
+# /etc/ssh/sshd_config.d/ (RPM defaults, Anaconda, ipa-client-install, etc.)
+# only fill in settings this file doesn't already set — they can't silently
+# override the hardening below.
 
 # ---- Connection ----
 Port {{ sshd_port }}
@@ -37,6 +40,7 @@ UsePAM {{ sshd_use_pam }}
 
 # ---- Session ----
 AllowTcpForwarding {{ sshd_allow_tcp_forwarding }}
+AllowAgentForwarding {{ sshd_allow_agent_forwarding }}
 AllowStreamLocalForwarding {{ sshd_allow_stream_local_forwarding }}
 X11Forwarding {{ sshd_x11_forwarding }}
 MaxStartups {{ sshd_max_startups }}
@@ -73,3 +77,9 @@ Match {{ block.type }} {{ block.targets | join(' ') }}
   {{ opt }}
 {% endfor %}
 {% endfor %}
+
+# ---- Drop-ins ----
+# Placed last so first-obtained-value-wins semantics keep the hardening above
+# authoritative; drop-ins only supply settings not already set (e.g. IPA's
+# AuthorizedKeysCommand, crypto-policies backend Include).
+Include /etc/ssh/sshd_config.d/*.conf

@@ -31,13 +31,18 @@
     - "'rpcbind.service' in ansible_facts.services"
 
 - name: hardened_services services - Disable and mask rpcbind socket
+  # service_facts only enumerates .service units, never .socket units, so
+  # this is gated on rpcbind.service's presence instead — they ship in the
+  # same package. failed_when covers the rare case where only the socket
+  # unit is missing.
   ansible.builtin.systemd_service:
     name:    rpcbind.socket
     enabled: false
     masked:  true
   when:
     - hardened_services_disable_rpcbind
-    - "'rpcbind.socket' in ansible_facts.services"
+    - "'rpcbind.service' in ansible_facts.services"
+  failed_when: false
 
 - name: hardened_services services - Disable and mask nftables (RedHat uses firewalld)
   ansible.builtin.systemd_service:
