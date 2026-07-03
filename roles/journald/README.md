@@ -61,3 +61,8 @@ Notes
   data is preserved — `Storage=persistent` does not clear volatile data.
 - `/var/log/journal/` is created automatically by journald on first restart when
   `Storage=persistent` is set.
+- `systemd-journal-remote` is **not** installed by this role — `ForwardToSyslog`
+  is native to journald and needs no extra package. If something else pulls
+  the package in, `systemd-journal-remote.socket` is masked rather than left
+  merely disabled (CIS `socket_systemd-journal-remote_disabled` — a disabled
+  but unmasked socket can still be started on demand).

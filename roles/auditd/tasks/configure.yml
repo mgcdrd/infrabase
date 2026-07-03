@@ -6,6 +6,27 @@
     state: absent
   notify: auditd reload rules
 
+- name: auditd configure - Determine mount points eligible for privileged command scan
+  # Mirrors the CIS/SSG discovery method: mounts without noexec/nosuid are
+  # where a setuid/setgid binary could actually be executed as such.
+  ansible.builtin.set_fact:
+    _auditd_privileged_mounts: "{{ ansible_facts.mounts
+      | rejectattr('options', 'search', 'noexec|nosuid')
+      | rejectattr('mount', 'match', '^/proc($|/.*$)')
+      | map(attribute='mount') | list }}"
+
+- name: auditd configure - Discover setuid/setgid binaries on eligible mounts
+  ansible.builtin.shell: "find {{ item }} -xdev -perm /6000 -type f 2>/dev/null"
+  loop: "{{ _auditd_privileged_mounts }}"
+  register: _auditd_privileged_found
+  changed_when: false
+
+- name: auditd configure - Build combined privileged commands list
+  ansible.builtin.set_fact:
+    _auditd_privileged_commands: "{{ (_auditd_privileged_found.results
+      | map(attribute='stdout_lines') | flatten
+      + auditd_privileged_commands_extra) | unique | sort }}"
+
 - name: auditd configure - Deploy base audit rules
   ansible.builtin.template:
     src:   auditd.rules.j2

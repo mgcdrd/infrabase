@@ -16,6 +16,21 @@
     regexp: '^TMOUT='
     state:  absent
 
+- name: password_policy session - Rewrite existing inline umask lines
+  # RHEL9's stock /etc/bashrc sets 'umask 022' inside a conditional
+  # ('[ `umask` -eq 0 ] && umask 022') that our blockinfile append below
+  # never touches — CIS's check does a naive text search and trips on that
+  # leftover line even though our appended block also sets the umask.
+  # ansible.builtin.replace rewrites every matching line in place, same as
+  # the CIS/SSG remediation itself.
+  ansible.builtin.replace:
+    path:    "{{ item }}"
+    regexp:  '^([^#]*\b)umask\s+\d+$'
+    replace: '\g<1>umask {{ password_policy_umask }}'
+  loop:
+    - /etc/profile
+    - "{{ '/etc/bash.bashrc' if ansible_facts['os_family'] == 'Debian' else '/etc/bashrc' }}"
+
 - name: password_policy session - Set umask in /etc/profile
   ansible.builtin.blockinfile:
     path:   /etc/profile

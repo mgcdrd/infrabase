@@ -125,6 +125,11 @@ Notes
   stock `/root/.bashrc` prepends them to `PATH` unconditionally, and CIS
   `root_path_all_dirs` requires every `PATH` entry to be a real directory.
 - `TMOUT=0` disables idle timeout. Set `password_policy_tmout: 0` to skip.
+- Before appending the umask block, any existing inline `umask N` line in
+  `/etc/profile` or the shell rc file is rewritten in place. RHEL9 ships a
+  conditional `umask 022` in `/etc/bashrc` that an append-only block never
+  touches — CIS `accounts_umask_etc_bashrc`'s check does a plain text search
+  and trips on that leftover regardless of what the appended block sets.
 - The `replace` module is used for `login.defs` and shell rc files — lines that
   do not match the regexp are left unchanged. If your `login.defs` has a
   non-standard format, verify with `ansible --check` first.

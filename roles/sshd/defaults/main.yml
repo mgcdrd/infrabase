@@ -28,7 +28,7 @@ sshd_deny_groups:  []
 # ---- Session behaviour ----
 sshd_login_grace_time:     60
 sshd_client_alive_interval: 300
-sshd_client_alive_count_max: 3
+sshd_client_alive_count_max: 1  # CIS profile requires 1, not the more common 3
 sshd_log_level:                      "VERBOSE"
 sshd_allow_tcp_forwarding:           "no"
 sshd_allow_agent_forwarding:         "no"
@@ -48,6 +48,16 @@ sshd_banner:                         ""  # path to banner file, empty = no banne
 #       options:
 #         - AuthenticationMethods publickey
 sshd_match_blocks: []
+
+# ---- Drop-in scrubbing ----
+# CIS's automated check for these settings does a naive text search across
+# sshd_config.d/*.conf rather than resolving effective (first-match-wins)
+# values — a drop-in we don't own (RPM package defaults, ipa-client-install)
+# can still trip the check even though it has no runtime effect. Directives
+# listed here are stripped from every *.conf file in sshd_config.d except
+# our own, on every run.
+sshd_scrub_directives:
+  - GSSAPIAuthentication
 
 # ---- Crypto (written to sshd_config.d/00-crypto.conf) ----
 sshd_ciphers: >-

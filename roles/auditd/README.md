@@ -53,9 +53,21 @@ to add or remove entries.
 | `auditd_kernel_module_syscalls` | Syscalls audited for module load/unload |
 | `auditd_mount_syscalls` | Syscalls audited for mount/export |
 | `auditd_time_syscalls` | Syscalls audited for time changes (list of `{name, key}`) |
-| `auditd_privileged_exec` | Paths audited with `perm=x` |
-| `auditd_privileged_access` | Paths audited for privileged access (no perm filter) |
+| `auditd_privileged_commands_extra` | Extra paths unioned into the discovered setuid/setgid binary list |
 | `auditd_watches` | File/dir watchpoints (`-w`), list of `{file, perm, key}` |
+
+Network config and kernel module syscall rules include `-F auid>=1000 -F
+auid!=unset` — CIS's automated check requires the filter to be present, not
+just the syscall.
+
+### Privileged commands (CIS 4.1.3.13)
+
+Rather than a static path list (which drifts as packages change), `configure.yml`
+discovers setuid/setgid binaries at play time: it rejects mounts with
+`noexec`/`nosuid` (nothing there can execute as setuid anyway) and `/proc`,
+then runs `find <mount> -xdev -perm /6000 -type f` on what's left. The result
+is unioned with `auditd_privileged_commands_extra` and deduplicated. This
+mirrors the CIS/SSG remediation's own discovery method exactly.
 
 
 Dependencies

@@ -70,12 +70,32 @@ accepted-risk rationale on `sshd_limit_user_access`.
 |---|---|---|
 | `sshd_login_grace_time` | `60` | Seconds to complete auth before disconnect |
 | `sshd_client_alive_interval` | `300` | Keepalive interval in seconds |
-| `sshd_client_alive_count_max` | `3` | Keepalives before disconnect |
+| `sshd_client_alive_count_max` | `1` | Keepalives before disconnect — CIS requires exactly `1`, not the more common `3` |
 | `sshd_allow_tcp_forwarding` | `no` | TCP port forwarding |
 | `sshd_allow_agent_forwarding` | `no` | SSH agent forwarding |
 | `sshd_x11_forwarding` | `no` | X11 forwarding |
 | `sshd_print_motd` | `no` | Print MOTD on login |
 | `sshd_banner` | `""` | Path to banner file; empty = no banner |
+
+When `sshd_allow_tcp_forwarding`, `sshd_allow_agent_forwarding`,
+`sshd_allow_stream_local_forwarding`, and `sshd_x11_forwarding` are all `no`,
+the template also emits the consolidated `DisableForwarding yes` — CIS's
+automated check looks for that literal directive, not the granular ones. Set
+any one of the granular vars to `yes` and `DisableForwarding` is dropped
+automatically (it would otherwise override them).
+
+### Drop-in scrubbing
+
+| Variable | Default | Description |
+|---|---|---|
+| `sshd_scrub_directives` | `[GSSAPIAuthentication]` | Directive names stripped from every `sshd_config.d/*.conf` file this role doesn't manage |
+
+CIS's automated check for some `sshd` settings does a naive text search
+across `sshd_config.d/*.conf` rather than resolving effective
+(first-obtained-value-wins) config — a drop-in this role doesn't own (RPM
+package defaults, `ipa-client-install`) can still trip the check even though
+it has no runtime effect. Add a directive name here if a future CIS finding
+turns out to be the same class of false positive.
 
 ### Match blocks
 

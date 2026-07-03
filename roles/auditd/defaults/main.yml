@@ -95,26 +95,13 @@ auditd_kernel_module_syscalls:
 auditd_mount_syscalls:
   - mount
 
-# CIS 4.1.3.13 — privileged execution (setuid/setgid binaries, perm=x)
-auditd_privileged_exec:
-  - /usr/bin/chacl
-  - /usr/bin/chcon
-  - /usr/bin/setfacl
-  - /usr/bin/kmod
-  - /usr/sbin/usermod
-
-# Privileged access (no perm filter — watched for any access)
-auditd_privileged_access:
-  - /usr/bin/chage
-  - /usr/bin/chsh
-  - /usr/bin/crontab
-  - /usr/bin/gpasswd
-  - /usr/bin/mount
-  - /usr/bin/newgrp
-  - /usr/bin/passwd
-  - /usr/bin/su
-  - /usr/bin/sudo
-  - /usr/bin/umount
+# CIS 4.1.3.13 — privileged commands (setuid/setgid binaries, perm=x)
+# The actual path list is discovered at play time (configure.yml) by
+# scanning mounts without noexec/nosuid for -perm /6000 files, matching
+# CIS/SSG's own discovery method — a static list drifts as packages change.
+# Anything listed here is unioned into that discovered list, for paths you
+# want audited even if they aren't currently setuid/setgid on this host.
+auditd_privileged_commands_extra: []
 
 # CIS 4.1.3.2, 4.1.3.4, 4.1.3.7, 4.1.3.10, 4.1.3.11, 4.1.3.16 — watchpoints
 auditd_watches:
@@ -153,12 +140,15 @@ auditd_watches:
   - { file: /usr/bin/kmod,          perm: x,  key: modules }
 
 # Red Hat-only watch paths (faillock, sysconfig, SELinux, NetworkManager)
+# No trailing slash on directory paths — CIS's automated check does a literal
+# text match against the rule line and the reference form has none.
 auditd_watches_redhat:
-  - { file: /var/run/faillock,               perm: wa, key: logins }
-  - { file: /etc/sysconfig/network-scripts/, perm: wa, key: system-locale }
-  - { file: /etc/NetworkManager/,            perm: wa, key: system-locale }
-  - { file: /etc/selinux/,                   perm: wa, key: MAC-policy }
-  - { file: /usr/share/selinux/,             perm: wa, key: MAC-policy }
+  - { file: /var/run/faillock,              perm: wa, key: logins }
+  - { file: /etc/sysconfig/network,         perm: wa, key: system-locale }
+  - { file: /etc/sysconfig/network-scripts, perm: wa, key: system-locale }
+  - { file: /etc/NetworkManager,            perm: wa, key: system-locale }
+  - { file: /etc/selinux,                   perm: wa, key: MAC-policy }
+  - { file: /usr/share/selinux,             perm: wa, key: MAC-policy }
 
 # Debian-only watch paths (AppArmor)
 auditd_watches_debian:

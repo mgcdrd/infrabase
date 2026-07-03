@@ -1,9 +1,23 @@
 ---
 
-- name: journald main - Install systemd-journal-remote
-  ansible.builtin.package:
-    name:  systemd-journal-remote
-    state: present
+- name: journald main - Check for systemd-journal-remote.socket
+  # Not installed by this role — ForwardToSyslog below needs no extra
+  # package, it's native to journald. If something else pulls in
+  # systemd-journal-remote, mask its socket rather than leave it merely
+  # disabled (CIS socket_systemd-journal-remote_disabled).
+  ansible.builtin.systemd_service:
+    name: systemd-journal-remote.socket
+  register: _journald_remote_socket
+  failed_when: false
+  changed_when: false
+
+- name: journald main - Mask systemd-journal-remote.socket if present
+  ansible.builtin.systemd_service:
+    name:    systemd-journal-remote.socket
+    state:   stopped
+    enabled: false
+    masked:  true
+  when: _journald_remote_socket.status is defined
 
 - name: journald main - Deploy journald configuration
   ansible.builtin.template:

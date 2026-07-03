@@ -58,18 +58,34 @@
     immediate: true
   when: ansible_facts['os_family'] == 'RedHat'
 
-- name: firewall configure - Drop spoofed loopback-sourced traffic (RedHat)
-  # CIS: reject packets claiming a 127.0.0.0/8 or ::1 source that didn't
-  # actually arrive via lo (lo traffic is handled by the trusted-zone rule
-  # above and never reaches this zone).
+- name: firewall configure - Remove superseded loopback rich rules (RedHat)
+  # An earlier version of this role placed these in firewall_default_zone
+  # using the 127.0.0.0/8 network. CIS's own remediation puts them in the
+  # trusted zone against the single address 127.0.0.1 — clean up the old
+  # ones so they don't linger (firewalld is additive; wrong rules don't
+  # self-remove when the task below changes).
   ansible.posix.firewalld:
     zone:       "{{ firewall_default_zone }}"
+    rich_rule:  "{{ item }}"
+    state:      disabled
+    permanent:  true
+    immediate:  true
+  loop:
+    - 'rule family="ipv4" source address="127.0.0.0/8" destination not address="127.0.0.0/8" drop'
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: firewall configure - Drop spoofed loopback-sourced traffic (RedHat)
+  # CIS: reject packets claiming a 127.0.0.1 or ::1 source on the trusted
+  # zone — genuine loopback traffic arrives via lo (already trusted above),
+  # so anything hitting this rule is spoofed.
+  ansible.posix.firewalld:
+    zone:       trusted
     rich_rule:  "{{ item }}"
     state:      enabled
     permanent:  true
     immediate:  true
   loop:
-    - 'rule family="ipv4" source address="127.0.0.0/8" destination not address="127.0.0.0/8" drop'
+    - 'rule family="ipv4" source address="127.0.0.1" destination not address="127.0.0.1" drop'
     - 'rule family="ipv6" source address="::1" destination not address="::1" drop'
   when: ansible_facts['os_family'] == 'RedHat'
 
