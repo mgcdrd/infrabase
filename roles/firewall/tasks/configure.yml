@@ -72,6 +72,7 @@
     immediate:  true
   loop:
     - 'rule family="ipv4" source address="127.0.0.0/8" destination not address="127.0.0.0/8" drop'
+    - 'rule family="ipv6" source address="::1" destination not address="::1" drop'
   when: ansible_facts['os_family'] == 'RedHat'
 
 - name: firewall configure - Drop spoofed loopback-sourced traffic (RedHat)
