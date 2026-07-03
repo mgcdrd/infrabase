@@ -69,6 +69,13 @@ then runs `find <mount> -xdev -perm /6000 -type f` on what's left. The result
 is unioned with `auditd_privileged_commands_extra` and deduplicated. This
 mirrors the CIS/SSG remediation's own discovery method exactly.
 
+`auditd_privileged_commands_extra` defaults to `chacl`, `setfacl`, `chcon`,
+`kmod`, `usermod` — these five have their own dedicated CIS rules
+(`audit_rules_execution_*`, `audit_rules_privileged_commands_kmod`/`_usermod`)
+that require the audit rule unconditionally, regardless of whether the binary
+is actually setuid/setgid on this particular host. Discovery alone isn't
+enough for these five.
+
 
 Dependencies
 ------------
