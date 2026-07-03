@@ -29,12 +29,13 @@ List of mount points to configure. Each entry requires:
 |-----|----------|-------------|
 | `path` | yes | Mount point path |
 | `opts` | yes | Mount options string |
-| `src` | no | Device or source (e.g. `none` for tmpfs) |
-| `fstype` | no | Filesystem type (e.g. `tmpfs`) |
+| `src` | yes | Device or source (e.g. `none` for tmpfs) |
+| `fstype` | yes | Filesystem type (e.g. `tmpfs`, `xfs`) |
 
-`src` and `fstype` are passed through only when the entry does not already
-exist in `/etc/fstab`. When updating an existing fstab entry, only `opts` is
-changed.
+`ansible.posix.mount` with `state: mounted` requires `src` and `fstype` on
+every call, even when the entry already exists in `/etc/fstab` — it doesn't
+read the existing entry to infer them. Check `findmnt -no SOURCE,FSTYPE
+<path>` on the target host for the values to use.
 
 Default:
 
@@ -79,6 +80,8 @@ Additional mounts (e.g. /tmp on its own partition):
             fstype: tmpfs
             opts:   nodev,noexec,nosuid
           - path:   /tmp
+            src:    /dev/mapper/vg-lv_tmp
+            fstype: xfs
             opts:   nodev,noexec,nosuid
 ```
 
@@ -88,7 +91,5 @@ Notes
 
 - `state: mounted` remounts with the new options immediately and writes to
   `/etc/fstab`. The mount persists across reboots.
-- If `/tmp` is bind-mounted from another partition, include the full fstab
-  entry (`src`, `fstype`) to avoid a mount failure.
 - Do not add `noexec` to `/var` or `/usr` — package managers and scripts
   require execute permission there.
