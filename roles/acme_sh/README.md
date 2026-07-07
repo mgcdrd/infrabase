@@ -95,8 +95,18 @@ acme_sh_certs:
     webroot_path: ""         # required for webroot challenge only
     reload_cmd: ""           # shell command run after cert install/renew
                              # e.g. "systemctl reload nginx"
+    keylength: "2048"        # per-cert override of acme_sh_keylength
+    complete_chain: false    # see "Complete chain" below
     state: present           # present (default) | absent
 ```
+
+### Key type
+
+`acme_sh_keylength` (default `"2048"`) is passed to `acme.sh --issue
+--keylength`. RSA keeps the cert on the Let's Encrypt RSA chain, which
+`complete-le-chain.sh` can root with ISRG Root X1. Set `""` for acme.sh's
+default (ec-256) or `ec-384` etc. for ECC — note ECC certs live in a
+separate acme.sh config dir (`<domain>_ecc`).
 
 Issued certs are deployed to `{{ acme_sh_cert_base_dir }}/{{ primary_domain }}/`:
 
@@ -104,12 +114,24 @@ Issued certs are deployed to `{{ acme_sh_cert_base_dir }}/{{ primary_domain }}/`
 |------|----------|
 | `cert.pem`      | Domain certificate |
 | `key.pem`       | Private key |
-| `fullchain.pem` | Cert + intermediates (use this in most configs) |
-| `ca.pem`        | Intermediate CA chain |
+| `fullchain.pem` | Cert + intermediates (not deployed with `complete_chain`) |
+| `ca.pem`        | Intermediate CA chain, or the complete rooted chain with `complete_chain` |
+
+### Complete chain
+
+With `complete_chain: true`, `ca.pem` receives the full chain instead of
+just the intermediates, and `/usr/local/sbin/complete-le-chain.sh` (deployed
+by this role) appends the fingerprint-pinned ISRG Root X1 and validates the
+result. No `fullchain.pem` is deployed. Use this for consumers that must
+validate the chain to a self-contained root (e.g. `katello-certs-check`).
+Renewal hooks should re-run
+`complete-le-chain.sh -f <dir>/ca.pem -l <dir>/cert.pem` as their first step
+since acme.sh re-copies the un-rooted chain on every renewal.
 
 acme.sh installs its own cron job for auto-renewal during the initial install.
-The `reload_cmd` is re-registered with acme.sh on each run and will be called
-automatically on every successful renewal.
+The `reload_cmd` is registered with `--install-cert` after a new issue, or on
+any run where the cert exists but was never registered (e.g. issued manually)
+— so renewals always propagate files and fire the hook.
 
 
 Example Playbook

@@ -32,6 +32,14 @@ acme_sh_eab_enabled:  false
 acme_sh_eab_kid:      ""
 acme_sh_eab_hmac_key: ""
 
+# ---- KEY TYPE ----
+
+# Key length passed to acme.sh --issue. RSA (2048 or higher) keeps the
+# certificate on the Let's Encrypt RSA chain, which complete-le-chain.sh
+# can root with ISRG Root X1. Set "" to fall back to acme.sh's default
+# (ec-256), or e.g. ec-384 for an ECC cert. Per-cert override: keylength.
+acme_sh_keylength: "2048"
+
 # ---- CERTIFICATES ----
 
 # acme_sh_certs:
@@ -41,5 +49,11 @@ acme_sh_eab_hmac_key: ""
 #     challenge: dns_cf       # dns_cf | standalone | webroot | nginx | apache
 #     webroot_path: ""        # webroot challenge only
 #     reload_cmd: ""          # e.g. "systemctl reload nginx"
+#     keylength: "2048"       # per-cert override of acme_sh_keylength
+#     complete_chain: false   # true: ca.pem = full chain rooted with ISRG
+#                             # Root X1 (via complete-le-chain.sh) and no
+#                             # fullchain.pem is deployed. Needed by
+#                             # consumers that validate the chain to a
+#                             # self-contained root (e.g. katello-certs).
 #     state: present          # present (default) | absent
 acme_sh_certs: []

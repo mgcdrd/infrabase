@@ -89,6 +89,7 @@
       {% elif _cert.challenge == 'nginx' %}--nginx
       {% elif _cert.challenge == 'apache' %}--apache
       {% endif %}
+      {% if _cert.keylength | default(acme_sh_keylength) | length > 0 %}--keylength {{ _cert.keylength | default(acme_sh_keylength) }}{% endif %}
       {% if acme_sh_staging | bool %}--staging{% endif %}
     chdir: /root/.acme.sh
   environment: "{{ _acme_env }}"
@@ -127,20 +128,58 @@
     - _acme_state == 'present'
     - _acme_issue.rc not in [0, 2]
 
+# A cert can exist without an --install-cert registration (issued manually,
+# or issue returned rc=2 on a fresh host) — in that state renewals would
+# never propagate to the deploy dir or run the reloadcmd. Detect it so the
+# deploy task below can register.
+- name: "acme_sh cert - Check install registration for {{ _acme_primary }}"
+  become: true
+  ansible.builtin.shell:
+    cmd: >-
+      grep -q '^Le_RealCertPath=.\{3,\}'
+      "/root/.acme.sh/{{ _acme_primary }}{{ '_ecc' if (_cert.keylength | default(acme_sh_keylength)).startswith('ec-') else '' }}/{{ _acme_primary }}.conf"
+  register: _acme_registered
+  changed_when: false
+  failed_when: false
+  when: _acme_state == 'present'
+
+# With complete_chain, ca.pem receives the full chain (fullchain + ISRG
+# Root X1 appended below) and no separate fullchain.pem is deployed —
+# consumers like katello-certs validate ca.pem to a self-contained root.
 - name: "acme_sh cert - Deploy cert files for {{ _acme_primary }}"
   become: true
   ansible.builtin.shell:
     cmd: >-
       /root/.acme.sh/acme.sh --install-cert -d {{ _acme_primary }}
+      {% if (_cert.keylength | default(acme_sh_keylength)).startswith('ec-') %}--ecc{% endif %}
       --cert-file      {{ _acme_cert_dir }}/cert.pem
       --key-file       {{ _acme_cert_dir }}/key.pem
+      {% if _cert.complete_chain | default(false) | bool %}
+      --fullchain-file {{ _acme_cert_dir }}/ca.pem
+      {% else %}
       --fullchain-file {{ _acme_cert_dir }}/fullchain.pem
       --ca-file        {{ _acme_cert_dir }}/ca.pem
+      {% endif %}
       {% if _cert.reload_cmd | default('') | length > 0 %}
       --reloadcmd '{{ _cert.reload_cmd }}'
       {% endif %}
     chdir: /root/.acme.sh
   when:
     - _acme_state == 'present'
-    - _acme_issue.rc == 0
+    - _acme_issue.rc == 0 or _acme_registered.rc != 0
+  changed_when: true
+
+- name: "acme_sh cert - Root the deployed chain for {{ _acme_primary }}"
+  become: true
+  ansible.builtin.command:
+    argv:
+      - /usr/local/sbin/complete-le-chain.sh
+      - -f
+      - "{{ _acme_cert_dir }}/ca.pem"
+      - -l
+      - "{{ _acme_cert_dir }}/cert.pem"
+  when:
+    - _acme_state == 'present'
+    - _acme_issue.rc == 0 or _acme_registered.rc != 0
+    - _cert.complete_chain | default(false) | bool
   changed_when: true

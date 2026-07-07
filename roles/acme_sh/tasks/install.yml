@@ -52,3 +52,15 @@
     owner: root
     group: root
     mode: "0750"
+
+# Roots a Let's Encrypt fullchain with ISRG Root X1 (fingerprint-pinned)
+# and validates it. Used by certs with complete_chain: true and available
+# to renewal hooks.
+- name: acme_sh install - Deploy complete-le-chain.sh
+  become: true
+  ansible.builtin.copy:
+    src: complete-le-chain.sh
+    dest: /usr/local/sbin/complete-le-chain.sh
+    owner: root
+    group: root
+    mode: "0700"
