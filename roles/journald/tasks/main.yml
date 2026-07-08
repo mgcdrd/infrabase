@@ -11,13 +11,23 @@
   failed_when: false
   changed_when: false
 
+# status.LoadState is "not-found" when the unit genuinely doesn't exist —
+# "status is defined" is nearly always true regardless, so it isn't a
+# meaningful gate. failed_when: false mirrors the check above: masking is
+# opportunistic CIS hardening, not something that should fail the whole
+# play on a transient systemd/dbus hiccup right after other unit changes.
 - name: journald main - Mask systemd-journal-remote.socket if present
   ansible.builtin.systemd_service:
     name:    systemd-journal-remote.socket
     state:   stopped
     enabled: false
     masked:  true
-  when: _journald_remote_socket.status is defined
+  when: _journald_remote_socket.status.LoadState | default('not-found') != 'not-found'
+  register: _journald_remote_socket_mask
+  retries: 2
+  delay: 3
+  until: _journald_remote_socket_mask is not failed
+  failed_when: false
 
 - name: journald main - Deploy journald configuration
   ansible.builtin.template:
