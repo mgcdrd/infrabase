@@ -1,0 +1,54 @@
+---
+
+- name: ssl_scripting config - Creating base directory
+  ansible.builtin.file:
+    path:  "{{ ssl_scripting.base_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode:  "0750"
+
+- name: ssl_scripting config - Pushing make_new_ssl.sh template
+  ansible.builtin.template:
+    src:   make_new_ssl.sh.j2
+    dest:  "{{ ssl_scripting.base_dir }}/make_new_ssl.sh"
+    owner: root
+    group: root
+    mode:  "0750"
+
+- name: ssl_scripting config - Checking for presence of dummy key
+  ansible.builtin.stat:
+    path: "{{ ssl_scripting.base_dir }}/ssl-dummy.key"
+  register: ssl_scripting_dummy_key
+
+- name: ssl_scripting config - Checking for presence of dummy crt
+  ansible.builtin.stat:
+    path: "{{ ssl_scripting.base_dir }}/ssl-dummy.crt"
+  register: ssl_scripting_dummy_crt
+
+- name: ssl_scripting config - Checking for dhparam.pem
+  ansible.builtin.stat:
+    path: "{{ ssl_scripting.base_dir }}/dhparam.pem"
+  register: ssl_scripting_dhparam
+
+- name: ssl_scripting config - Create dummy key
+  ansible.builtin.command:
+    cmd: "{{ ssl_scripting.base_dir }}/make_new_ssl.sh ssl-dummy"
+  when: not ssl_scripting_dummy_key.stat.exists
+  changed_when: true
+
+- name: ssl_scripting config - Create dummy crt
+  ansible.builtin.command:
+    cmd: >-
+      openssl x509 -req -days 365
+      -in {{ ssl_scripting.base_dir }}/extras/ssl-dummy.csr
+      -signkey {{ ssl_scripting.base_dir }}/ssl-dummy.key
+      -out {{ ssl_scripting.base_dir }}/ssl-dummy.crt
+  when: not ssl_scripting_dummy_crt.stat.exists
+  changed_when: true
+
+- name: ssl_scripting config - Create dhparam
+  ansible.builtin.command:
+    cmd: "openssl dhparam -out {{ ssl_scripting.base_dir }}/dhparam.pem {{ ssl_scripting.def_bits }}"
+  when: not ssl_scripting_dhparam.stat.exists
+  changed_when: true

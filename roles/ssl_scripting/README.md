@@ -16,9 +16,8 @@ Tested on: Debian 12/13, Rocky Linux 9/10
 Requirements
 ------------
 
-`become: true` is required. `gather_facts` is not required.
-
-`openssl` must be installed on the target host.
+`become: true` and `gather_facts: true` are required (OS-family detection
+for the `openssl` package install).
 
 
 Role Variables
