@@ -1,0 +1,83 @@
+---
+# ---- ProxMox API connection ----
+# proxmox_vm_api_host must be set by the caller (any PVE node or the cluster VIP).
+#
+# Two auth methods are supported — set one pair, leave the other unset:
+#   - API token (recommended): proxmox_vm_api_token_id + proxmox_vm_api_token_secret
+#   - Password:                 proxmox_vm_api_user (default root@pam) + proxmox_vm_api_password
+# Unset vault_* variables resolve to `omit` so only the method you configure
+# is sent to the module.
+proxmox_vm_api_host:          ""
+proxmox_vm_api_user:          "root@pam"
+proxmox_vm_api_password:      "{{ vault_proxmox_api_password | default(omit) }}"
+proxmox_vm_api_token_id:      "{{ vault_proxmox_api_token_id | default(omit) }}"
+proxmox_vm_api_token_secret:  "{{ vault_proxmox_api_token_secret | default(omit) }}"
+proxmox_vm_validate_certs:    false
+
+# ---- EXECUTION GATES ----
+# Each section is independently re-runnable via its gate + tag, so you can
+# e.g. clone a batch of VMs today and tear one down next week without
+# re-running the rest.
+proxmox_vm_do_info:      false   # tag: info
+proxmox_vm_do_clone:     false   # tag: clone
+proxmox_vm_do_lifecycle: false   # tag: lifecycle
+proxmox_vm_do_template:  false   # tag: template
+
+# ==============================================================
+# info — cluster/node/storage facts (read-only)
+# ==============================================================
+# No variables required. Sets facts:
+#   proxmox_vm_cluster_status  (community.proxmox.proxmox_cluster_status_info)
+#   proxmox_vm_node_facts      (community.proxmox.proxmox_node_info)
+#   proxmox_vm_storage_facts   (community.proxmox.proxmox_storage_info)
+
+# ==============================================================
+# clone — create a new VM from an existing template/VM
+# ==============================================================
+proxmox_vm_clone_source: ""       # name of the template/VM to clone
+proxmox_vm_name:         ""       # name for the new VM
+proxmox_vm_node:         ""       # PVE node to place the clone on
+proxmox_vm_newid:        ""       # explicit target VMID — "" lets PVE assign the next free one
+proxmox_vm_full_clone:   true     # true = full clone, false = linked clone (template source only)
+proxmox_vm_storage:      ""       # target storage for a full clone
+proxmox_vm_format:       "qcow2"  # qcow2 | raw | vmdk — full clone only
+proxmox_vm_clone_timeout: 600
+
+# Config applied in a follow-up update after the clone completes — PVE's
+# clone operation only copies the disk, it does not accept these inline.
+proxmox_vm_cores:   2
+proxmox_vm_sockets:  1
+proxmox_vm_memory:   2048
+proxmox_vm_net0:     "virtio,bridge=vmbr0"
+proxmox_vm_agent:    true
+proxmox_vm_onboot:   true
+proxmox_vm_tags:     []
+# proxmox_kvm blocks net/virtio/ide/sata/scsi changes on update by default
+# (they can change a MAC address or create a fresh disk). We need net0 to
+# apply, so this defaults to true — set false if you'd rather leave net0 as
+# whatever the source template already has.
+proxmox_vm_update_unsafe: true
+
+# Cloud-init (leave blank to skip cloud-init configuration entirely)
+proxmox_vm_ipconfig0:     ""   # e.g. "ip=dhcp" or "ip=10.10.10.50/24,gw=10.10.10.1"
+proxmox_vm_ciuser:        ""
+proxmox_vm_cipassword:    "{{ vault_proxmox_vm_cipassword | default(omit) }}"
+proxmox_vm_sshkeys:       ""   # public key content, not a path
+proxmox_vm_nameservers:   []
+proxmox_vm_searchdomains: []
+
+proxmox_vm_start_after_clone: true
+
+# ==============================================================
+# lifecycle — start / stop / destroy an existing VM (looked up by name)
+# ==============================================================
+proxmox_vm_target_name: ""        # VM name to discover via proxmox_vm_info
+proxmox_vm_lifecycle_state: ""    # started | stopped | absent
+proxmox_vm_force_stop: false      # true = power off instead of graceful shutdown
+proxmox_vm_destroy_unreferenced_disks: true   # absent only
+proxmox_vm_lifecycle_timeout: 300
+
+# ==============================================================
+# template — convert an existing (stopped) VM into a reusable template
+# ==============================================================
+proxmox_vm_template_source_name: ""   # VM name to convert, looked up via proxmox_vm_info

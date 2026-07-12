@@ -1,0 +1,20 @@
+---
+- name: proxmox_vm - gather cluster/node/storage info
+  ansible.builtin.include_tasks: info.yml
+  when: proxmox_vm_do_info | bool
+  tags: [proxmox_vm, info]
+
+- name: proxmox_vm - clone VM from template
+  ansible.builtin.include_tasks: clone.yml
+  when: proxmox_vm_do_clone | bool
+  tags: [proxmox_vm, clone]
+
+- name: proxmox_vm - start/stop/destroy VM
+  ansible.builtin.include_tasks: lifecycle.yml
+  when: proxmox_vm_do_lifecycle | bool
+  tags: [proxmox_vm, lifecycle]
+
+- name: proxmox_vm - convert VM to template
+  ansible.builtin.include_tasks: to_template.yml
+  when: proxmox_vm_do_template | bool
+  tags: [proxmox_vm, template]

@@ -26,6 +26,8 @@ This collection contains common infrastructure roles used to standardize and aut
 | `lvm2_provision` | Provisions LVM storage at setup time — creates VGs, LVs, filesystems, and mounts |
 | `podman` | Installs Podman container runtime |
 | `postfix` | Installs and configures Postfix MTA |
+| `proxmox_disk` | Adds or resizes a disk on a ProxMox VM via the PVE API, then detects the resulting block device inside the VM |
+| `proxmox_vm` | Clones, lifecycle-manages, and templates VMs via the ProxMox API; queries cluster/node/storage info |
 | `sshd` | Installs and configures sshd with hardened defaults; crypto policy managed via `sshd_config.d/` drop-in |
 | `ssl_scripting` | Deploys SSL certificate scripting utilities |
 | `sudoers` | Hardens `/etc/sudoers` — enforces `timestamp_timeout` and configures a sudo log file |

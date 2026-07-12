@@ -1,0 +1,28 @@
+---
+# Converts an existing VM into a PVE template (a golden image other clone.yml
+# runs can source from). The VM should be stopped and generalized (cloud-init
+# installed, machine-id cleared, etc.) before running this — the module does
+# not do any in-guest cleanup.
+
+- name: to_template - fail if required variable is unset
+  ansible.builtin.fail:
+    msg: "proxmox_vm_template_source_name is required."
+  when: not proxmox_vm_template_source_name
+
+- name: to_template - discover source VM
+  ansible.builtin.include_tasks: discover.yml
+  vars:
+    proxmox_vm_discover_name: "{{ proxmox_vm_template_source_name }}"
+
+- name: to_template - convert VM to template
+  community.proxmox.proxmox_kvm:
+    api_host:         "{{ proxmox_vm_api_host }}"
+    api_user:         "{{ proxmox_vm_api_user }}"
+    api_password:     "{{ proxmox_vm_api_password }}"
+    api_token_id:     "{{ proxmox_vm_api_token_id }}"
+    api_token_secret: "{{ proxmox_vm_api_token_secret }}"
+    validate_certs:   "{{ proxmox_vm_validate_certs }}"
+    vmid:  "{{ proxmox_vm_discovered_vmid }}"
+    node:  "{{ proxmox_vm_discovered_node }}"
+    state: template
+  delegate_to: localhost

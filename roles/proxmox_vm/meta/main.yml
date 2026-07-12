@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  author: mgcdrd
+  description: Clone, lifecycle-manage, and template VMs via the ProxMox API; query cluster/node/storage info
+  role_name: proxmox_vm
+
+  license: GPL-3.0-or-later
+  min_ansible_version: '2.14'
+
+  galaxy_tags:
+    - mgcdrd
+
+collections:
+  - community.proxmox

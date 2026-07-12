@@ -1,0 +1,73 @@
+---
+- name: clone - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_vm_clone_source, proxmox_vm_name, proxmox_vm_node, and proxmox_vm_storage are required."
+  when: >
+    not proxmox_vm_clone_source or not proxmox_vm_name or
+    not proxmox_vm_node or not proxmox_vm_storage
+
+- name: clone - clone VM from template
+  community.proxmox.proxmox_kvm:
+    api_host:         "{{ proxmox_vm_api_host }}"
+    api_user:         "{{ proxmox_vm_api_user }}"
+    api_password:     "{{ proxmox_vm_api_password }}"
+    api_token_id:     "{{ proxmox_vm_api_token_id }}"
+    api_token_secret: "{{ proxmox_vm_api_token_secret }}"
+    validate_certs:   "{{ proxmox_vm_validate_certs }}"
+    clone:   "{{ proxmox_vm_clone_source }}"
+    name:    "{{ proxmox_vm_name }}"
+    node:    "{{ proxmox_vm_node }}"
+    newid:   "{{ proxmox_vm_newid | default(omit, true) }}"
+    storage: "{{ proxmox_vm_storage }}"
+    format:  "{{ proxmox_vm_format }}"
+    full:    "{{ proxmox_vm_full_clone }}"
+    timeout: "{{ proxmox_vm_clone_timeout }}"
+  register: proxmox_vm_clone_result
+  delegate_to: localhost
+
+# PVE's clone operation only copies the disk — cores, memory, network, and
+# cloud-init are applied in a separate update call against the new VMID.
+- name: clone - apply VM configuration
+  community.proxmox.proxmox_kvm:
+    api_host:         "{{ proxmox_vm_api_host }}"
+    api_user:         "{{ proxmox_vm_api_user }}"
+    api_password:     "{{ proxmox_vm_api_password }}"
+    api_token_id:     "{{ proxmox_vm_api_token_id }}"
+    api_token_secret: "{{ proxmox_vm_api_token_secret }}"
+    validate_certs:   "{{ proxmox_vm_validate_certs }}"
+    node:   "{{ proxmox_vm_node }}"
+    name:   "{{ proxmox_vm_name }}"
+    update: true
+    # net/virtio/ide/sata/scsi updates are blocked by the module unless
+    # update_unsafe is set — we need net0 to reflect proxmox_vm_net0 rather
+    # than whatever the template happened to have.
+    update_unsafe: "{{ proxmox_vm_update_unsafe }}"
+    cores:   "{{ proxmox_vm_cores }}"
+    sockets: "{{ proxmox_vm_sockets }}"
+    memory:  "{{ proxmox_vm_memory }}"
+    net:
+      net0: "{{ proxmox_vm_net0 }}"
+    agent:  "{{ proxmox_vm_agent }}"
+    onboot: "{{ proxmox_vm_onboot }}"
+    tags:   "{{ proxmox_vm_tags | default(omit, true) }}"
+    ipconfig: "{{ {'ipconfig0': proxmox_vm_ipconfig0} if proxmox_vm_ipconfig0 else omit }}"
+    ciuser:        "{{ proxmox_vm_ciuser | default(omit, true) }}"
+    cipassword:    "{{ proxmox_vm_cipassword }}"
+    sshkeys:       "{{ proxmox_vm_sshkeys | default(omit, true) }}"
+    nameservers:   "{{ proxmox_vm_nameservers | default(omit, true) }}"
+    searchdomains: "{{ proxmox_vm_searchdomains | default(omit, true) }}"
+  delegate_to: localhost
+
+- name: clone - start VM
+  community.proxmox.proxmox_kvm:
+    api_host:         "{{ proxmox_vm_api_host }}"
+    api_user:         "{{ proxmox_vm_api_user }}"
+    api_password:     "{{ proxmox_vm_api_password }}"
+    api_token_id:     "{{ proxmox_vm_api_token_id }}"
+    api_token_secret: "{{ proxmox_vm_api_token_secret }}"
+    validate_certs:   "{{ proxmox_vm_validate_certs }}"
+    node:  "{{ proxmox_vm_node }}"
+    name:  "{{ proxmox_vm_name }}"
+    state: started
+  when: proxmox_vm_start_after_clone | bool
+  delegate_to: localhost

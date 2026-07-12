@@ -1,0 +1,34 @@
+---
+# Shared VM lookup by name, used by lifecycle.yml and to_template.yml.
+# Caller sets proxmox_vm_discover_name before including this file.
+# Sets proxmox_vm_discovered_vmid and proxmox_vm_discovered_node.
+
+- name: discover - look up VM by name in ProxMox
+  community.proxmox.proxmox_vm_info:
+    api_host:         "{{ proxmox_vm_api_host }}"
+    api_user:         "{{ proxmox_vm_api_user }}"
+    api_password:     "{{ proxmox_vm_api_password }}"
+    api_token_id:     "{{ proxmox_vm_api_token_id }}"
+    api_token_secret: "{{ proxmox_vm_api_token_secret }}"
+    validate_certs:   "{{ proxmox_vm_validate_certs }}"
+    name: "{{ proxmox_vm_discover_name }}"
+  register: proxmox_vm_discover_info
+  delegate_to: localhost
+
+- name: discover - fail if VM not found
+  ansible.builtin.fail:
+    msg: "No VM named '{{ proxmox_vm_discover_name }}' found in ProxMox."
+  when: proxmox_vm_discover_info.proxmox_vms | length == 0
+
+- name: discover - fail if multiple VMs match
+  ansible.builtin.fail:
+    msg: >
+      Multiple VMs named '{{ proxmox_vm_discover_name }}' found
+      ({{ proxmox_vm_discover_info.proxmox_vms | map(attribute='vmid') | list }}).
+      Use a more specific name or resolve the naming conflict in PVE.
+  when: proxmox_vm_discover_info.proxmox_vms | length > 1
+
+- name: discover - set VMID and node facts
+  ansible.builtin.set_fact:
+    proxmox_vm_discovered_vmid: "{{ proxmox_vm_discover_info.proxmox_vms[0].vmid }}"
+    proxmox_vm_discovered_node: "{{ proxmox_vm_discover_info.proxmox_vms[0].node }}"
