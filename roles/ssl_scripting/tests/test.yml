@@ -1,0 +1,18 @@
+---
+
+- hosts: all
+  gather_facts: false
+  become: true
+  roles:
+    - mgcdrd.infrabase.ssl_scripting
+  vars:
+    ssl_scripting:
+      base_dir: /root/ssl_gen
+      def_bits: 2048
+      def_md:   sha256
+      country:  US
+      state:    XX
+      locale:   YY
+      org:      ZZ
+      orgunit:  AA
+      email:    admins@example.com
