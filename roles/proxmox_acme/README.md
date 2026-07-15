@@ -164,7 +164,7 @@ Example Playbook — Cloudflare DNS-01 cert for a node
         proxmox_acme_do_certificate: true
         proxmox_acme_accounts:
           - name: default
-            contact: admin@example.com
+            contact: admin@lab.example.com
             directory: "https://acme-v02.api.letsencrypt.org/directory"
         proxmox_acme_plugins:
           - name: cloudflare
@@ -176,7 +176,7 @@ Example Playbook — Cloudflare DNS-01 cert for a node
           - node_name: pve1
             account: default
             domains:
-              - domain: pve1.example.com
+              - domain: pve1.lab.example.com
                 plugin: cloudflare
 ```
 

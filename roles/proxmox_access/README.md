@@ -228,12 +228,12 @@ Example Playbook — LDAP realm + role + group + ACL
           - realm: ipa
             state: present
             type: ldap
-            ldap_base_dn: "cn=accounts,dc=lab,dc=provenzawt,dc=dev"
+            ldap_base_dn: "cn=accounts,dc=lab,dc=example,dc=com"
             ldap_user_attr: uid
-            ldap_bind_dn: "uid=svc-proxmox,cn=users,cn=accounts,dc=lab,dc=provenzawt,dc=dev"
+            ldap_bind_dn: "uid=svc-proxmox,cn=users,cn=accounts,dc=lab,dc=example,dc=com"
             ldap_password: "{{ vault_proxmox_ldap_bind_password }}"
-            ldap_primary_server: ipa2.example.com
-            ldap_secondary_server: ipa3.example.com
+            ldap_primary_server: ipa2.lab.example.com
+            ldap_secondary_server: ipa3.lab.example.com
             ldap_mode: ldaps
         proxmox_access_roles:
           - roleid: VMOperator
