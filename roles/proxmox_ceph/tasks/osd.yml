@@ -1,0 +1,34 @@
+---
+- name: osd - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: >
+      proxmox_ceph_osds must be a non-empty list, and each item needs a
+      'node' key plus 'dev' (for state=present) or 'osdid' (for every
+      other state).
+  when: proxmox_ceph_osds | length == 0
+
+- name: osd - manage Ceph OSDs
+  community.proxmox.proxmox_ceph_osd:
+    api_host:         "{{ proxmox_ceph_api_host }}"
+    api_user:         "{{ proxmox_ceph_api_user }}"
+    api_password:     "{{ proxmox_ceph_api_password }}"
+    api_token_id:     "{{ proxmox_ceph_api_token_id }}"
+    api_token_secret: "{{ proxmox_ceph_api_token_secret }}"
+    validate_certs:   "{{ proxmox_ceph_validate_certs }}"
+    node:  "{{ item.node }}"
+    state: "{{ item.state | default('present') }}"
+    dev:   "{{ item.dev | default(omit) }}"
+    osdid: "{{ item.osdid | default(omit) }}"
+    cleanup:             "{{ item.cleanup | default(omit) }}"
+    crush_device_class:  "{{ item.crush_device_class | default(omit) }}"
+    db_dev:               "{{ item.db_dev | default(omit) }}"
+    db_dev_size:           "{{ item.db_dev_size | default(omit) }}"
+    deep:                   "{{ item.deep | default(omit) }}"
+    encrypted:               "{{ item.encrypted | default(omit) }}"
+    osds_per_device:          "{{ item.osds_per_device | default(omit) }}"
+    wal_dev:                   "{{ item.wal_dev | default(omit) }}"
+    wal_dev_size:                "{{ item.wal_dev_size | default(omit) }}"
+  loop: "{{ proxmox_ceph_osds }}"
+  loop_control:
+    label: "{{ item.node }}/{{ item.dev | default(item.osdid | default('?')) }}"
+  delegate_to: localhost

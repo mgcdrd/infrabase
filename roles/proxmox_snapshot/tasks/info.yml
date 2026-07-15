@@ -1,0 +1,19 @@
+---
+- name: info - fail if required variable is unset
+  ansible.builtin.fail:
+    msg: "Set either proxmox_snapshot_info_hostname or proxmox_snapshot_info_vmid."
+  when: not proxmox_snapshot_info_hostname and not proxmox_snapshot_info_vmid
+
+- name: info - list/query snapshots
+  community.proxmox.proxmox_snap_info:
+    api_host:         "{{ proxmox_snapshot_api_host }}"
+    api_user:         "{{ proxmox_snapshot_api_user }}"
+    api_password:     "{{ proxmox_snapshot_api_password }}"
+    api_token_id:     "{{ proxmox_snapshot_api_token_id }}"
+    api_token_secret: "{{ proxmox_snapshot_api_token_secret }}"
+    validate_certs:   "{{ proxmox_snapshot_validate_certs }}"
+    hostname: "{{ proxmox_snapshot_info_hostname | default(omit, true) }}"
+    vmid:     "{{ proxmox_snapshot_info_vmid | default(omit, true) }}"
+    snapname: "{{ proxmox_snapshot_info_snapname | default(omit, true) }}"
+  register: proxmox_snapshot_facts
+  delegate_to: localhost

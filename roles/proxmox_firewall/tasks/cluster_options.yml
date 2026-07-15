@@ -1,0 +1,16 @@
+---
+- name: cluster_options - set cluster-wide firewall options
+  community.proxmox.proxmox_cluster_firewall_options:
+    api_host:         "{{ proxmox_firewall_api_host }}"
+    api_user:         "{{ proxmox_firewall_api_user }}"
+    api_password:     "{{ proxmox_firewall_api_password }}"
+    api_token_id:     "{{ proxmox_firewall_api_token_id }}"
+    api_token_secret: "{{ proxmox_firewall_api_token_secret }}"
+    validate_certs:   "{{ proxmox_firewall_validate_certs }}"
+    state:           "{{ proxmox_firewall_cluster_state }}"
+    ebtables:         "{{ proxmox_firewall_cluster_ebtables }}"
+    input_policy:     "{{ proxmox_firewall_cluster_input_policy }}"
+    output_policy:    "{{ proxmox_firewall_cluster_output_policy }}"
+    forward_policy:   "{{ proxmox_firewall_cluster_forward_policy }}"
+    log_ratelimit:    "{{ proxmox_firewall_cluster_log_ratelimit | default(omit, true) }}"
+  delegate_to: localhost

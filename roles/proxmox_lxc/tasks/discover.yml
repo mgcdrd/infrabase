@@ -1,0 +1,35 @@
+---
+# Shared LXC container lookup by name, used by clone.yml (source), lifecycle.yml,
+# and to_template.yml. Caller sets proxmox_lxc_discover_name before including
+# this file. Sets proxmox_lxc_discovered_vmid and proxmox_lxc_discovered_node.
+
+- name: discover - look up container by name in ProxMox
+  community.proxmox.proxmox_vm_info:
+    api_host:         "{{ proxmox_lxc_api_host }}"
+    api_user:         "{{ proxmox_lxc_api_user }}"
+    api_password:     "{{ proxmox_lxc_api_password }}"
+    api_token_id:     "{{ proxmox_lxc_api_token_id }}"
+    api_token_secret: "{{ proxmox_lxc_api_token_secret }}"
+    validate_certs:   "{{ proxmox_lxc_validate_certs }}"
+    type: lxc
+    name: "{{ proxmox_lxc_discover_name }}"
+  register: proxmox_lxc_discover_info
+  delegate_to: localhost
+
+- name: discover - fail if container not found
+  ansible.builtin.fail:
+    msg: "No LXC container named '{{ proxmox_lxc_discover_name }}' found in ProxMox."
+  when: proxmox_lxc_discover_info.proxmox_vms | length == 0
+
+- name: discover - fail if multiple containers match
+  ansible.builtin.fail:
+    msg: >
+      Multiple LXC containers named '{{ proxmox_lxc_discover_name }}' found
+      ({{ proxmox_lxc_discover_info.proxmox_vms | map(attribute='vmid') | list }}).
+      Use a more specific name or resolve the naming conflict in PVE.
+  when: proxmox_lxc_discover_info.proxmox_vms | length > 1
+
+- name: discover - set VMID and node facts
+  ansible.builtin.set_fact:
+    proxmox_lxc_discovered_vmid: "{{ proxmox_lxc_discover_info.proxmox_vms[0].vmid }}"
+    proxmox_lxc_discovered_node: "{{ proxmox_lxc_discover_info.proxmox_vms[0].node }}"

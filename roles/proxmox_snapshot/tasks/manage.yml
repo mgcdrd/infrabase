@@ -1,0 +1,32 @@
+---
+- name: manage - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: >
+      proxmox_snapshot_snapshots must be a non-empty list, and each item
+      needs 'snapname' plus either 'hostname' or 'vmid'.
+  when: proxmox_snapshot_snapshots | length == 0
+
+# rollback fails (not a no-op) if the named snapshot doesn't exist — unlike
+# absent, which is a graceful no-op when it's already gone.
+- name: manage - create/delete/rollback snapshots
+  community.proxmox.proxmox_snap:
+    api_host:         "{{ proxmox_snapshot_api_host }}"
+    api_user:         "{{ proxmox_snapshot_api_user }}"
+    api_password:     "{{ proxmox_snapshot_api_password }}"
+    api_token_id:     "{{ proxmox_snapshot_api_token_id }}"
+    api_token_secret: "{{ proxmox_snapshot_api_token_secret }}"
+    validate_certs:   "{{ proxmox_snapshot_validate_certs }}"
+    hostname:    "{{ item.hostname | default(omit) }}"
+    vmid:        "{{ item.vmid | default(omit) }}"
+    snapname:    "{{ item.snapname }}"
+    state:       "{{ item.state | default('present') }}"
+    description: "{{ item.description | default(omit) }}"
+    vmstate:     "{{ item.vmstate | default(omit) }}"
+    retention:   "{{ item.retention | default(omit) }}"
+    force:       "{{ item.force | default(omit) }}"
+    unbind:      "{{ item.unbind | default(omit) }}"
+    timeout:     "{{ item.timeout | default(omit) }}"
+  loop: "{{ proxmox_snapshot_snapshots }}"
+  loop_control:
+    label: "{{ item.hostname | default(item.vmid | default('?')) }}/{{ item.snapname }}"
+  delegate_to: localhost

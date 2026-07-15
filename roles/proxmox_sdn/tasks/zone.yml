@@ -1,0 +1,49 @@
+---
+- name: zone - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_sdn_zones must be a non-empty list, and each item needs a 'zone' key."
+  when: proxmox_sdn_zones | length == 0
+
+# type is immutable once a zone exists — the module hard-fails rather than
+# attempting to change it in place. Each task here applies immediately;
+# there is no separate stage/apply step for SDN (unlike proxmox_network).
+- name: zone - create/update/delete SDN zones
+  community.proxmox.proxmox_zone:
+    api_host:         "{{ proxmox_sdn_api_host }}"
+    api_user:         "{{ proxmox_sdn_api_user }}"
+    api_password:     "{{ proxmox_sdn_api_password }}"
+    api_token_id:     "{{ proxmox_sdn_api_token_id }}"
+    api_token_secret: "{{ proxmox_sdn_api_token_secret }}"
+    validate_certs:   "{{ proxmox_sdn_validate_certs }}"
+    zone:                        "{{ item.zone }}"
+    type:                        "{{ item.type | default(omit) }}"
+    state:                       "{{ item.state | default('present') }}"
+    update:                      "{{ item.update | default(omit) }}"
+    bridge:                      "{{ item.bridge | default(omit) }}"
+    tag:                         "{{ item.tag | default(omit) }}"
+    vlan_protocol:               "{{ item.vlan_protocol | default(omit) }}"
+    fabric:                      "{{ item.fabric | default(omit) }}"
+    peers:                       "{{ item.peers | default(omit) }}"
+    controller:                  "{{ item.controller | default(omit) }}"
+    vrf_vxlan:                   "{{ item.vrf_vxlan | default(omit) }}"
+    mtu:                         "{{ item.mtu | default(omit) }}"
+    dhcp:                        "{{ item.dhcp | default(omit) }}"
+    dns:                         "{{ item.dns | default(omit) }}"
+    dnszone:                     "{{ item.dnszone | default(omit) }}"
+    reversedns:                  "{{ item.reversedns | default(omit) }}"
+    ipam:                        "{{ item.ipam | default(omit) }}"
+    mac:                         "{{ item.mac | default(omit) }}"
+    nodes:                       "{{ item.nodes | default(omit) }}"
+    exitnodes:                   "{{ item.exitnodes | default(omit) }}"
+    exitnodes_local_routing:     "{{ item.exitnodes_local_routing | default(omit) }}"
+    exitnodes_primary:           "{{ item.exitnodes_primary | default(omit) }}"
+    advertise_subnets:           "{{ item.advertise_subnets | default(omit) }}"
+    disable_arp_nd_suppression:  "{{ item.disable_arp_nd_suppression | default(omit) }}"
+    rt_import:                   "{{ item.rt_import | default(omit) }}"
+    dp_id:                       "{{ item.dp_id | default(omit) }}"
+    bridge_disable_mac_learning: "{{ item.bridge_disable_mac_learning | default(omit) }}"
+    vxlan_port:                  "{{ item.vxlan_port | default(omit) }}"
+  loop: "{{ proxmox_sdn_zones }}"
+  loop_control:
+    label: "{{ item.zone }}"
+  delegate_to: localhost

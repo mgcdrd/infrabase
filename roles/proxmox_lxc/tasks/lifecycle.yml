@@ -1,0 +1,29 @@
+---
+- name: lifecycle - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_lxc_target_name and proxmox_lxc_lifecycle_state (started|stopped|restarted|absent) are required."
+  when: >
+    not proxmox_lxc_target_name or
+    proxmox_lxc_lifecycle_state not in ['started', 'stopped', 'restarted', 'absent']
+
+- name: lifecycle - discover target container
+  ansible.builtin.include_tasks: discover.yml
+  vars:
+    proxmox_lxc_discover_name: "{{ proxmox_lxc_target_name }}"
+
+- name: lifecycle - set container state
+  community.proxmox.proxmox:
+    api_host:         "{{ proxmox_lxc_api_host }}"
+    api_user:         "{{ proxmox_lxc_api_user }}"
+    api_password:     "{{ proxmox_lxc_api_password }}"
+    api_token_id:     "{{ proxmox_lxc_api_token_id }}"
+    api_token_secret: "{{ proxmox_lxc_api_token_secret }}"
+    validate_certs:   "{{ proxmox_lxc_validate_certs }}"
+    vmid:  "{{ proxmox_lxc_discovered_vmid }}"
+    node:  "{{ proxmox_lxc_discovered_node }}"
+    state: "{{ proxmox_lxc_lifecycle_state }}"
+    force: "{{ proxmox_lxc_force_stop if proxmox_lxc_lifecycle_state == 'stopped' else omit }}"
+    purge: "{{ proxmox_lxc_purge if proxmox_lxc_lifecycle_state == 'absent' else omit }}"
+    destroy_unreferenced_disks: "{{ proxmox_lxc_destroy_unreferenced_disks if proxmox_lxc_lifecycle_state == 'absent' else omit }}"
+    timeout: "{{ proxmox_lxc_lifecycle_timeout }}"
+  delegate_to: localhost

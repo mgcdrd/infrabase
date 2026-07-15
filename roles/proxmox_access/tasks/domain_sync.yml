@@ -1,0 +1,19 @@
+---
+- name: domain_sync - fail if required variable is unset
+  ansible.builtin.fail:
+    msg: "proxmox_access_domain_sync_realm is required."
+  when: not proxmox_access_domain_sync_realm
+
+- name: domain_sync - trigger LDAP/AD directory sync
+  community.proxmox.proxmox_domain_sync:
+    api_host:         "{{ proxmox_access_api_host }}"
+    api_user:         "{{ proxmox_access_api_user }}"
+    api_password:     "{{ proxmox_access_api_password }}"
+    api_token_id:     "{{ proxmox_access_api_token_id }}"
+    api_token_secret: "{{ proxmox_access_api_token_secret }}"
+    validate_certs:   "{{ proxmox_access_validate_certs }}"
+    realm:           "{{ proxmox_access_domain_sync_realm }}"
+    scope:           "{{ proxmox_access_domain_sync_scope | default(omit, true) }}"
+    enable_new:      "{{ proxmox_access_domain_sync_enable_new | default(omit, true) }}"
+    remove_vanished: "{{ proxmox_access_domain_sync_remove_vanished | default(omit, true) }}"
+  delegate_to: localhost

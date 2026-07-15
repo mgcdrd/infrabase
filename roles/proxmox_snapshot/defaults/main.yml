@@ -1,0 +1,40 @@
+---
+# ---- ProxMox API connection ----
+proxmox_snapshot_api_host:          ""
+proxmox_snapshot_api_user:          "root@pam"
+proxmox_snapshot_api_password:      "{{ vault_proxmox_api_password | default(omit) }}"
+proxmox_snapshot_api_token_id:      "{{ vault_proxmox_api_token_id | default(omit) }}"
+proxmox_snapshot_api_token_secret:  "{{ vault_proxmox_api_token_secret | default(omit) }}"
+proxmox_snapshot_validate_certs:    false
+
+# ---- EXECUTION GATES ----
+proxmox_snapshot_do_info:   false   # tag: info
+proxmox_snapshot_do_manage: false   # tag: manage
+
+# ==============================================================
+# manage — create/delete/rollback snapshots
+# ==============================================================
+# Each item mirrors community.proxmox.proxmox_snap. Set either `hostname`
+# or `vmid` (vmid wins if both are set) plus `snapname`. Works for both
+# QEMU VMs and LXC containers.
+#
+# `snapname` defaults to the literal string "ansible_snap" in the underlying
+# module if omitted — always set it explicitly below.
+proxmox_snapshot_snapshots: []
+# proxmox_snapshot_snapshots:
+#   - hostname: myvm             # or vmid: 100
+#     snapname: pre-updates
+#     state: present               # present | absent | rollback
+#     description: "Before OS updates"
+#     vmstate: false                # include RAM state — QEMU only, silently ignored on LXC
+#     retention: 0                  # keep only the N newest snapshots; 0 = keep all; only applies on present, only when a new snapshot was actually created
+#     force: false                  # absent only — remove from config even if disk snapshot removal fails
+#     unbind: false                 # LXC only — requires root@pam + api_password (API tokens not supported for this option)
+#     timeout: 30
+
+# ==============================================================
+# info — list/query snapshots (read-only)
+# ==============================================================
+proxmox_snapshot_info_hostname: ""   # set this or vmid below
+proxmox_snapshot_info_vmid:     ""
+proxmox_snapshot_info_snapname: ""   # "" = list all snapshots for the target

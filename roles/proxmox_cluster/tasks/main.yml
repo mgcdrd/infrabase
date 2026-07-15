@@ -1,0 +1,15 @@
+---
+- name: proxmox_cluster - query cluster status and join info
+  ansible.builtin.include_tasks: info.yml
+  when: proxmox_cluster_do_info | bool
+  tags: [proxmox_cluster, info]
+
+- name: proxmox_cluster - create a new cluster
+  ansible.builtin.include_tasks: create.yml
+  when: proxmox_cluster_do_create | bool
+  tags: [proxmox_cluster, create]
+
+- name: proxmox_cluster - join nodes to an existing cluster
+  ansible.builtin.include_tasks: join.yml
+  when: proxmox_cluster_do_join | bool
+  tags: [proxmox_cluster, join]

@@ -1,0 +1,37 @@
+---
+- name: node_options - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_firewall_node_options must be a non-empty list, and each item needs a 'node_name' key."
+  when: proxmox_firewall_node_options | length == 0
+
+- name: node_options - set node-level firewall options
+  community.proxmox.proxmox_node_firewall_options:
+    api_host:         "{{ proxmox_firewall_api_host }}"
+    api_user:         "{{ proxmox_firewall_api_user }}"
+    api_password:     "{{ proxmox_firewall_api_password }}"
+    api_token_id:     "{{ proxmox_firewall_api_token_id }}"
+    api_token_secret: "{{ proxmox_firewall_api_token_secret }}"
+    validate_certs:   "{{ proxmox_firewall_validate_certs }}"
+    node_name:  "{{ item.node_name }}"
+    state:      "{{ item.state | default(omit) }}"
+    log_level_in:      "{{ item.log_level_in | default(omit) }}"
+    log_level_out:      "{{ item.log_level_out | default(omit) }}"
+    log_level_forward:   "{{ item.log_level_forward | default(omit) }}"
+    ndp:                  "{{ item.ndp | default(omit) }}"
+    nftables:               "{{ item.nftables | default(omit) }}"
+    nosmurfs:                "{{ item.nosmurfs | default(omit) }}"
+    smurf_log_level:          "{{ item.smurf_log_level | default(omit) }}"
+    tcpflags:                  "{{ item.tcpflags | default(omit) }}"
+    tcp_flags_log_level:        "{{ item.tcp_flags_log_level | default(omit) }}"
+    nf_conntrack_allow_invalid:  "{{ item.nf_conntrack_allow_invalid | default(omit) }}"
+    nf_conntrack_helpers:         "{{ item.nf_conntrack_helpers | default(omit) }}"
+    nf_conntrack_max:              "{{ item.nf_conntrack_max | default(omit) }}"
+    nf_conntrack_tcp_timeout_established: "{{ item.nf_conntrack_tcp_timeout_established | default(omit) }}"
+    nf_conntrack_tcp_timeout_syn_recv:     "{{ item.nf_conntrack_tcp_timeout_syn_recv | default(omit) }}"
+    protection_synflood:                    "{{ item.protection_synflood | default(omit) }}"
+    protection_synflood_burst:               "{{ item.protection_synflood_burst | default(omit) }}"
+    protection_synflood_rate:                 "{{ item.protection_synflood_rate | default(omit) }}"
+  loop: "{{ proxmox_firewall_node_options }}"
+  loop_control:
+    label: "{{ item.node_name }}"
+  delegate_to: localhost

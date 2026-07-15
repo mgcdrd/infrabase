@@ -1,0 +1,29 @@
+---
+- name: membership - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: >
+      proxmox_backup_membership must be a non-empty list, and each item needs
+      'backup_id' plus either 'vm_name' or 'vm_id'. backup_id is effectively
+      required even for state=present — see README.
+  when: proxmox_backup_membership | length == 0
+
+# state=absent without backup_id removes the vmid from EVERY job it's in.
+# The module also refuses to remove the last vmid in a job (fails rather
+# than emptying it) — use the job section's delete instead if you want to
+# remove the job entirely.
+- name: membership - toggle VM membership in an existing backup job
+  community.proxmox.proxmox_backup_schedule:
+    api_host:         "{{ proxmox_backup_api_host }}"
+    api_user:         "{{ proxmox_backup_api_user }}"
+    api_password:     "{{ proxmox_backup_api_password }}"
+    api_token_id:     "{{ proxmox_backup_api_token_id }}"
+    api_token_secret: "{{ proxmox_backup_api_token_secret }}"
+    validate_certs:   "{{ proxmox_backup_validate_certs }}"
+    vm_name:   "{{ item.vm_name | default(omit) }}"
+    vm_id:     "{{ item.vm_id | default(omit) }}"
+    backup_id: "{{ item.backup_id | default(omit) }}"
+    state:     "{{ item.state | default('present') }}"
+  loop: "{{ proxmox_backup_membership }}"
+  loop_control:
+    label: "{{ item.vm_name | default(item.vm_id | default('?')) }} -> {{ item.backup_id | default('any job') }}"
+  delegate_to: localhost

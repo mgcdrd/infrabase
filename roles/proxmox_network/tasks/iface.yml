@@ -1,0 +1,46 @@
+---
+- name: iface - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_network_interfaces must be a non-empty list, and each item needs at least an 'iface' key."
+  when: proxmox_network_interfaces | length == 0
+
+# state=present/absent only STAGES the change on the node (PVE writes to
+# /etc/network/interfaces.new) — nothing is live until a separate
+# proxmox_network_do_apply run against the same node. iface_type is
+# immutable once created; delete and recreate to change it.
+- name: iface - create/modify/delete node network interfaces
+  community.proxmox.proxmox_node_network:
+    api_host:         "{{ proxmox_network_api_host }}"
+    api_user:         "{{ proxmox_network_api_user }}"
+    api_password:     "{{ proxmox_network_api_password }}"
+    api_token_id:     "{{ proxmox_network_api_token_id }}"
+    api_token_secret: "{{ proxmox_network_api_token_secret }}"
+    validate_certs:   "{{ proxmox_network_validate_certs }}"
+    node:                   "{{ item.node | default(proxmox_network_node) }}"
+    iface:                  "{{ item.iface }}"
+    iface_type:             "{{ item.iface_type | default(omit) }}"
+    state:                  "{{ item.state | default('present') }}"
+    cidr:                   "{{ item.cidr | default(omit) }}"
+    gateway:                "{{ item.gateway | default(omit) }}"
+    cidr6:                  "{{ item.cidr6 | default(omit) }}"
+    gateway6:               "{{ item.gateway6 | default(omit) }}"
+    autostart:              "{{ item.autostart | default(omit) }}"
+    comments:                "{{ item.comments | default(omit) }}"
+    mtu:                     "{{ item.mtu | default(omit) }}"
+    bridge_ports:            "{{ item.bridge_ports | default(omit) }}"
+    bridge_vids:             "{{ item.bridge_vids | default(omit) }}"
+    bridge_vlan_aware:       "{{ item.bridge_vlan_aware | default(omit) }}"
+    bond_primary:            "{{ item.bond_primary | default(omit) }}"
+    bond_mode:               "{{ item.bond_mode | default(omit) }}"
+    bond_xmit_hash_policy:   "{{ item.bond_xmit_hash_policy | default(omit) }}"
+    slaves:                  "{{ item.slaves | default(omit) }}"
+    vlan_raw_device:         "{{ item.vlan_raw_device | default(omit) }}"
+    ovs_ports:                "{{ item.ovs_ports | default(omit) }}"
+    ovs_options:              "{{ item.ovs_options | default(omit) }}"
+    ovs_bonds:                "{{ item.ovs_bonds | default(omit) }}"
+    ovs_bridge:                "{{ item.ovs_bridge | default(omit) }}"
+    ovs_tag:                   "{{ item.ovs_tag | default(omit) }}"
+  loop: "{{ proxmox_network_interfaces }}"
+  loop_control:
+    label: "{{ item.node | default(proxmox_network_node) }}/{{ item.iface }}"
+  delegate_to: localhost

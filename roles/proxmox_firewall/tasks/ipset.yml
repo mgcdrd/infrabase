@@ -1,0 +1,23 @@
+---
+- name: ipset - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_firewall_ipsets must be a non-empty list, and each item needs a 'name' key."
+  when: proxmox_firewall_ipsets | length == 0
+
+- name: ipset - manage IP sets
+  community.proxmox.proxmox_firewall:
+    api_host:         "{{ proxmox_firewall_api_host }}"
+    api_user:         "{{ proxmox_firewall_api_user }}"
+    api_password:     "{{ proxmox_firewall_api_password }}"
+    api_token_id:     "{{ proxmox_firewall_api_token_id }}"
+    api_token_secret: "{{ proxmox_firewall_api_token_secret }}"
+    validate_certs:   "{{ proxmox_firewall_validate_certs }}"
+    state: "{{ item.state | default('present') }}"
+    ip_sets:
+      - name:    "{{ item.name }}"
+        comment: "{{ item.comment | default(omit) }}"
+        cidrs:   "{{ item.cidrs | default(omit) }}"
+  loop: "{{ proxmox_firewall_ipsets }}"
+  loop_control:
+    label: "{{ item.name }}"
+  delegate_to: localhost

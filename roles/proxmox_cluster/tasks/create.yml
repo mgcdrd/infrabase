@@ -1,0 +1,22 @@
+---
+- name: create - fail if required variable is unset
+  ansible.builtin.fail:
+    msg: "proxmox_cluster_name is required."
+  when: not proxmox_cluster_name
+
+# Run against the intended master's own API (proxmox_cluster_api_host set
+# to that node) — this calls POST /cluster/config on it, equivalent to
+# `pvecm create <name>` run locally.
+- name: create - create the cluster
+  community.proxmox.proxmox_cluster:
+    api_host:         "{{ proxmox_cluster_api_host }}"
+    api_user:         "{{ proxmox_cluster_api_user }}"
+    api_password:     "{{ proxmox_cluster_api_password }}"
+    api_token_id:     "{{ proxmox_cluster_api_token_id }}"
+    api_token_secret: "{{ proxmox_cluster_api_token_secret }}"
+    validate_certs:   "{{ proxmox_cluster_validate_certs }}"
+    state: present
+    cluster_name: "{{ proxmox_cluster_name }}"
+    link0: "{{ proxmox_cluster_link0 | default(omit, true) }}"
+    link1: "{{ proxmox_cluster_link1 | default(omit, true) }}"
+  delegate_to: localhost

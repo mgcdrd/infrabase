@@ -1,0 +1,35 @@
+---
+- name: run - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: >
+      proxmox_backup_run_storage is required. proxmox_backup_run_mode must be
+      include|all|pool, with proxmox_backup_run_vmids set for 'include' or
+      proxmox_backup_run_pool set for 'pool'.
+  when: >
+    not proxmox_backup_run_storage or
+    proxmox_backup_run_mode not in ['include', 'all', 'pool'] or
+    (proxmox_backup_run_mode == 'include' and proxmox_backup_run_vmids | length == 0) or
+    (proxmox_backup_run_mode == 'pool' and not proxmox_backup_run_pool)
+
+# NOT idempotent — always starts a new backup task, mirroring the PVE GUI's
+# "Backup now" button. This task always reports changed on success.
+- name: run - trigger an on-demand backup
+  community.proxmox.proxmox_backup:
+    api_host:         "{{ proxmox_backup_api_host }}"
+    api_user:         "{{ proxmox_backup_api_user }}"
+    api_password:     "{{ proxmox_backup_api_password }}"
+    api_token_id:     "{{ proxmox_backup_api_token_id }}"
+    api_token_secret: "{{ proxmox_backup_api_token_secret }}"
+    validate_certs:   "{{ proxmox_backup_validate_certs }}"
+    mode:         "{{ proxmox_backup_run_mode }}"
+    storage:      "{{ proxmox_backup_run_storage }}"
+    vmids:        "{{ proxmox_backup_run_vmids if proxmox_backup_run_mode == 'include' else omit }}"
+    pool:         "{{ proxmox_backup_run_pool if proxmox_backup_run_mode == 'pool' else omit }}"
+    backup_mode:  "{{ proxmox_backup_run_backup_mode }}"
+    compress:     "{{ proxmox_backup_run_compress | default(omit, true) }}"
+    description:  "{{ proxmox_backup_run_description | default(omit, true) }}"
+    retention:    "{{ proxmox_backup_run_retention | default(omit, true) }}"
+    wait:         "{{ proxmox_backup_run_wait }}"
+    wait_timeout: "{{ proxmox_backup_run_wait_timeout }}"
+  register: proxmox_backup_run_result
+  delegate_to: localhost

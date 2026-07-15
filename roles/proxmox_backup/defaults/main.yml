@@ -1,0 +1,74 @@
+---
+# ---- ProxMox API connection ----
+proxmox_backup_api_host:          ""
+proxmox_backup_api_user:          "root@pam"
+proxmox_backup_api_password:      "{{ vault_proxmox_api_password | default(omit) }}"
+proxmox_backup_api_token_id:      "{{ vault_proxmox_api_token_id | default(omit) }}"
+proxmox_backup_api_token_secret:  "{{ vault_proxmox_api_token_secret | default(omit) }}"
+proxmox_backup_validate_certs:    false
+
+# ---- EXECUTION GATES ----
+proxmox_backup_do_info:       false   # tag: info
+proxmox_backup_do_job:        false   # tag: job         (requires API token auth — see README)
+proxmox_backup_do_membership: false   # tag: membership
+proxmox_backup_do_run:        false   # tag: run
+
+# ==============================================================
+# info — query backup jobs / per-VM backup membership (read-only)
+# ==============================================================
+proxmox_backup_info_vm_name: ""     # mutually exclusive with vm_id and jobs=true
+proxmox_backup_info_vm_id:   ""     # mutually exclusive with vm_name and jobs=true
+proxmox_backup_info_jobs:    false  # true = raw job list; false = per-VM parsed view
+
+# ==============================================================
+# job — create/update/delete SCHEDULED backup jobs (cron + retention + storage)
+# ==============================================================
+# No community.proxmox module exists for this (confirmed against collection
+# 2.1.0 source) — handled via ansible.builtin.uri against /cluster/backup.
+# REQUIRES API TOKEN AUTH (proxmox_backup_api_token_id/secret) — this section
+# doesn't implement the ticket+CSRF login flow password auth would need.
+#
+# `id` is required and used as the idempotency key — PVE auto-generates one
+# if omitted via the raw API, which would create a new job on every run.
+proxmox_backup_jobs: []
+# proxmox_backup_jobs:
+#   - id: backup-webtier
+#     state: present                # present | absent
+#     comment: "Weekly full backup - web tier"
+#     schedule: "sun 02:00"          # systemd-calendar subset, e.g. "mon,wed,fri 03:30"
+#     storage: pbs-main
+#     vmid: "100,101,102"           # comma-separated STRING, not a list
+#     mode: snapshot                 # snapshot | suspend | stop
+#     compress: zstd                 # "0" | "1" | gzip | lzo | zstd
+#     prune_backups: "keep-last=7,keep-daily=7,keep-weekly=4,keep-monthly=6,keep-yearly=0"
+#     enabled: true
+#     notification_mode: notification-system   # auto | legacy-sendmail | notification-system
+
+# ==============================================================
+# membership — toggle a single VM's presence in an ALREADY-EXISTING job
+# ==============================================================
+# backup_id is effectively required even for state=present — the underlying
+# module's "optional" marking doesn't hold up in its own present-path logic
+# (confirmed from source). Always set it explicitly.
+proxmox_backup_membership: []
+# proxmox_backup_membership:
+#   - vm_name: newhost01      # or vm_id: "100"
+#     backup_id: backup-webtier
+#     state: present            # present | absent
+
+# ==============================================================
+# run — trigger an on-demand ("backup now") vzdump run
+# ==============================================================
+# NOT idempotent — always starts a new backup task when it runs (this
+# mirrors the PVE GUI's "Backup now" button, gate it behind a trigger
+# condition rather than leaving it in a routinely-applied play).
+proxmox_backup_run_mode:         "include"   # include | all | pool
+proxmox_backup_run_storage:      ""
+proxmox_backup_run_vmids:        []          # required when mode: include
+proxmox_backup_run_pool:         ""          # required when mode: pool
+proxmox_backup_run_backup_mode:  "snapshot"  # snapshot | suspend | stop
+proxmox_backup_run_compress:     ""
+proxmox_backup_run_description:  ""
+proxmox_backup_run_retention:    ""          # overrides cluster default retention for this run only
+proxmox_backup_run_wait:         false        # true = poll until the backup task completes
+proxmox_backup_run_wait_timeout: 10

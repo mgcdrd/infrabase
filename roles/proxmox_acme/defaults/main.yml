@@ -1,0 +1,72 @@
+---
+# ---- ProxMox API connection ----
+# ACME account/plugin/certificate management requires root@pam PASSWORD
+# authentication — the underlying modules explicitly do not accept API
+# token auth for these operations. proxmox_acme_api_user therefore defaults
+# to root@pam, and account/plugin/certificate tasks fail their precondition
+# check if it's been changed or if no password is set.
+proxmox_acme_api_host:          ""
+proxmox_acme_api_user:          "root@pam"
+proxmox_acme_api_password:      "{{ vault_proxmox_api_password | default(omit) }}"
+proxmox_acme_validate_certs:    false
+
+# ---- EXECUTION GATES ----
+proxmox_acme_do_info:        false   # tag: info
+proxmox_acme_do_account:     false   # tag: account
+proxmox_acme_do_plugin:      false   # tag: plugin
+proxmox_acme_do_certificate: false   # tag: certificate
+
+# ==============================================================
+# info — list ACME accounts and DNS plugins (read-only)
+# ==============================================================
+# No variables required. Sets facts:
+#   proxmox_acme_accounts_facts   (community.proxmox.proxmox_acme_accounts_info)
+#   proxmox_acme_plugins_facts    (community.proxmox.proxmox_acme_plugins_info)
+#
+# community.proxmox.proxmox_acme_account_info, proxmox_acme_plugin_info, and
+# proxmox_acme_certificates_info also exist upstream (single-item reads) but
+# aren't wired into this section — their filter-parameter names weren't
+# confirmed during research. Call them directly (check `ansible-doc
+# community.proxmox.proxmox_acme_account_info` first) if you need per-item
+# detail beyond the plural list views above.
+
+# ==============================================================
+# account — ACME accounts (CA registration: contact email + TOS)
+# ==============================================================
+# Once an account exists, only `contact` can be updated afterward — a PVE
+# API limitation, not something this role works around.
+proxmox_acme_accounts: []
+# proxmox_acme_accounts:
+#   - name: default
+#     state: present
+#     contact: admin@example.com
+#     directory: "https://acme-v02.api.letsencrypt.org/directory"
+#     tos: "https://letsencrypt.org/documents/LE-SA-v1.3-September-21-2022.pdf"
+
+# ==============================================================
+# plugin — DNS-01 challenge plugins (e.g. Cloudflare)
+# ==============================================================
+proxmox_acme_plugins: []
+# proxmox_acme_plugins:
+#   - name: cloudflare
+#     state: present
+#     plugin: cf                  # DNS API implementation id
+#     data:
+#       CF_Account_ID: "{{ vault_cf_account_id }}"
+#       CF_Token: "{{ vault_cf_token }}"
+#     validation_delay: 30        # seconds, 0-172800
+
+# ==============================================================
+# certificate — per-node domain list + order/renew/remove the cert
+# ==============================================================
+# Single module handles both domain assignment AND cert ordering/renewal —
+# there's no separate "assign domains" vs "order cert" step.
+proxmox_acme_certificates: []
+# proxmox_acme_certificates:
+#   - node_name: pve1
+#     state: present
+#     account: default
+#     force: false                 # true = renew even if not due
+#     domains:
+#       - domain: pve1.lab.example.com
+#         plugin: cloudflare        # omit for standalone HTTP-01 instead of DNS-01

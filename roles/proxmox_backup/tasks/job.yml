@@ -1,0 +1,121 @@
+---
+# No community.proxmox module manages scheduled backup job CRUD (cron +
+# retention + storage + vmid selection) — confirmed against collection
+# 2.1.0 source. This section talks to /cluster/backup directly.
+
+- name: job - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: >
+      proxmox_backup_jobs must be a non-empty list, and each item needs an
+      explicit 'id' key (required for idempotency — PVE auto-generates one
+      if omitted, which would create a new job on every run).
+  when: proxmox_backup_jobs | length == 0
+
+- name: job - fail if API token auth is not configured
+  ansible.builtin.fail:
+    msg: >
+      proxmox_backup_do_job requires API token auth
+      (proxmox_backup_api_token_id + proxmox_backup_api_token_secret).
+      Password/ticket auth isn't supported by this section since no
+      community.proxmox module exists for job CRUD and ansible.builtin.uri
+      needs a bearer-style header, not PVE's login-ticket + CSRF flow.
+  when: not proxmox_backup_api_token_id or not proxmox_backup_api_token_secret
+
+- name: job - fetch existing backup jobs
+  ansible.builtin.uri:
+    url: "https://{{ proxmox_backup_api_host }}:8006/api2/json/cluster/backup"
+    method: GET
+    headers:
+      Authorization: "PVEAPIToken={{ proxmox_backup_api_token_id }}={{ proxmox_backup_api_token_secret }}"
+    validate_certs: "{{ proxmox_backup_validate_certs }}"
+    return_content: true
+  register: proxmox_backup_existing_jobs
+  no_log: true
+  delegate_to: localhost
+
+- name: job - create backup jobs that don't yet exist
+  ansible.builtin.uri:
+    url: "https://{{ proxmox_backup_api_host }}:8006/api2/json/cluster/backup"
+    method: POST
+    headers:
+      Authorization: "PVEAPIToken={{ proxmox_backup_api_token_id }}={{ proxmox_backup_api_token_secret }}"
+    validate_certs: "{{ proxmox_backup_validate_certs }}"
+    body_format: json
+    body:
+      id:                   "{{ item.id }}"
+      comment:               "{{ item.comment | default(omit) }}"
+      schedule:               "{{ item.schedule | default(omit) }}"
+      storage:                 "{{ item.storage | default(omit) }}"
+      vmid:                     "{{ item.vmid | default(omit) }}"
+      all:                       "{{ item.all | default(omit) }}"
+      exclude:                    "{{ item.exclude | default(omit) }}"
+      pool:                         "{{ item.pool | default(omit) }}"
+      node:                          "{{ item.node | default(omit) }}"
+      mode:                           "{{ item.mode | default(omit) }}"
+      compress:                       "{{ item.compress | default(omit) }}"
+      "prune-backups":                "{{ item.prune_backups | default(omit) }}"
+      enabled:                        "{{ item.enabled | default(omit) }}"
+      "repeat-missed":                "{{ item.repeat_missed | default(omit) }}"
+      "notes-template":               "{{ item.notes_template | default(omit) }}"
+      bwlimit:                        "{{ item.bwlimit | default(omit) }}"
+      "notification-mode":            "{{ item.notification_mode | default(omit) }}"
+    status_code: [200]
+  loop: "{{ proxmox_backup_jobs }}"
+  loop_control:
+    label: "{{ item.id }}"
+  when: >
+    (item.state | default('present')) == 'present' and
+    item.id not in (proxmox_backup_existing_jobs.json | default([]) | map(attribute='id') | list)
+  no_log: true
+  delegate_to: localhost
+
+- name: job - update backup jobs that already exist
+  ansible.builtin.uri:
+    url: "https://{{ proxmox_backup_api_host }}:8006/api2/json/cluster/backup/{{ item.id }}"
+    method: PUT
+    headers:
+      Authorization: "PVEAPIToken={{ proxmox_backup_api_token_id }}={{ proxmox_backup_api_token_secret }}"
+    validate_certs: "{{ proxmox_backup_validate_certs }}"
+    body_format: json
+    body:
+      comment:               "{{ item.comment | default(omit) }}"
+      schedule:               "{{ item.schedule | default(omit) }}"
+      storage:                 "{{ item.storage | default(omit) }}"
+      vmid:                     "{{ item.vmid | default(omit) }}"
+      all:                       "{{ item.all | default(omit) }}"
+      exclude:                    "{{ item.exclude | default(omit) }}"
+      pool:                         "{{ item.pool | default(omit) }}"
+      node:                          "{{ item.node | default(omit) }}"
+      mode:                           "{{ item.mode | default(omit) }}"
+      compress:                       "{{ item.compress | default(omit) }}"
+      "prune-backups":                "{{ item.prune_backups | default(omit) }}"
+      enabled:                        "{{ item.enabled | default(omit) }}"
+      "repeat-missed":                "{{ item.repeat_missed | default(omit) }}"
+      "notes-template":               "{{ item.notes_template | default(omit) }}"
+      bwlimit:                        "{{ item.bwlimit | default(omit) }}"
+      "notification-mode":            "{{ item.notification_mode | default(omit) }}"
+    status_code: [200]
+  loop: "{{ proxmox_backup_jobs }}"
+  loop_control:
+    label: "{{ item.id }}"
+  when: >
+    (item.state | default('present')) == 'present' and
+    item.id in (proxmox_backup_existing_jobs.json | default([]) | map(attribute='id') | list)
+  no_log: true
+  delegate_to: localhost
+
+- name: job - delete backup jobs
+  ansible.builtin.uri:
+    url: "https://{{ proxmox_backup_api_host }}:8006/api2/json/cluster/backup/{{ item.id }}"
+    method: DELETE
+    headers:
+      Authorization: "PVEAPIToken={{ proxmox_backup_api_token_id }}={{ proxmox_backup_api_token_secret }}"
+    validate_certs: "{{ proxmox_backup_validate_certs }}"
+    status_code: [200]
+  loop: "{{ proxmox_backup_jobs }}"
+  loop_control:
+    label: "{{ item.id }}"
+  when: >
+    (item.state | default('present')) == 'absent' and
+    item.id in (proxmox_backup_existing_jobs.json | default([]) | map(attribute='id') | list)
+  delegate_to: localhost

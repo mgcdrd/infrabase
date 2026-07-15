@@ -1,0 +1,41 @@
+---
+- name: clone - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_lxc_clone_source_name and proxmox_lxc_clone_hostname are required."
+  when: not proxmox_lxc_clone_source_name or not proxmox_lxc_clone_hostname
+
+- name: clone - discover source container
+  ansible.builtin.include_tasks: discover.yml
+  vars:
+    proxmox_lxc_discover_name: "{{ proxmox_lxc_clone_source_name }}"
+
+- name: clone - clone container
+  community.proxmox.proxmox:
+    api_host:         "{{ proxmox_lxc_api_host }}"
+    api_user:         "{{ proxmox_lxc_api_user }}"
+    api_password:     "{{ proxmox_lxc_api_password }}"
+    api_token_id:     "{{ proxmox_lxc_api_token_id }}"
+    api_token_secret: "{{ proxmox_lxc_api_token_secret }}"
+    validate_certs:   "{{ proxmox_lxc_validate_certs }}"
+    vmid:       "{{ proxmox_lxc_clone_vmid | default(omit, true) }}"
+    node:       "{{ proxmox_lxc_clone_node | default(proxmox_lxc_discovered_node, true) }}"
+    hostname:   "{{ proxmox_lxc_clone_hostname }}"
+    clone:      "{{ proxmox_lxc_discovered_vmid }}"
+    clone_type: "{{ proxmox_lxc_clone_type }}"
+    storage:    "{{ proxmox_lxc_clone_storage | default(omit, true) }}"
+    timeout:    "{{ proxmox_lxc_clone_timeout }}"
+  register: proxmox_lxc_clone_result
+  delegate_to: localhost
+
+- name: clone - start container
+  community.proxmox.proxmox:
+    api_host:         "{{ proxmox_lxc_api_host }}"
+    api_user:         "{{ proxmox_lxc_api_user }}"
+    api_password:     "{{ proxmox_lxc_api_password }}"
+    api_token_id:     "{{ proxmox_lxc_api_token_id }}"
+    api_token_secret: "{{ proxmox_lxc_api_token_secret }}"
+    validate_certs:   "{{ proxmox_lxc_validate_certs }}"
+    hostname: "{{ proxmox_lxc_clone_hostname }}"
+    state: started
+  when: proxmox_lxc_clone_start_after | bool
+  delegate_to: localhost

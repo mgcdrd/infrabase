@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  author: mgcdrd
+  description: Manage node-level physical network interfaces (bridges/bonds/VLANs/OVS) via the ProxMox API
+  role_name: proxmox_network
+
+  license: GPL-3.0-or-later
+  min_ansible_version: '2.14'
+
+  galaxy_tags:
+    - mgcdrd
+
+collections:
+  - community.proxmox

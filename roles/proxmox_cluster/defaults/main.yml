@@ -1,0 +1,56 @@
+---
+# ---- ProxMox API connection (default/master node) ----
+# For `create` and `info`, proxmox_cluster_api_host must point at the node
+# the action runs against — the intended master for create, any cluster
+# member for info. `join` overrides api_host per node — see below.
+proxmox_cluster_api_host:          ""
+proxmox_cluster_api_user:          "root@pam"
+proxmox_cluster_api_password:      "{{ vault_proxmox_api_password | default(omit) }}"
+proxmox_cluster_api_token_id:      "{{ vault_proxmox_api_token_id | default(omit) }}"
+proxmox_cluster_api_token_secret:  "{{ vault_proxmox_api_token_secret | default(omit) }}"
+proxmox_cluster_validate_certs:    false
+
+# ---- EXECUTION GATES ----
+proxmox_cluster_do_info:   false   # tag: info
+proxmox_cluster_do_create: false   # tag: create
+proxmox_cluster_do_join:   false   # tag: join
+
+# ==============================================================
+# info — cluster status + join info (fingerprint/nodelist) — read-only
+# ==============================================================
+# No variables required beyond the connection block. Sets facts:
+#   proxmox_cluster_status       (community.proxmox.proxmox_cluster_status_info)
+#   proxmox_cluster_join_facts   (community.proxmox.proxmox_cluster_join_info)
+# Use proxmox_cluster_join_facts.cluster_join[0].nodelist[].pve_fp as the
+# fingerprint input for `join` below.
+
+# ==============================================================
+# create — create a new cluster, run against the intended master's own API
+# ==============================================================
+proxmox_cluster_name:  ""   # required
+proxmox_cluster_link0: ""   # ring0 address
+proxmox_cluster_link1: ""   # ring1 address
+
+# ==============================================================
+# join — add nodes to an already-existing cluster
+# ==============================================================
+# Each item's api_host is the NEW node's own local PVE API — the join call
+# is sent to the joining node itself, which then contacts master_ip using
+# the fingerprint/password supplied. This mirrors `pvecm add <master-ip>`
+# run locally on the new node, just over HTTPS instead of SSH+CLI.
+proxmox_cluster_master_ip:            ""   # existing cluster master, reachable from every joining node
+proxmox_cluster_master_fingerprint:   ""   # from proxmox_cluster_join_facts.cluster_join[0].nodelist[].pve_fp
+# Always set this explicitly rather than relying on the underlying module's
+# fallback to api_password — that fallback silently reuses whatever
+# credential authenticates to the LOCAL node for the join call to the
+# MASTER as well, which is the wrong credential if you use per-node tokens.
+proxmox_cluster_master_api_password:  "{{ vault_proxmox_cluster_master_api_password | default(omit) }}"
+
+proxmox_cluster_join_nodes: []
+# proxmox_cluster_join_nodes:
+#   - api_host: pve2.example.com   # required — the new node's own API
+#     link0: "10.10.1.2"
+#     link1: "10.10.2.2"
+#     # api_user/api_password/api_token_id/api_token_secret may be set
+#     # per-item to override the top-level connection block, if this node's
+#     # own credentials differ from proxmox_cluster_api_user/etc.

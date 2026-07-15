@@ -1,0 +1,42 @@
+---
+- name: task - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_node_task_target is required, and proxmox_node_task_upid is required when proxmox_node_task_wait is true."
+  when: >
+    not proxmox_node_task_target or
+    (proxmox_node_task_wait | bool and not proxmox_node_task_upid)
+
+- name: task - list tasks
+  community.proxmox.proxmox_tasks_info:
+    api_host:         "{{ proxmox_node_api_host }}"
+    api_user:         "{{ proxmox_node_api_user }}"
+    api_password:     "{{ proxmox_node_api_password }}"
+    api_token_id:     "{{ proxmox_node_api_token_id }}"
+    api_token_secret: "{{ proxmox_node_api_token_secret }}"
+    validate_certs:   "{{ proxmox_node_validate_certs }}"
+    node:   "{{ proxmox_node_task_target }}"
+    task:   "{{ proxmox_node_task_upid | default(omit, true) }}"
+    source: "{{ proxmox_node_task_source }}"
+  register: proxmox_node_task_facts
+  when: not proxmox_node_task_wait | bool
+  delegate_to: localhost
+
+# No blocking "wait for task" module exists upstream — this is the
+# collection-recommended until/retries/delay polling idiom.
+- name: task - poll a specific task until it has a status
+  community.proxmox.proxmox_tasks_info:
+    api_host:         "{{ proxmox_node_api_host }}"
+    api_user:         "{{ proxmox_node_api_user }}"
+    api_password:     "{{ proxmox_node_api_password }}"
+    api_token_id:     "{{ proxmox_node_api_token_id }}"
+    api_token_secret: "{{ proxmox_node_api_token_secret }}"
+    validate_certs:   "{{ proxmox_node_validate_certs }}"
+    node:   "{{ proxmox_node_task_target }}"
+    task:   "{{ proxmox_node_task_upid }}"
+    source: "{{ proxmox_node_task_source }}"
+  register: proxmox_node_task_facts
+  until: proxmox_node_task_facts.proxmox_tasks[0].status is defined
+  retries: "{{ proxmox_node_task_wait_retries }}"
+  delay: "{{ proxmox_node_task_wait_delay }}"
+  when: proxmox_node_task_wait | bool
+  delegate_to: localhost

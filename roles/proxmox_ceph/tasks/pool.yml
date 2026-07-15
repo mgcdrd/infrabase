@@ -1,0 +1,34 @@
+---
+- name: pool - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_ceph_pools must be a non-empty list, and each item needs 'node' and 'name' keys."
+  when: proxmox_ceph_pools | length == 0
+
+# The only Ceph module here that diffs current vs desired state and issues
+# a PUT update rather than just create/delete — see README for an
+# idempotency caveat around field-type mismatches against PVE's status API.
+- name: pool - create/update/delete Ceph pools
+  community.proxmox.proxmox_ceph_pool:
+    api_host:         "{{ proxmox_ceph_api_host }}"
+    api_user:         "{{ proxmox_ceph_api_user }}"
+    api_password:     "{{ proxmox_ceph_api_password }}"
+    api_token_id:     "{{ proxmox_ceph_api_token_id }}"
+    api_token_secret: "{{ proxmox_ceph_api_token_secret }}"
+    validate_certs:   "{{ proxmox_ceph_validate_certs }}"
+    node:  "{{ item.node }}"
+    name:  "{{ item.name }}"
+    state: "{{ item.state | default('present') }}"
+    add_storages:       "{{ item.add_storages | default(omit) }}"
+    crush_rule:           "{{ item.crush_rule | default(omit) }}"
+    min_size:              "{{ item.min_size | default(omit) }}"
+    size:                    "{{ item.size | default(omit) }}"
+    pg_autoscale_mode:        "{{ item.pg_autoscale_mode | default(omit) }}"
+    pg_num:                     "{{ item.pg_num | default(omit) }}"
+    pg_num_min:                   "{{ item.pg_num_min | default(omit) }}"
+    target_size:                    "{{ item.target_size | default(omit) }}"
+    target_size_ratio:                "{{ item.target_size_ratio | default(omit) }}"
+    timeout:                            "{{ item.timeout | default(omit) }}"
+  loop: "{{ proxmox_ceph_pools }}"
+  loop_control:
+    label: "{{ item.node }}/{{ item.name }}"
+  delegate_to: localhost

@@ -1,0 +1,39 @@
+---
+# ---- ProxMox API connection ----
+proxmox_pool_api_host:          ""
+proxmox_pool_api_user:          "root@pam"
+proxmox_pool_api_password:      "{{ vault_proxmox_api_password | default(omit) }}"
+proxmox_pool_api_token_id:      "{{ vault_proxmox_api_token_id | default(omit) }}"
+proxmox_pool_api_token_secret:  "{{ vault_proxmox_api_token_secret | default(omit) }}"
+proxmox_pool_validate_certs:    false
+
+# ---- EXECUTION GATES ----
+proxmox_pool_do_pool:   false   # tag: pool
+proxmox_pool_do_member: false   # tag: member
+
+# ==============================================================
+# pool — create/delete pools
+# ==============================================================
+# Each item mirrors community.proxmox.proxmox_pool. `comment` is only
+# applied on creation — the module has no update path, so editing an
+# existing pool's comment here is a no-op. A pool must be empty (no VM or
+# storage members) before it can be deleted.
+proxmox_pool_pools: []
+# proxmox_pool_pools:
+#   - poolid: customer-a
+#     comment: "Customer A resources"
+#     state: present
+
+# ==============================================================
+# member — add/remove/reconcile VM and storage membership in one pool
+# ==============================================================
+proxmox_pool_poolid: ""     # target pool
+# Each item is either {vm: <vmid-or-name>} or {storage: <storage-name>}.
+proxmox_pool_members: []
+# proxmox_pool_members:
+#   - vm: 101
+#   - vm: pxe.home.arpa
+#   - storage: zfs-data
+proxmox_pool_member_state: "present"   # present | absent — ignored when proxmox_pool_exclusive is true
+proxmox_pool_exclusive:    false        # true = reconcile membership to exactly match proxmox_pool_members
+proxmox_pool_allow_move:   false        # true = allow adding a guest that's already in another pool

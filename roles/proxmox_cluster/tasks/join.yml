@@ -1,0 +1,34 @@
+---
+- name: join - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: >
+      proxmox_cluster_master_ip, proxmox_cluster_master_fingerprint, and a
+      non-empty proxmox_cluster_join_nodes list (each with an 'api_host'
+      key) are required.
+  when: >
+    not proxmox_cluster_master_ip or not proxmox_cluster_master_fingerprint or
+    proxmox_cluster_join_nodes | length == 0
+
+# api_host per item is the NEW node's own local PVE API — the join call is
+# sent to the joining node itself (POST /cluster/config/join), which then
+# contacts master_ip using the fingerprint/password supplied. This mirrors
+# `pvecm add <master-ip>` run locally on the new node, just over HTTPS
+# instead of SSH+CLI — no ansible.builtin.command needed.
+- name: join - join nodes to the existing cluster
+  community.proxmox.proxmox_cluster:
+    api_host:         "{{ item.api_host }}"
+    api_user:         "{{ item.api_user | default(proxmox_cluster_api_user) }}"
+    api_password:     "{{ item.api_password | default(proxmox_cluster_api_password) }}"
+    api_token_id:     "{{ item.api_token_id | default(proxmox_cluster_api_token_id) }}"
+    api_token_secret: "{{ item.api_token_secret | default(proxmox_cluster_api_token_secret) }}"
+    validate_certs:   "{{ proxmox_cluster_validate_certs }}"
+    state: present
+    master_ip:           "{{ proxmox_cluster_master_ip }}"
+    fingerprint:          "{{ proxmox_cluster_master_fingerprint }}"
+    master_api_password:  "{{ proxmox_cluster_master_api_password }}"
+    link0: "{{ item.link0 | default(omit) }}"
+    link1: "{{ item.link1 | default(omit) }}"
+  loop: "{{ proxmox_cluster_join_nodes }}"
+  loop_control:
+    label: "{{ item.api_host }}"
+  delegate_to: localhost

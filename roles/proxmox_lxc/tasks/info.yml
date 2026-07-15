@@ -1,0 +1,45 @@
+---
+# Read-only cluster/node/storage lookup. Useful as a pre-flight check before
+# create.yml/clone.yml (confirm target node/storage exist and have capacity)
+# or for feeding a dynamic inventory / capacity report.
+
+- name: info - query cluster status
+  community.proxmox.proxmox_cluster_status_info:
+    api_host:         "{{ proxmox_lxc_api_host }}"
+    api_user:         "{{ proxmox_lxc_api_user }}"
+    api_password:     "{{ proxmox_lxc_api_password }}"
+    api_token_id:     "{{ proxmox_lxc_api_token_id }}"
+    api_token_secret: "{{ proxmox_lxc_api_token_secret }}"
+    validate_certs:   "{{ proxmox_lxc_validate_certs }}"
+  register: proxmox_lxc_cluster_status
+  delegate_to: localhost
+
+- name: info - query node info
+  community.proxmox.proxmox_node_info:
+    api_host:         "{{ proxmox_lxc_api_host }}"
+    api_user:         "{{ proxmox_lxc_api_user }}"
+    api_password:     "{{ proxmox_lxc_api_password }}"
+    api_token_id:     "{{ proxmox_lxc_api_token_id }}"
+    api_token_secret: "{{ proxmox_lxc_api_token_secret }}"
+    validate_certs:   "{{ proxmox_lxc_validate_certs }}"
+  register: proxmox_lxc_node_facts
+  delegate_to: localhost
+
+- name: info - query storage info
+  community.proxmox.proxmox_storage_info:
+    api_host:         "{{ proxmox_lxc_api_host }}"
+    api_user:         "{{ proxmox_lxc_api_user }}"
+    api_password:     "{{ proxmox_lxc_api_password }}"
+    api_token_id:     "{{ proxmox_lxc_api_token_id }}"
+    api_token_secret: "{{ proxmox_lxc_api_token_secret }}"
+    validate_certs:   "{{ proxmox_lxc_validate_certs }}"
+  register: proxmox_lxc_storage_facts
+  delegate_to: localhost
+
+- name: info - report cluster summary
+  ansible.builtin.debug:
+    msg: >-
+      Nodes: {{ proxmox_lxc_node_facts.proxmox_nodes | map(attribute='node') | list }} —
+      quorate: {{ proxmox_lxc_cluster_status.cluster_status
+        | selectattr('type', 'equalto', 'cluster') | map(attribute='quorate') | first | default('n/a') }} —
+      storage: {{ proxmox_lxc_storage_facts.proxmox_storages | map(attribute='storage') | list }}

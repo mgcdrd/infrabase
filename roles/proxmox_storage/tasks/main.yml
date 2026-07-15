@@ -1,0 +1,10 @@
+---
+- name: proxmox_storage - list configured storage
+  ansible.builtin.include_tasks: info.yml
+  when: proxmox_storage_do_info | bool
+  tags: [proxmox_storage, info]
+
+- name: proxmox_storage - create/delete storage definitions
+  ansible.builtin.include_tasks: manage.yml
+  when: proxmox_storage_do_manage | bool
+  tags: [proxmox_storage, manage]

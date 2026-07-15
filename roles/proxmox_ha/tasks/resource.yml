@@ -1,0 +1,26 @@
+---
+- name: resource - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_ha_resources must be a non-empty list, and each item needs a 'name' key (e.g. 'vm:100')."
+  when: proxmox_ha_resources | length == 0
+
+# No check_mode support in the underlying module.
+- name: resource - create/update/delete HA resources
+  community.proxmox.proxmox_cluster_ha_resources:
+    api_host:         "{{ proxmox_ha_api_host }}"
+    api_user:         "{{ proxmox_ha_api_user }}"
+    api_password:     "{{ proxmox_ha_api_password }}"
+    api_token_id:     "{{ proxmox_ha_api_token_id }}"
+    api_token_secret: "{{ proxmox_ha_api_token_secret }}"
+    validate_certs:   "{{ proxmox_ha_validate_certs }}"
+    state:        "{{ item.state | default('present') }}"
+    name:         "{{ item.name }}"
+    comment:      "{{ item.comment | default(omit) }}"
+    group:        "{{ item.group | default(omit) }}"
+    max_relocate: "{{ item.max_relocate | default(omit) }}"
+    max_restart:  "{{ item.max_restart | default(omit) }}"
+    hastate:      "{{ item.hastate | default(omit) }}"
+  loop: "{{ proxmox_ha_resources }}"
+  loop_control:
+    label: "{{ item.name }}"
+  delegate_to: localhost

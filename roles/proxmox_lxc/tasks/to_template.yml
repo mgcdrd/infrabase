@@ -1,0 +1,28 @@
+---
+# Converts an existing container into a PVE template (a golden image other
+# clone.yml runs can source from). The container should be stopped and
+# generalized before running this — the module does no in-guest cleanup.
+
+- name: to_template - fail if required variable is unset
+  ansible.builtin.fail:
+    msg: "proxmox_lxc_template_source_name is required."
+  when: not proxmox_lxc_template_source_name
+
+- name: to_template - discover source container
+  ansible.builtin.include_tasks: discover.yml
+  vars:
+    proxmox_lxc_discover_name: "{{ proxmox_lxc_template_source_name }}"
+
+- name: to_template - convert container to template
+  community.proxmox.proxmox:
+    api_host:         "{{ proxmox_lxc_api_host }}"
+    api_user:         "{{ proxmox_lxc_api_user }}"
+    api_password:     "{{ proxmox_lxc_api_password }}"
+    api_token_id:     "{{ proxmox_lxc_api_token_id }}"
+    api_token_secret: "{{ proxmox_lxc_api_token_secret }}"
+    validate_certs:   "{{ proxmox_lxc_validate_certs }}"
+    vmid:  "{{ proxmox_lxc_discovered_vmid }}"
+    node:  "{{ proxmox_lxc_discovered_node }}"
+    state: template
+    force: "{{ proxmox_lxc_template_force }}"
+  delegate_to: localhost

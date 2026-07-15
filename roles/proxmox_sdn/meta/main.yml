@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  author: mgcdrd
+  description: Manage ProxMox VE Software-Defined Networking — zones, vnets, and subnets — via the PVE API
+  role_name: proxmox_sdn
+
+  license: GPL-3.0-or-later
+  min_ansible_version: '2.14'
+
+  galaxy_tags:
+    - mgcdrd
+
+collections:
+  - community.proxmox

@@ -1,0 +1,73 @@
+---
+# ---- ProxMox API connection ----
+proxmox_ha_api_host:          ""
+proxmox_ha_api_user:          "root@pam"
+proxmox_ha_api_password:      "{{ vault_proxmox_api_password | default(omit) }}"
+proxmox_ha_api_token_id:      "{{ vault_proxmox_api_token_id | default(omit) }}"
+proxmox_ha_api_token_secret:  "{{ vault_proxmox_api_token_secret | default(omit) }}"
+proxmox_ha_validate_certs:    false
+
+# ---- EXECUTION GATES ----
+proxmox_ha_do_info:     false   # tag: info     (rules only — no info module for groups/resources)
+proxmox_ha_do_group:    false   # tag: group    (legacy — deprecated on PVE 9.0+, still works)
+proxmox_ha_do_resource: false   # tag: resource
+proxmox_ha_do_rule:     false   # tag: rule     (PVE 9.0+ node/resource-affinity)
+
+# ==============================================================
+# group — legacy HA groups (PVE < 9.0, or PVE 9+ back-compat)
+# ==============================================================
+# PVE deprecated HA groups in favor of node-affinity rules as of 9.0 — the
+# /cluster/ha/groups API still works, but prefer `rule` below on PVE 9+
+# clusters. Each item mirrors community.proxmox.proxmox_cluster_ha_groups.
+# No check_mode support in the underlying module.
+proxmox_ha_groups: []
+# proxmox_ha_groups:
+#   - name: ha0
+#     state: present
+#     nodes: "node0:0,node1:1"    # list or "node:priority,node:priority" string
+#     nofailback: false
+#     restricted: false
+#     comment: "Primary HA group"
+
+# ==============================================================
+# resource — assign a VM/CT to HA management (works with both groups and rules)
+# ==============================================================
+# Each item mirrors community.proxmox.proxmox_cluster_ha_resources.
+# `name` is the HA resource id ("sid"), e.g. "vm:100" or "ct:101".
+# No check_mode support in the underlying module.
+proxmox_ha_resources: []
+# proxmox_ha_resources:
+#   - name: "vm:100"
+#     state: present
+#     group: ha0            # legacy group assignment — omit if using rules instead
+#     max_relocate: 1
+#     max_restart: 1
+#     hastate: started       # started | stopped | disabled | ignored
+#     comment: "Web frontend VM"
+
+# ==============================================================
+# rule — PVE 9.0+ HA node-affinity / resource-affinity rules
+# ==============================================================
+# Each item mirrors community.proxmox.proxmox_cluster_ha_rules. Full
+# check_mode/diff_mode support in the underlying module (unlike group/resource).
+proxmox_ha_rules: []
+# proxmox_ha_rules:
+#   - name: prefer-node0
+#     state: present
+#     type: node-affinity          # node-affinity | resource-affinity
+#     nodes: ["node0:10", "node1:20"]
+#     resources: ["vm:100"]
+#     strict: false
+#     disable: false
+#     comment: "VM 100 prefers node0, falls back to node1"
+#   - name: separate-web-nodes
+#     type: resource-affinity
+#     affinity: negative           # positive = keep together, negative = keep apart
+#     resources: ["vm:100", "vm:101"]
+
+# ==============================================================
+# info — query HA rules (read-only; no info module exists for legacy groups/resources)
+# ==============================================================
+proxmox_ha_info_rule:     ""   # filter to one rule by name; mutually exclusive with type/resource below
+proxmox_ha_info_type:     ""   # node-affinity | resource-affinity — filter by rule type
+proxmox_ha_info_resource: ""   # filter to rules affecting a given resource id, e.g. "vm:100"

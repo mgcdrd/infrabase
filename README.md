@@ -26,7 +26,21 @@ This collection contains common infrastructure roles used to standardize and aut
 | `lvm2_provision` | Provisions LVM storage at setup time — creates VGs, LVs, filesystems, and mounts |
 | `podman` | Installs Podman container runtime |
 | `postfix` | Installs and configures Postfix MTA |
+| `proxmox_access` | Manages ProxMox VE users, groups, IAM roles, ACLs, and auth realms via the PVE API |
+| `proxmox_acme` | Manages ACME certificates for the PVE node's own web UI (pveproxy) via the PVE API |
+| `proxmox_backup` | Manages ProxMox VE backup jobs, VM job membership, and on-demand backups via the PVE API |
+| `proxmox_ceph` | Manages ProxMox VE-integrated Ceph monitors/managers/MDS, OSDs, and pools via the PVE API |
+| `proxmox_cluster` | Creates a ProxMox VE cluster and joins additional nodes to it via the PVE API |
 | `proxmox_disk` | Adds or resizes a disk on a ProxMox VM via the PVE API, then detects the resulting block device inside the VM |
+| `proxmox_firewall` | Manages ProxMox VE's built-in firewall — options, rules, security groups, aliases, IP sets — via the PVE API |
+| `proxmox_ha` | Manages ProxMox VE High Availability groups, resources, and node/resource-affinity rules via the PVE API |
+| `proxmox_lxc` | Creates, clones, lifecycle-manages, and templates LXC containers via the ProxMox API |
+| `proxmox_network` | Manages node-level physical network interfaces (bridges/bonds/VLANs/OVS) via the PVE API |
+| `proxmox_node` | Manages ProxMox VE node power state, certificates/DNS/subscription config, and task monitoring via the PVE API |
+| `proxmox_pool` | Creates/deletes ProxMox VE resource pools and manages VM/storage pool membership via the PVE API |
+| `proxmox_sdn` | Manages ProxMox VE Software-Defined Networking — zones, vnets, and subnets — via the PVE API |
+| `proxmox_snapshot` | Creates, deletes, and rolls back ProxMox VE VM/CT snapshots via the PVE API |
+| `proxmox_storage` | Creates/deletes ProxMox VE storage backend definitions (NFS/CIFS/dir/iSCSI/CephFS/RBD/PBS/ZFS) via the PVE API |
 | `proxmox_vm` | Clones, lifecycle-manages, and templates VMs via the ProxMox API; queries cluster/node/storage info |
 | `sshd` | Installs and configures sshd with hardened defaults; crypto policy managed via `sshd_config.d/` drop-in |
 | `ssl_scripting` | Deploys SSL certificate scripting utilities |

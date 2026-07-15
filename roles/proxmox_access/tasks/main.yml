@@ -1,0 +1,30 @@
+---
+- name: proxmox_access - manage users
+  ansible.builtin.include_tasks: user.yml
+  when: proxmox_access_do_user | bool
+  tags: [proxmox_access, user]
+
+- name: proxmox_access - manage groups
+  ansible.builtin.include_tasks: group.yml
+  when: proxmox_access_do_group | bool
+  tags: [proxmox_access, group]
+
+- name: proxmox_access - manage IAM roles
+  ansible.builtin.include_tasks: role.yml
+  when: proxmox_access_do_role | bool
+  tags: [proxmox_access, role]
+
+- name: proxmox_access - manage ACLs
+  ansible.builtin.include_tasks: acl.yml
+  when: proxmox_access_do_acl | bool
+  tags: [proxmox_access, acl]
+
+- name: proxmox_access - manage authentication realms
+  ansible.builtin.include_tasks: domain.yml
+  when: proxmox_access_do_domain | bool
+  tags: [proxmox_access, domain]
+
+- name: proxmox_access - trigger realm directory sync
+  ansible.builtin.include_tasks: domain_sync.yml
+  when: proxmox_access_do_domain_sync | bool
+  tags: [proxmox_access, domain_sync]

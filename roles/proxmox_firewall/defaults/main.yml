@@ -1,0 +1,116 @@
+---
+# ---- ProxMox API connection ----
+proxmox_firewall_api_host:          ""
+proxmox_firewall_api_user:          "root@pam"
+proxmox_firewall_api_password:      "{{ vault_proxmox_api_password | default(omit) }}"
+proxmox_firewall_api_token_id:      "{{ vault_proxmox_api_token_id | default(omit) }}"
+proxmox_firewall_api_token_secret:  "{{ vault_proxmox_api_token_secret | default(omit) }}"
+proxmox_firewall_validate_certs:    false
+
+# ---- EXECUTION GATES ----
+proxmox_firewall_do_info:            false   # tag: info
+proxmox_firewall_do_cluster_options: false   # tag: cluster_options
+proxmox_firewall_do_node_options:    false   # tag: node_options
+proxmox_firewall_do_rule:            false   # tag: rule
+proxmox_firewall_do_group:           false   # tag: group
+proxmox_firewall_do_alias:           false   # tag: alias
+proxmox_firewall_do_ipset:           false   # tag: ipset
+
+# ==============================================================
+# info — read rules/groups/aliases/ipsets at any level, + node options (read-only)
+# ==============================================================
+proxmox_firewall_info_level: "cluster"   # cluster | group | vnet | node | vm
+proxmox_firewall_info_node:  ""          # required when level: node
+proxmox_firewall_info_vmid:  ""          # required when level: vm
+proxmox_firewall_info_vnet:  ""          # required when level: vnet
+proxmox_firewall_info_group: ""          # required when level: group
+proxmox_firewall_info_node_options_target: ""   # "" = skip the node-options lookup
+
+# ==============================================================
+# cluster_options — cluster-wide firewall enable/policy/log-ratelimit
+# ==============================================================
+proxmox_firewall_cluster_state:          "disabled"   # enabled | disabled
+proxmox_firewall_cluster_ebtables:       true
+proxmox_firewall_cluster_input_policy:   "DROP"        # ACCEPT | REJECT | DROP
+proxmox_firewall_cluster_output_policy:  "ACCEPT"      # ACCEPT | REJECT | DROP
+proxmox_firewall_cluster_forward_policy: "ACCEPT"      # ACCEPT | DROP
+proxmox_firewall_cluster_log_ratelimit: {}
+# proxmox_firewall_cluster_log_ratelimit:
+#   enabled: true
+#   burst: 5
+#   rate: "1/second"
+
+# ==============================================================
+# node_options — per-node firewall enable, logging, protocol hardening
+# ==============================================================
+proxmox_firewall_node_options: []
+# proxmox_firewall_node_options:
+#   - node_name: pve1
+#     state: enabled
+#     log_level_in: nolog
+#     nosmurfs: true
+#     protection_synflood: true
+
+# ==============================================================
+# rule — firewall rules at cluster/group/vnet/node/vm level
+# ==============================================================
+# No check_mode/diff_mode support in the underlying module. `pos` is
+# required for state=absent (identifies which rule to delete). Each item's
+# `rules` list mirrors community.proxmox.proxmox_firewall's `rules` suboptions.
+proxmox_firewall_rules: []
+# proxmox_firewall_rules:
+#   - level: cluster        # cluster | group | vnet | node | vm
+#     state: present
+#     rules:
+#       - type: in            # in | out | forward | group
+#         action: ACCEPT       # ACCEPT | DROP | REJECT | a security-group name
+#         pos: 0                 # required per rule
+#         proto: tcp
+#         dport: "22"
+#         log: nolog
+#         enable: true
+#   - level: vm
+#     vmid: 100
+#     state: present
+#     rules:
+#       - type: in
+#         action: ACCEPT
+#         pos: 0
+#         proto: tcp
+#         dport: "80"
+
+# ==============================================================
+# group — create/delete named security groups (NAME ONLY — no rule content)
+# ==============================================================
+# Rule content inside a security group requires
+# community.proxmox.proxmox_cluster_firewall_security_group, which is
+# unreleased as of collection 2.0.0 (targeted for 2.1.0) — not usable from
+# this role yet. See README.
+proxmox_firewall_groups: []
+# proxmox_firewall_groups:
+#   - group: webservers
+#     comment: "Web tier"
+#     state: present
+
+# ==============================================================
+# alias — cluster or VM-level firewall aliases
+# ==============================================================
+proxmox_firewall_aliases: []
+# proxmox_firewall_aliases:
+#   - name: office
+#     cidr: "203.0.113.0/24"
+#     state: present
+
+# ==============================================================
+# ipset — cluster-level IP sets
+# ==============================================================
+proxmox_firewall_ipsets: []
+# proxmox_firewall_ipsets:
+#   - name: hypervisors
+#     comment: "PVE hosts"
+#     state: present
+#     cidrs:
+#       - cidr: "192.168.1.10"
+#         comment: "pve1"
+#       - cidr: "192.168.1.11"
+#         comment: "pve2"

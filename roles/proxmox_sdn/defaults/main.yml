@@ -1,0 +1,69 @@
+---
+# ---- ProxMox API connection ----
+proxmox_sdn_api_host:          ""
+proxmox_sdn_api_user:          "root@pam"
+proxmox_sdn_api_password:      "{{ vault_proxmox_api_password | default(omit) }}"
+proxmox_sdn_api_token_id:      "{{ vault_proxmox_api_token_id | default(omit) }}"
+proxmox_sdn_api_token_secret:  "{{ vault_proxmox_api_token_secret | default(omit) }}"
+proxmox_sdn_validate_certs:    false
+
+# ---- EXECUTION GATES ----
+# Every zone/vnet/subnet task applies its change immediately (PVE's SDN
+# modules stage-then-apply internally, no separate apply step exists or is
+# needed — unlike proxmox_network).
+proxmox_sdn_do_info:   false   # tag: info
+proxmox_sdn_do_zone:   false   # tag: zone
+proxmox_sdn_do_vnet:   false   # tag: vnet
+proxmox_sdn_do_subnet: false   # tag: subnet
+
+# ==============================================================
+# info — list zones/vnets (read-only; no proxmox_subnet_info module exists upstream)
+# ==============================================================
+# No variables required. Sets facts:
+#   proxmox_sdn_zone_facts  (community.proxmox.proxmox_zone_info)
+#   proxmox_sdn_vnet_facts  (community.proxmox.proxmox_vnet_info)
+
+# ==============================================================
+# zone — create/update/delete SDN zones
+# ==============================================================
+# Each item mirrors community.proxmox.proxmox_zone's parameters. Only
+# `zone` and `type` are required per item. `type` is immutable once the
+# zone exists (the module hard-fails rather than changing it in place).
+proxmox_sdn_zones: []
+# proxmox_sdn_zones:
+#   - zone: lab
+#     type: vlan
+#     bridge: vmbr0
+#     state: present
+#   - zone: labvx
+#     type: vxlan
+#     fabric: my_fabric
+
+# ==============================================================
+# vnet — create/update/delete SDN vnets
+# ==============================================================
+# Each item mirrors community.proxmox.proxmox_vnet's parameters. `vnet` and
+# `zone` are required per item.
+proxmox_sdn_vnets: []
+# proxmox_sdn_vnets:
+#   - vnet: labnet
+#     zone: lab
+#     tag: 100
+#     vlanaware: true
+
+# ==============================================================
+# subnet — create/update/delete SDN subnets
+# ==============================================================
+# Each item mirrors community.proxmox.proxmox_subnet's parameters. `subnet`,
+# `vnet`, and `zone` are required per item (zone is required even for
+# state=absent by the underlying module's required_if logic).
+proxmox_sdn_subnets: []
+# proxmox_sdn_subnets:
+#   - subnet: "10.10.2.0/24"
+#     vnet: labnet
+#     zone: lab
+#     gateway: "10.10.2.1"
+#     snat: true
+#     dhcp_range:
+#       - start: "10.10.2.10"
+#         end: "10.10.2.200"

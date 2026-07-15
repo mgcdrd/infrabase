@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  author: mgcdrd
+  description: Create/delete ProxMox VE storage backend definitions (NFS/CIFS/dir/iSCSI/CephFS/RBD/PBS/ZFS) via the PVE API
+  role_name: proxmox_storage
+
+  license: GPL-3.0-or-later
+  min_ansible_version: '2.14'
+
+  galaxy_tags:
+    - mgcdrd
+
+collections:
+  - community.proxmox

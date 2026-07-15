@@ -1,0 +1,20 @@
+---
+- name: proxmox_sdn - list zones/vnets
+  ansible.builtin.include_tasks: info.yml
+  when: proxmox_sdn_do_info | bool
+  tags: [proxmox_sdn, info]
+
+- name: proxmox_sdn - manage SDN zones
+  ansible.builtin.include_tasks: zone.yml
+  when: proxmox_sdn_do_zone | bool
+  tags: [proxmox_sdn, zone]
+
+- name: proxmox_sdn - manage SDN vnets
+  ansible.builtin.include_tasks: vnet.yml
+  when: proxmox_sdn_do_vnet | bool
+  tags: [proxmox_sdn, vnet]
+
+- name: proxmox_sdn - manage SDN subnets
+  ansible.builtin.include_tasks: subnet.yml
+  when: proxmox_sdn_do_subnet | bool
+  tags: [proxmox_sdn, subnet]

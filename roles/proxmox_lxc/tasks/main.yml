@@ -1,0 +1,25 @@
+---
+- name: proxmox_lxc - gather cluster/node/storage info
+  ansible.builtin.include_tasks: info.yml
+  when: proxmox_lxc_do_info | bool
+  tags: [proxmox_lxc, info]
+
+- name: proxmox_lxc - create container from template
+  ansible.builtin.include_tasks: create.yml
+  when: proxmox_lxc_do_create | bool
+  tags: [proxmox_lxc, create]
+
+- name: proxmox_lxc - clone container from an existing container
+  ansible.builtin.include_tasks: clone.yml
+  when: proxmox_lxc_do_clone | bool
+  tags: [proxmox_lxc, clone]
+
+- name: proxmox_lxc - start/stop/restart/destroy container
+  ansible.builtin.include_tasks: lifecycle.yml
+  when: proxmox_lxc_do_lifecycle | bool
+  tags: [proxmox_lxc, lifecycle]
+
+- name: proxmox_lxc - convert container to template
+  ansible.builtin.include_tasks: to_template.yml
+  when: proxmox_lxc_do_template | bool
+  tags: [proxmox_lxc, template]

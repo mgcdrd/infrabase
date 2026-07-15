@@ -1,0 +1,61 @@
+---
+# ---- ProxMox API connection ----
+proxmox_node_api_host:          ""
+proxmox_node_api_user:          "root@pam"
+proxmox_node_api_password:      "{{ vault_proxmox_api_password | default(omit) }}"
+proxmox_node_api_token_id:      "{{ vault_proxmox_api_token_id | default(omit) }}"
+proxmox_node_api_token_secret:  "{{ vault_proxmox_api_token_secret | default(omit) }}"
+proxmox_node_validate_certs:    false
+
+# ---- EXECUTION GATES ----
+proxmox_node_do_info:   false   # tag: info
+proxmox_node_do_power:  false   # tag: power
+proxmox_node_do_config: false   # tag: config
+proxmox_node_do_task:   false   # tag: task
+
+# ==============================================================
+# info — list nodes with detailed status (read-only)
+# ==============================================================
+# No variables required. Sets fact: proxmox_node_facts
+
+# ==============================================================
+# power — wake-on-lan or shutdown a node
+# ==============================================================
+# The underlying module has NO reboot capability and NO target-MAC param
+# for wake-on-lan (PVE derives the MAC server-side from the node's own WOL
+# config, set separately via `pvenode config`). "online" triggers WOL if
+# the node isn't already online; "offline" triggers a graceful shutdown,
+# not a reboot.
+proxmox_node_target:      ""   # node name, required
+proxmox_node_power_state: ""   # online | offline
+
+# ==============================================================
+# config — node certificates, DNS resolvers, subscription key
+# ==============================================================
+proxmox_node_config_target: ""   # node name, required
+proxmox_node_certificates: {}
+# proxmox_node_certificates:
+#   certificate_file_path: /opt/ansible/cert.pem   # or certificate_raw: "<PEM string>"
+#   private_key_file_path: /opt/ansible/key.pem     # or private_key_raw: "<PEM string>"
+#   state: present
+#   force: false
+#   restart: false
+proxmox_node_dns: {}
+# proxmox_node_dns:
+#   dns1: "10.0.0.1"
+#   dns2: "10.0.0.2"
+#   search: "lab.example.com"   # required within this dict if dns is used
+proxmox_node_subscription: {}
+# proxmox_node_subscription:
+#   state: present
+#   key: "{{ vault_proxmox_subscription_key }}"
+
+# ==============================================================
+# task — list/poll PVE tasks by node or UPID (read-only)
+# ==============================================================
+proxmox_node_task_target: ""         # node name, required
+proxmox_node_task_upid:   ""         # "" = list tasks instead of polling one specific task
+proxmox_node_task_source: "archive"  # archive (finished, default) | active (running) | all
+proxmox_node_task_wait:         false  # true = poll proxmox_node_task_upid until it has a status
+proxmox_node_task_wait_retries: 30
+proxmox_node_task_wait_delay:   5

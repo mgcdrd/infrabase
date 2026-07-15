@@ -1,0 +1,28 @@
+---
+- name: rule - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_ha_rules must be a non-empty list, and each item needs a 'name' key."
+  when: proxmox_ha_rules | length == 0
+
+- name: rule - create/update/delete HA node/resource-affinity rules
+  community.proxmox.proxmox_cluster_ha_rules:
+    api_host:         "{{ proxmox_ha_api_host }}"
+    api_user:         "{{ proxmox_ha_api_user }}"
+    api_password:     "{{ proxmox_ha_api_password }}"
+    api_token_id:     "{{ proxmox_ha_api_token_id }}"
+    api_token_secret: "{{ proxmox_ha_api_token_secret }}"
+    validate_certs:   "{{ proxmox_ha_validate_certs }}"
+    state:      "{{ item.state | default('present') }}"
+    name:       "{{ item.name }}"
+    type:       "{{ item.type | default(omit) }}"
+    affinity:   "{{ item.affinity | default(omit) }}"
+    nodes:      "{{ item.nodes | default(omit) }}"
+    resources:  "{{ item.resources | default(omit) }}"
+    strict:     "{{ item.strict | default(omit) }}"
+    disable:    "{{ item.disable | default(omit) }}"
+    comment:    "{{ item.comment | default(omit) }}"
+    force:      "{{ item.force | default(omit) }}"
+  loop: "{{ proxmox_ha_rules }}"
+  loop_control:
+    label: "{{ item.name }}"
+  delegate_to: localhost

@@ -1,0 +1,30 @@
+---
+- name: user - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_access_users must be a non-empty list, and each item needs a 'userid' key (e.g. 'jdoe@pve')."
+  when: proxmox_access_users | length == 0
+
+- name: user - create/update/delete users
+  community.proxmox.proxmox_user:
+    api_host:         "{{ proxmox_access_api_host }}"
+    api_user:         "{{ proxmox_access_api_user }}"
+    api_password:     "{{ proxmox_access_api_password }}"
+    api_token_id:     "{{ proxmox_access_api_token_id }}"
+    api_token_secret: "{{ proxmox_access_api_token_secret }}"
+    validate_certs:   "{{ proxmox_access_validate_certs }}"
+    userid:    "{{ item.userid }}"
+    state:     "{{ item.state | default('present') }}"
+    comment:   "{{ item.comment | default(omit) }}"
+    enable:    "{{ item.enable | default(omit) }}"
+    email:     "{{ item.email | default(omit) }}"
+    expire:    "{{ item.expire | default(omit) }}"
+    firstname: "{{ item.firstname | default(omit) }}"
+    lastname:  "{{ item.lastname | default(omit) }}"
+    groups:    "{{ item.groups | default(omit) }}"
+    keys:      "{{ item.keys | default(omit) }}"
+    password:  "{{ item.password | default(omit) }}"
+    tokens:    "{{ item.tokens | default(omit) }}"
+  loop: "{{ proxmox_access_users }}"
+  loop_control:
+    label: "{{ item.userid }}"
+  delegate_to: localhost

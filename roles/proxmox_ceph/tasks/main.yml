@@ -1,0 +1,25 @@
+---
+- name: proxmox_ceph - manage Ceph monitors
+  ansible.builtin.include_tasks: mon.yml
+  when: proxmox_ceph_do_mon | bool
+  tags: [proxmox_ceph, mon]
+
+- name: proxmox_ceph - manage Ceph managers
+  ansible.builtin.include_tasks: mgr.yml
+  when: proxmox_ceph_do_mgr | bool
+  tags: [proxmox_ceph, mgr]
+
+- name: proxmox_ceph - manage Ceph metadata servers
+  ansible.builtin.include_tasks: mds.yml
+  when: proxmox_ceph_do_mds | bool
+  tags: [proxmox_ceph, mds]
+
+- name: proxmox_ceph - manage Ceph OSDs
+  ansible.builtin.include_tasks: osd.yml
+  when: proxmox_ceph_do_osd | bool
+  tags: [proxmox_ceph, osd]
+
+- name: proxmox_ceph - manage Ceph pools
+  ansible.builtin.include_tasks: pool.yml
+  when: proxmox_ceph_do_pool | bool
+  tags: [proxmox_ceph, pool]

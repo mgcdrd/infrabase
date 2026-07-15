@@ -1,0 +1,63 @@
+---
+# ---- ProxMox API connection ----
+proxmox_storage_api_host:          ""
+proxmox_storage_api_user:          "root@pam"
+proxmox_storage_api_password:      "{{ vault_proxmox_api_password | default(omit) }}"
+proxmox_storage_api_token_id:      "{{ vault_proxmox_api_token_id | default(omit) }}"
+proxmox_storage_api_token_secret:  "{{ vault_proxmox_api_token_secret | default(omit) }}"
+proxmox_storage_validate_certs:    false
+
+# ---- EXECUTION GATES ----
+proxmox_storage_do_info:   false   # tag: info
+proxmox_storage_do_manage: false   # tag: manage
+
+# ==============================================================
+# info — list configured storage (read-only)
+# ==============================================================
+# No variables required. Sets fact: proxmox_storage_facts
+
+# ==============================================================
+# manage — create/delete storage backend definitions
+# ==============================================================
+# Each item mirrors community.proxmox.proxmox_storage. `type` choices:
+# cephfs, cifs, dir, iscsi, nfs, pbs, rbd, zfspool — there is NO lvm,
+# lvmthin, or btrfs choice in this module (PVE supports them, this
+# collection's module does not manage them — see README).
+#
+# There is NO update path — state=present against an already-existing
+# storage is always a no-op, even if content/nodes/backend options differ
+# from what's set here. Delete and recreate to change an existing storage.
+proxmox_storage_definitions: []
+# proxmox_storage_definitions:
+#   - name: net-nfsshare01
+#     type: nfs
+#     state: present
+#     nodes: ["pve1", "pve2"]        # omit for cluster-wide availability
+#     content: ["images", "rootdir"]
+#     nfs_options:
+#       server: "10.0.0.124"
+#       export: "/mnt/tank/pve"
+#
+#   - name: zfspool-storage
+#     type: zfspool
+#     content: ["images", "rootdir"]
+#     zfspool_options:
+#       pool: "rpool/data"
+#       sparse: true
+#
+#   - name: local-extra
+#     type: dir
+#     nodes: ["pve1"]
+#     content: ["vztmpl", "iso", "backup"]
+#     dir_options:
+#       path: "/mnt/pve/local-extra"
+#
+# Per-type option dicts (only the relevant one is used, based on `type`):
+#   cephfs_options:  {path, monhost, subdir, username, password, client_keyring, fs_name}
+#   cifs_options:    {server, share, username, password, domain, subdir, smb_version, ...} — server/share/username/password required
+#   dir_options:     {path}                                                                — required
+#   iscsi_options:   {portal, target}                                                       — both required
+#   nfs_options:     {server, export, options, preallocation}                               — server/export required
+#   pbs_options:     {server, datastore, username, password, namespace, fingerprint, encryption_key} — server/datastore/username/password required
+#   rbd_options:     {pool}                                                                  — required (enforced at the PVE API level, not by Ansible arg validation)
+#   zfspool_options: {pool, sparse}                                                          — pool required

@@ -1,0 +1,60 @@
+---
+- name: domain - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_access_domains must be a non-empty list, and each item needs a 'realm' key."
+  when: proxmox_access_domains | length == 0
+
+# type and openid_username_claim are immutable after creation — the module
+# warns and silently drops those fields from an update rather than failing.
+# Only ad/ldap/openid are manageable here; pam/pve are built-in and always
+# exist.
+- name: domain - create/update/delete authentication realms
+  community.proxmox.proxmox_domain:
+    api_host:         "{{ proxmox_access_api_host }}"
+    api_user:         "{{ proxmox_access_api_user }}"
+    api_password:     "{{ proxmox_access_api_password }}"
+    api_token_id:     "{{ proxmox_access_api_token_id }}"
+    api_token_secret: "{{ proxmox_access_api_token_secret }}"
+    validate_certs:   "{{ proxmox_access_validate_certs }}"
+    realm:   "{{ item.realm }}"
+    state:   "{{ item.state }}"
+    type:    "{{ item.type | default(omit) }}"
+    comment: "{{ item.comment | default(omit) }}"
+    default: "{{ item.default | default(omit) }}"
+    # LDAP (also used for shared AD fields — see README)
+    ldap_base_dn:               "{{ item.ldap_base_dn | default(omit) }}"
+    ldap_user_attr:              "{{ item.ldap_user_attr | default(omit) }}"
+    ldap_primary_server:         "{{ item.ldap_primary_server | default(omit) }}"
+    ldap_secondary_server:       "{{ item.ldap_secondary_server | default(omit) }}"
+    ldap_port:                   "{{ item.ldap_port | default(omit) }}"
+    ldap_mode:                   "{{ item.ldap_mode | default(omit) }}"
+    ldap_bind_dn:                "{{ item.ldap_bind_dn | default(omit) }}"
+    ldap_password:               "{{ item.ldap_password | default(omit) }}"
+    ldap_filter:                 "{{ item.ldap_filter | default(omit) }}"
+    ldap_group_filter:           "{{ item.ldap_group_filter | default(omit) }}"
+    ldap_group_classes:          "{{ item.ldap_group_classes | default(omit) }}"
+    ldap_group_name_attr:        "{{ item.ldap_group_name_attr | default(omit) }}"
+    ldap_user_classes:           "{{ item.ldap_user_classes | default(omit) }}"
+    ldap_validate_certs:         "{{ item.ldap_validate_certs | default(omit) }}"
+    ldap_sync_defaults_options:  "{{ item.ldap_sync_defaults_options | default(omit) }}"
+    # AD-only
+    ad_domain:         "{{ item.ad_domain | default(omit) }}"
+    ad_case_sensitive: "{{ item.ad_case_sensitive | default(omit) }}"
+    # OpenID
+    openid_issuer_url:          "{{ item.openid_issuer_url | default(omit) }}"
+    openid_client_id:           "{{ item.openid_client_id | default(omit) }}"
+    openid_client_key:          "{{ item.openid_client_key | default(omit) }}"
+    openid_username_claim:      "{{ item.openid_username_claim | default(omit) }}"
+    openid_audiences:           "{{ item.openid_audiences | default(omit) }}"
+    openid_acr_values:          "{{ item.openid_acr_values | default(omit) }}"
+    openid_autocreate:          "{{ item.openid_autocreate | default(omit) }}"
+    openid_groups_autocreate:   "{{ item.openid_groups_autocreate | default(omit) }}"
+    openid_groups_claim:        "{{ item.openid_groups_claim | default(omit) }}"
+    openid_groups_overwrite:    "{{ item.openid_groups_overwrite | default(omit) }}"
+    openid_prompt:               "{{ item.openid_prompt | default(omit) }}"
+    openid_query_userinfo:       "{{ item.openid_query_userinfo | default(omit) }}"
+    openid_scopes:                "{{ item.openid_scopes | default(omit) }}"
+  loop: "{{ proxmox_access_domains }}"
+  loop_control:
+    label: "{{ item.realm }}"
+  delegate_to: localhost

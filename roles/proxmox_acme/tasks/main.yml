@@ -1,0 +1,20 @@
+---
+- name: proxmox_acme - list ACME accounts and DNS plugins
+  ansible.builtin.include_tasks: info.yml
+  when: proxmox_acme_do_info | bool
+  tags: [proxmox_acme, info]
+
+- name: proxmox_acme - manage ACME accounts
+  ansible.builtin.include_tasks: account.yml
+  when: proxmox_acme_do_account | bool
+  tags: [proxmox_acme, account]
+
+- name: proxmox_acme - manage DNS challenge plugins
+  ansible.builtin.include_tasks: plugin.yml
+  when: proxmox_acme_do_plugin | bool
+  tags: [proxmox_acme, plugin]
+
+- name: proxmox_acme - set node domains and order/renew/remove certificates
+  ansible.builtin.include_tasks: certificate.yml
+  when: proxmox_acme_do_certificate | bool
+  tags: [proxmox_acme, certificate]

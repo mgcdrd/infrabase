@@ -1,0 +1,30 @@
+---
+- name: subnet - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_sdn_subnets must be a non-empty list, and each item needs 'subnet', 'vnet', and 'zone' keys."
+  when: proxmox_sdn_subnets | length == 0
+
+- name: subnet - create/update/delete SDN subnets
+  community.proxmox.proxmox_subnet:
+    api_host:         "{{ proxmox_sdn_api_host }}"
+    api_user:         "{{ proxmox_sdn_api_user }}"
+    api_password:     "{{ proxmox_sdn_api_password }}"
+    api_token_id:     "{{ proxmox_sdn_api_token_id }}"
+    api_token_secret: "{{ proxmox_sdn_api_token_secret }}"
+    validate_certs:   "{{ proxmox_sdn_validate_certs }}"
+    subnet:                    "{{ item.subnet }}"
+    vnet:                      "{{ item.vnet }}"
+    zone:                      "{{ item.zone }}"
+    state:                     "{{ item.state | default('present') }}"
+    update:                    "{{ item.update | default(omit) }}"
+    gateway:                   "{{ item.gateway | default(omit) }}"
+    snat:                      "{{ item.snat | default(omit) }}"
+    dhcp_dns_server:           "{{ item.dhcp_dns_server | default(omit) }}"
+    dhcp_range:                "{{ item.dhcp_range | default(omit) }}"
+    dhcp_range_update_mode:    "{{ item.dhcp_range_update_mode | default(omit) }}"
+    dnszoneprefix:             "{{ item.dnszoneprefix | default(omit) }}"
+    delete:                    "{{ item.delete | default(omit) }}"
+  loop: "{{ proxmox_sdn_subnets }}"
+  loop_control:
+    label: "{{ item.zone }}/{{ item.vnet }}/{{ item.subnet }}"
+  delegate_to: localhost

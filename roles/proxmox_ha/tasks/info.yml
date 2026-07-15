@@ -1,0 +1,19 @@
+---
+# No proxmox_cluster_ha_groups_info / proxmox_cluster_ha_resources_info module
+# exists upstream — only HA rules are readable through this role. Query
+# /cluster/ha/groups or /cluster/ha/resources directly (ansible.builtin.uri
+# or pvesh) if you need to audit legacy groups/resources.
+
+- name: info - query HA rules
+  community.proxmox.proxmox_cluster_ha_rules_info:
+    api_host:         "{{ proxmox_ha_api_host }}"
+    api_user:         "{{ proxmox_ha_api_user }}"
+    api_password:     "{{ proxmox_ha_api_password }}"
+    api_token_id:     "{{ proxmox_ha_api_token_id }}"
+    api_token_secret: "{{ proxmox_ha_api_token_secret }}"
+    validate_certs:   "{{ proxmox_ha_validate_certs }}"
+    rule:     "{{ proxmox_ha_info_rule | default(omit, true) }}"
+    type:     "{{ proxmox_ha_info_type | default(omit, true) }}"
+    resource: "{{ proxmox_ha_info_resource | default(omit, true) }}"
+  register: proxmox_ha_rule_facts
+  delegate_to: localhost

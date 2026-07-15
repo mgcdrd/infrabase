@@ -1,0 +1,34 @@
+---
+- name: info - fail if required variable is unset
+  ansible.builtin.fail:
+    msg: "proxmox_network_info_node is required."
+  when: not proxmox_network_info_node
+
+- name: info - query live node network interfaces
+  community.proxmox.proxmox_node_network_info:
+    api_host:         "{{ proxmox_network_api_host }}"
+    api_user:         "{{ proxmox_network_api_user }}"
+    api_password:     "{{ proxmox_network_api_password }}"
+    api_token_id:     "{{ proxmox_network_api_token_id }}"
+    api_token_secret: "{{ proxmox_network_api_token_secret }}"
+    validate_certs:   "{{ proxmox_network_validate_certs }}"
+    node:       "{{ proxmox_network_info_node }}"
+    iface:      "{{ proxmox_network_info_iface | default(omit, true) }}"
+    iface_type: "{{ proxmox_network_info_iface_type | default(omit, true) }}"
+  register: proxmox_network_facts
+  when: not proxmox_network_info_check_changes | bool
+  delegate_to: localhost
+
+- name: info - check for pending (unapplied) network changes
+  community.proxmox.proxmox_node_network_info:
+    api_host:         "{{ proxmox_network_api_host }}"
+    api_user:         "{{ proxmox_network_api_user }}"
+    api_password:     "{{ proxmox_network_api_password }}"
+    api_token_id:     "{{ proxmox_network_api_token_id }}"
+    api_token_secret: "{{ proxmox_network_api_token_secret }}"
+    validate_certs:   "{{ proxmox_network_validate_certs }}"
+    node: "{{ proxmox_network_info_node }}"
+    check_changes: true
+  register: proxmox_network_pending_facts
+  when: proxmox_network_info_check_changes | bool
+  delegate_to: localhost

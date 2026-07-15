@@ -1,0 +1,112 @@
+---
+# ---- ProxMox API connection ----
+proxmox_access_api_host:          ""
+proxmox_access_api_user:          "root@pam"
+proxmox_access_api_password:      "{{ vault_proxmox_api_password | default(omit) }}"
+proxmox_access_api_token_id:      "{{ vault_proxmox_api_token_id | default(omit) }}"
+proxmox_access_api_token_secret:  "{{ vault_proxmox_api_token_secret | default(omit) }}"
+proxmox_access_validate_certs:    false
+
+# ---- EXECUTION GATES ----
+proxmox_access_do_user:        false   # tag: user
+proxmox_access_do_group:       false   # tag: group
+proxmox_access_do_role:        false   # tag: role   (PVE IAM role, not an Ansible role)
+proxmox_access_do_acl:         false   # tag: acl
+proxmox_access_do_domain:      false   # tag: domain (auth realms)
+proxmox_access_do_domain_sync: false   # tag: domain_sync
+
+# ==============================================================
+# user — PVE users (userid must include a realm, e.g. "jdoe@pve")
+# ==============================================================
+# Each item mirrors community.proxmox.proxmox_user. Password rotation on an
+# *existing* user is unreliable through this module — see README.
+proxmox_access_users: []
+# proxmox_access_users:
+#   - userid: jdoe@pve
+#     state: present
+#     enable: true
+#     email: jdoe@example.com
+#     firstname: John
+#     lastname: Doe
+#     expire: 0
+#     groups: [admins]
+#     password: "{{ vault_proxmox_jdoe_password }}"   # PVE-realm users only, creation only
+#     tokens:
+#       - tokenid: automation
+#         privsep: false
+#         comment: "CI token"
+
+# ==============================================================
+# group — PVE groups (membership is set from the user side via `groups:`, not here)
+# ==============================================================
+# comment is only applied on creation — the module has no update path for it.
+proxmox_access_groups: []
+# proxmox_access_groups:
+#   - groupid: admins
+#     comment: "IT Admins"
+#     state: present
+
+# ==============================================================
+# role — PVE IAM roles (custom privilege sets — NOT Ansible roles)
+# ==============================================================
+# privs is set/replaced wholesale on update, no add/remove semantics.
+proxmox_access_roles: []
+# proxmox_access_roles:
+#   - roleid: VMOperator
+#     privs: [VM.PowerMgmt, VM.Console, VM.Monitor]
+#     state: present
+
+# ==============================================================
+# acl — one ACE (path x role x principal) per item; loop for multiple grants
+# ==============================================================
+# For state=absent, only `path` is strictly required — if roleid/type/ugid
+# are also given they narrow which ACEs on that path get removed, otherwise
+# ALL ACEs on that path are removed.
+proxmox_access_acls: []
+# proxmox_access_acls:
+#   - path: /vms/100
+#     type: user            # user | group | token
+#     ugid: jdoe@pve
+#     roleid: VMOperator
+#     propagate: true
+#     state: present
+
+# ==============================================================
+# domain — auth realms. Only ad/ldap/openid are manageable — pam/pve are
+# built-in and always exist, they cannot be created/deleted through this role.
+# ==============================================================
+# `type` and `openid_username_claim` are immutable after creation — the
+# module warns and drops those fields from updates rather than failing.
+proxmox_access_domains: []
+# proxmox_access_domains:
+#   - realm: ipa
+#     state: present
+#     type: ldap
+#     default: false
+#     ldap_base_dn: "cn=accounts,dc=lab,dc=example,dc=com"
+#     ldap_user_attr: uid
+#     ldap_bind_dn: "uid=svc-proxmox,cn=users,cn=accounts,dc=lab,dc=example,dc=com"
+#     ldap_password: "{{ vault_proxmox_ldap_bind_password }}"
+#     ldap_primary_server: ipa2.lab.example.com
+#     ldap_secondary_server: ipa3.lab.example.com
+#     ldap_mode: ldaps
+#     ldap_validate_certs: true
+#     ldap_sync_defaults_options:
+#       scope: both
+#       enable_new: true
+#       remove_vanished: "acl;properties;entry"
+#   - realm: corp-ad
+#     state: present
+#     type: ad
+#     ad_domain: CORP
+#     ad_primary_server: dc1.corp.example.com
+#     ldap_bind_dn: "svc-proxmox@corp.example.com"    # AD realms still use ldap_* names for shared fields
+#     ldap_password: "{{ vault_proxmox_ad_bind_password }}"
+
+# ==============================================================
+# domain_sync — trigger an LDAP/AD directory sync on an existing realm
+# ==============================================================
+proxmox_access_domain_sync_realm:          ""     # required
+proxmox_access_domain_sync_scope:          ""     # users | groups | both
+proxmox_access_domain_sync_enable_new:     ""
+proxmox_access_domain_sync_remove_vanished: ""    # semicolon list: "acl;properties;entry" or "none"

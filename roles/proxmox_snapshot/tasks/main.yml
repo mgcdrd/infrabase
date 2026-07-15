@@ -1,0 +1,10 @@
+---
+- name: proxmox_snapshot - query snapshots
+  ansible.builtin.include_tasks: info.yml
+  when: proxmox_snapshot_do_info | bool
+  tags: [proxmox_snapshot, info]
+
+- name: proxmox_snapshot - create/delete/rollback snapshots
+  ansible.builtin.include_tasks: manage.yml
+  when: proxmox_snapshot_do_manage | bool
+  tags: [proxmox_snapshot, manage]

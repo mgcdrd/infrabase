@@ -1,0 +1,22 @@
+---
+- name: pool - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_pool_pools must be a non-empty list, and each item needs a 'poolid' key."
+  when: proxmox_pool_pools | length == 0
+
+# comment is only applied on creation — the module has no update path for it.
+- name: pool - create/delete pools
+  community.proxmox.proxmox_pool:
+    api_host:         "{{ proxmox_pool_api_host }}"
+    api_user:         "{{ proxmox_pool_api_user }}"
+    api_password:     "{{ proxmox_pool_api_password }}"
+    api_token_id:     "{{ proxmox_pool_api_token_id }}"
+    api_token_secret: "{{ proxmox_pool_api_token_secret }}"
+    validate_certs:   "{{ proxmox_pool_validate_certs }}"
+    poolid:  "{{ item.poolid }}"
+    comment: "{{ item.comment | default(omit) }}"
+    state:   "{{ item.state | default('present') }}"
+  loop: "{{ proxmox_pool_pools }}"
+  loop_control:
+    label: "{{ item.poolid }}"
+  delegate_to: localhost

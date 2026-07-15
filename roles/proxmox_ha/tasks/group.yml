@@ -1,0 +1,27 @@
+---
+- name: group - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_ha_groups must be a non-empty list, and each item needs a 'name' key."
+  when: proxmox_ha_groups | length == 0
+
+# HA groups are deprecated on PVE 9.0+ in favor of HA node-affinity rules
+# (proxmox_ha_do_rule) — the /cluster/ha/groups endpoint still works, but
+# prefer rule.yml for new PVE 9+ deployments. No check_mode support here.
+- name: group - create/update/delete HA groups
+  community.proxmox.proxmox_cluster_ha_groups:
+    api_host:         "{{ proxmox_ha_api_host }}"
+    api_user:         "{{ proxmox_ha_api_user }}"
+    api_password:     "{{ proxmox_ha_api_password }}"
+    api_token_id:     "{{ proxmox_ha_api_token_id }}"
+    api_token_secret: "{{ proxmox_ha_api_token_secret }}"
+    validate_certs:   "{{ proxmox_ha_validate_certs }}"
+    state:       "{{ item.state | default('present') }}"
+    name:        "{{ item.name }}"
+    comment:     "{{ item.comment | default(omit) }}"
+    nodes:       "{{ item.nodes | default(omit) }}"
+    nofailback:  "{{ item.nofailback | default(omit) }}"
+    restricted:  "{{ item.restricted | default(omit) }}"
+  loop: "{{ proxmox_ha_groups }}"
+  loop_control:
+    label: "{{ item.name }}"
+  delegate_to: localhost

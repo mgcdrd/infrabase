@@ -1,0 +1,20 @@
+---
+- name: proxmox_backup - query backup jobs/membership
+  ansible.builtin.include_tasks: info.yml
+  when: proxmox_backup_do_info | bool
+  tags: [proxmox_backup, info]
+
+- name: proxmox_backup - create/update/delete scheduled backup jobs
+  ansible.builtin.include_tasks: job.yml
+  when: proxmox_backup_do_job | bool
+  tags: [proxmox_backup, job]
+
+- name: proxmox_backup - toggle VM membership in an existing job
+  ansible.builtin.include_tasks: membership.yml
+  when: proxmox_backup_do_membership | bool
+  tags: [proxmox_backup, membership]
+
+- name: proxmox_backup - trigger an on-demand backup
+  ansible.builtin.include_tasks: run.yml
+  when: proxmox_backup_do_run | bool
+  tags: [proxmox_backup, run]

@@ -1,0 +1,23 @@
+---
+- name: alias - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_firewall_aliases must be a non-empty list, and each item needs a 'name' key."
+  when: proxmox_firewall_aliases | length == 0
+
+- name: alias - manage firewall aliases
+  community.proxmox.proxmox_firewall:
+    api_host:         "{{ proxmox_firewall_api_host }}"
+    api_user:         "{{ proxmox_firewall_api_user }}"
+    api_password:     "{{ proxmox_firewall_api_password }}"
+    api_token_id:     "{{ proxmox_firewall_api_token_id }}"
+    api_token_secret: "{{ proxmox_firewall_api_token_secret }}"
+    validate_certs:   "{{ proxmox_firewall_validate_certs }}"
+    state: "{{ item.state | default('present') }}"
+    aliases:
+      - name:    "{{ item.name }}"
+        cidr:    "{{ item.cidr | default(omit) }}"
+        comment: "{{ item.comment | default(omit) }}"
+  loop: "{{ proxmox_firewall_aliases }}"
+  loop_control:
+    label: "{{ item.name }}"
+  delegate_to: localhost

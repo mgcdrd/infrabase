@@ -1,0 +1,32 @@
+---
+- name: certificate - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_acme_certificates must be a non-empty list, and each item needs a 'node_name' key."
+  when: proxmox_acme_certificates | length == 0
+
+- name: certificate - fail if not authenticated as root@pam with a password
+  ansible.builtin.fail:
+    msg: >
+      ACME certificate management requires root@pam password authentication
+      (a PVE API restriction, not a limitation of this role) — set
+      proxmox_acme_api_user: root@pam and proxmox_acme_api_password.
+      API tokens are not accepted for this operation.
+  when: proxmox_acme_api_user != 'root@pam' or not proxmox_acme_api_password
+
+# Single module handles both per-node domain assignment AND ordering/
+# renewing/removing the resulting certificate — there's no separate step.
+- name: certificate - set node domains and order/renew/remove the ACME certificate
+  community.proxmox.proxmox_acme_certificate:
+    api_host:       "{{ proxmox_acme_api_host }}"
+    api_user:       "{{ proxmox_acme_api_user }}"
+    api_password:   "{{ proxmox_acme_api_password }}"
+    validate_certs: "{{ proxmox_acme_validate_certs }}"
+    state:     "{{ item.state | default('present') }}"
+    node_name: "{{ item.node_name }}"
+    account:   "{{ item.account | default(omit) }}"
+    domains:   "{{ item.domains | default(omit) }}"
+    force:     "{{ item.force | default(omit) }}"
+  loop: "{{ proxmox_acme_certificates }}"
+  loop_control:
+    label: "{{ item.node_name }}"
+  delegate_to: localhost

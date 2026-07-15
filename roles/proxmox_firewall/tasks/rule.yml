@@ -1,0 +1,32 @@
+---
+- name: rule - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: >
+      proxmox_firewall_rules must be a non-empty list, and each item needs a
+      'rules' list for state=present or a 'pos' for state=absent.
+  when: proxmox_firewall_rules | length == 0
+
+# No check_mode/diff_mode support in the underlying module.
+- name: rule - manage firewall rules
+  community.proxmox.proxmox_firewall:
+    api_host:         "{{ proxmox_firewall_api_host }}"
+    api_user:         "{{ proxmox_firewall_api_user }}"
+    api_password:     "{{ proxmox_firewall_api_password }}"
+    api_token_id:     "{{ proxmox_firewall_api_token_id }}"
+    api_token_secret: "{{ proxmox_firewall_api_token_secret }}"
+    validate_certs:   "{{ proxmox_firewall_validate_certs }}"
+    level:  "{{ item.level | default('cluster') }}"
+    state:  "{{ item.state | default('present') }}"
+    update: "{{ item.update | default(omit) }}"
+    node:   "{{ item.node | default(omit) }}"
+    vmid:   "{{ item.vmid | default(omit) }}"
+    vnet:   "{{ item.vnet | default(omit) }}"
+    group:  "{{ item.group | default(omit) }}"
+    pos:    "{{ item.pos | default(omit) }}"
+    rules:  "{{ item.rules | default(omit) }}"
+  loop: "{{ proxmox_firewall_rules }}"
+  loop_control:
+    label: >-
+      {{ item.level | default('cluster') }}
+      {{ item.node | default('') }}{{ item.vmid | default('') }}{{ item.vnet | default('') }}{{ item.group | default('') }}
+  delegate_to: localhost

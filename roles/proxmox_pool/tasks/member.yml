@@ -1,0 +1,20 @@
+---
+- name: member - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_pool_poolid and a non-empty proxmox_pool_members list are required."
+  when: not proxmox_pool_poolid or proxmox_pool_members | length == 0
+
+- name: member - manage pool membership
+  community.proxmox.proxmox_pool_member:
+    api_host:         "{{ proxmox_pool_api_host }}"
+    api_user:         "{{ proxmox_pool_api_user }}"
+    api_password:     "{{ proxmox_pool_api_password }}"
+    api_token_id:     "{{ proxmox_pool_api_token_id }}"
+    api_token_secret: "{{ proxmox_pool_api_token_secret }}"
+    validate_certs:   "{{ proxmox_pool_validate_certs }}"
+    poolid:     "{{ proxmox_pool_poolid }}"
+    members:    "{{ proxmox_pool_members }}"
+    state:      "{{ proxmox_pool_member_state }}"
+    exclusive:  "{{ proxmox_pool_exclusive }}"
+    allow_move: "{{ proxmox_pool_allow_move }}"
+  delegate_to: localhost

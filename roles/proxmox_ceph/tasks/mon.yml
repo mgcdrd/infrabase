@@ -1,0 +1,22 @@
+---
+- name: mon - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_ceph_mons must be a non-empty list, and each item needs a 'node' key."
+  when: proxmox_ceph_mons | length == 0
+
+# Monitor name is implicitly the node name — there is no separate mon-id
+# param, and no config knobs (mon IP, etc.) beyond present/absent.
+- name: mon - create/delete Ceph monitors
+  community.proxmox.proxmox_ceph_mon:
+    api_host:         "{{ proxmox_ceph_api_host }}"
+    api_user:         "{{ proxmox_ceph_api_user }}"
+    api_password:     "{{ proxmox_ceph_api_password }}"
+    api_token_id:     "{{ proxmox_ceph_api_token_id }}"
+    api_token_secret: "{{ proxmox_ceph_api_token_secret }}"
+    validate_certs:   "{{ proxmox_ceph_validate_certs }}"
+    node:  "{{ item.node }}"
+    state: "{{ item.state | default('present') }}"
+  loop: "{{ proxmox_ceph_mons }}"
+  loop_control:
+    label: "{{ item.node }}"
+  delegate_to: localhost

@@ -1,0 +1,55 @@
+---
+- name: create - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_lxc_node, proxmox_lxc_hostname, and proxmox_lxc_ostemplate are required."
+  when: >
+    not proxmox_lxc_node or not proxmox_lxc_hostname or
+    not proxmox_lxc_ostemplate
+
+# storage and size are combined into the "storage:size" form here — the
+# community.proxmox.proxmox module treats disk/storage as mutually exclusive
+# targets for the rootfs, so we only ever pass `disk`.
+- name: create - create container from template
+  community.proxmox.proxmox:
+    api_host:         "{{ proxmox_lxc_api_host }}"
+    api_user:         "{{ proxmox_lxc_api_user }}"
+    api_password:     "{{ proxmox_lxc_api_password }}"
+    api_token_id:     "{{ proxmox_lxc_api_token_id }}"
+    api_token_secret: "{{ proxmox_lxc_api_token_secret }}"
+    validate_certs:   "{{ proxmox_lxc_validate_certs }}"
+    vmid:         "{{ proxmox_lxc_vmid | default(omit, true) }}"
+    node:         "{{ proxmox_lxc_node }}"
+    hostname:     "{{ proxmox_lxc_hostname }}"
+    ostemplate:   "{{ proxmox_lxc_ostemplate }}"
+    password:     "{{ proxmox_lxc_password }}"
+    pool:         "{{ proxmox_lxc_pool | default(omit, true) }}"
+    disk:         "{{ proxmox_lxc_storage }}:{{ proxmox_lxc_disk_size }}"
+    cores:        "{{ proxmox_lxc_cores }}"
+    memory:       "{{ proxmox_lxc_memory }}"
+    swap:         "{{ proxmox_lxc_swap }}"
+    netif:
+      net0: "{{ proxmox_lxc_net0 }}"
+    nameserver:   "{{ proxmox_lxc_nameserver | default(omit, true) }}"
+    searchdomain: "{{ proxmox_lxc_searchdomain | default(omit, true) }}"
+    pubkey:       "{{ proxmox_lxc_pubkey | default(omit, true) }}"
+    unprivileged: "{{ proxmox_lxc_unprivileged }}"
+    features:     "{{ proxmox_lxc_features | default(omit, true) }}"
+    onboot:       "{{ proxmox_lxc_onboot }}"
+    tags:         "{{ proxmox_lxc_tags | default(omit, true) }}"
+    timeout:      "{{ proxmox_lxc_create_timeout }}"
+    state: present
+  register: proxmox_lxc_create_result
+  delegate_to: localhost
+
+- name: create - start container
+  community.proxmox.proxmox:
+    api_host:         "{{ proxmox_lxc_api_host }}"
+    api_user:         "{{ proxmox_lxc_api_user }}"
+    api_password:     "{{ proxmox_lxc_api_password }}"
+    api_token_id:     "{{ proxmox_lxc_api_token_id }}"
+    api_token_secret: "{{ proxmox_lxc_api_token_secret }}"
+    validate_certs:   "{{ proxmox_lxc_validate_certs }}"
+    hostname: "{{ proxmox_lxc_hostname }}"
+    state: started
+  when: proxmox_lxc_start_after_create | bool
+  delegate_to: localhost

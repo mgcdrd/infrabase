@@ -1,0 +1,24 @@
+---
+- name: group - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_access_groups must be a non-empty list, and each item needs a 'groupid' key."
+  when: proxmox_access_groups | length == 0
+
+# comment is only applied on creation — the module has no update path for it.
+# Group membership is set from the user side (proxmox_access_users[].groups),
+# not here — this module has no `members` param.
+- name: group - create/delete groups
+  community.proxmox.proxmox_group:
+    api_host:         "{{ proxmox_access_api_host }}"
+    api_user:         "{{ proxmox_access_api_user }}"
+    api_password:     "{{ proxmox_access_api_password }}"
+    api_token_id:     "{{ proxmox_access_api_token_id }}"
+    api_token_secret: "{{ proxmox_access_api_token_secret }}"
+    validate_certs:   "{{ proxmox_access_validate_certs }}"
+    groupid: "{{ item.groupid }}"
+    comment: "{{ item.comment | default(omit) }}"
+    state:   "{{ item.state | default('present') }}"
+  loop: "{{ proxmox_access_groups }}"
+  loop_control:
+    label: "{{ item.groupid }}"
+  delegate_to: localhost

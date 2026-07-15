@@ -1,0 +1,26 @@
+---
+- name: group - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_firewall_groups must be a non-empty list, and each item needs a 'group' key."
+  when: proxmox_firewall_groups | length == 0
+
+# Creates/deletes the named security group only — no rule content. Rule
+# content inside a security group requires
+# community.proxmox.proxmox_cluster_firewall_security_group, unreleased as
+# of collection 2.0.0 (targeted for 2.1.0) — see README.
+- name: group - create/delete security groups
+  community.proxmox.proxmox_firewall:
+    api_host:         "{{ proxmox_firewall_api_host }}"
+    api_user:         "{{ proxmox_firewall_api_user }}"
+    api_password:     "{{ proxmox_firewall_api_password }}"
+    api_token_id:     "{{ proxmox_firewall_api_token_id }}"
+    api_token_secret: "{{ proxmox_firewall_api_token_secret }}"
+    validate_certs:   "{{ proxmox_firewall_validate_certs }}"
+    group_conf: true
+    group:   "{{ item.group }}"
+    comment: "{{ item.comment | default(omit) }}"
+    state:   "{{ item.state | default('present') }}"
+  loop: "{{ proxmox_firewall_groups }}"
+  loop_control:
+    label: "{{ item.group }}"
+  delegate_to: localhost

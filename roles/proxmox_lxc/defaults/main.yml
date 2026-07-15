@@ -1,0 +1,83 @@
+---
+# ---- ProxMox API connection ----
+# proxmox_lxc_api_host must be set by the caller (any PVE node or the cluster VIP).
+#
+# Two auth methods are supported — set one pair, leave the other unset:
+#   - API token (recommended): proxmox_lxc_api_token_id + proxmox_lxc_api_token_secret
+#   - Password:                 proxmox_lxc_api_user (default root@pam) + proxmox_lxc_api_password
+# Unset vault_* variables resolve to `omit` so only the method you configure
+# is sent to the module.
+proxmox_lxc_api_host:          ""
+proxmox_lxc_api_user:          "root@pam"
+proxmox_lxc_api_password:      "{{ vault_proxmox_api_password | default(omit) }}"
+proxmox_lxc_api_token_id:      "{{ vault_proxmox_api_token_id | default(omit) }}"
+proxmox_lxc_api_token_secret:  "{{ vault_proxmox_api_token_secret | default(omit) }}"
+proxmox_lxc_validate_certs:    false
+
+# ---- EXECUTION GATES ----
+proxmox_lxc_do_info:      false   # tag: info
+proxmox_lxc_do_create:    false   # tag: create
+proxmox_lxc_do_clone:     false   # tag: clone
+proxmox_lxc_do_lifecycle: false   # tag: lifecycle
+proxmox_lxc_do_template:  false   # tag: template
+
+# ==============================================================
+# info — cluster/node/storage facts (read-only)
+# ==============================================================
+# No variables required. Sets facts:
+#   proxmox_lxc_cluster_status  (community.proxmox.proxmox_cluster_status_info)
+#   proxmox_lxc_node_facts      (community.proxmox.proxmox_node_info)
+#   proxmox_lxc_storage_facts   (community.proxmox.proxmox_storage_info)
+
+# ==============================================================
+# create — fresh container from a vztmpl
+# ==============================================================
+proxmox_lxc_vmid:         ""      # "" lets PVE assign the next free VMID
+proxmox_lxc_node:         ""
+proxmox_lxc_hostname:     ""
+proxmox_lxc_ostemplate:   ""      # e.g. "local:vztmpl/rockylinux-9-default_20240523_amd64.tar.xz"
+proxmox_lxc_password:     "{{ vault_proxmox_lxc_password | default(omit) }}"
+proxmox_lxc_pool:         ""
+proxmox_lxc_storage:      "local-lvm"
+proxmox_lxc_disk_size:    "8"     # GiB, no suffix — combined with proxmox_lxc_storage as "storage:size"
+proxmox_lxc_cores:        2
+proxmox_lxc_memory:       1024
+proxmox_lxc_swap:         512
+proxmox_lxc_net0:         "name=eth0,bridge=vmbr0,ip=dhcp"
+proxmox_lxc_nameserver:   ""
+proxmox_lxc_searchdomain: ""
+proxmox_lxc_pubkey:       ""      # public key content, not a path
+proxmox_lxc_unprivileged: true
+proxmox_lxc_features:     []      # e.g. ["nesting=1", "keyctl=1"]
+proxmox_lxc_onboot:       true
+proxmox_lxc_tags:         []
+proxmox_lxc_create_timeout: 300
+proxmox_lxc_start_after_create: true
+
+# ==============================================================
+# clone — create a new container from an existing container
+# ==============================================================
+proxmox_lxc_clone_source_name: ""              # name of the container to clone
+proxmox_lxc_clone_node:        ""              # "" defaults to the source container's own node
+proxmox_lxc_clone_vmid:        ""              # "" lets PVE assign the next free VMID
+proxmox_lxc_clone_hostname:    ""              # hostname for the new container
+proxmox_lxc_clone_type:        "opportunistic" # full | linked | opportunistic — linked requires a template source
+proxmox_lxc_clone_storage:     ""              # target storage — required for a full clone, "" = leave to PVE
+proxmox_lxc_clone_timeout:     300
+proxmox_lxc_clone_start_after: true
+
+# ==============================================================
+# lifecycle — start / stop / restart / destroy an existing container (looked up by name)
+# ==============================================================
+proxmox_lxc_target_name:     ""   # container name to discover via proxmox_vm_info
+proxmox_lxc_lifecycle_state: ""   # started | stopped | restarted | absent
+proxmox_lxc_force_stop:      false   # stopped only — power off instead of graceful shutdown
+proxmox_lxc_purge:           false   # absent only — remove from backup/replication/HA config
+proxmox_lxc_destroy_unreferenced_disks: true   # absent only
+proxmox_lxc_lifecycle_timeout: 300
+
+# ==============================================================
+# template — convert an existing (stopped) container into a reusable template
+# ==============================================================
+proxmox_lxc_template_source_name: ""   # container name to convert, looked up via proxmox_vm_info
+proxmox_lxc_template_force:       true # stop the container first if it's running

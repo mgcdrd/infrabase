@@ -1,0 +1,23 @@
+---
+- name: power - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_node_target and proxmox_node_power_state (online|offline) are required."
+  when: >
+    not proxmox_node_target or
+    proxmox_node_power_state not in ['online', 'offline']
+
+# "online" triggers wake-on-lan using the node's own server-side WOL config
+# if it isn't already online — there is no target-MAC parameter. "offline"
+# triggers a graceful shutdown, NOT a reboot — the module has no reboot
+# capability at all.
+- name: power - set node power state
+  community.proxmox.proxmox_node:
+    api_host:         "{{ proxmox_node_api_host }}"
+    api_user:         "{{ proxmox_node_api_user }}"
+    api_password:     "{{ proxmox_node_api_password }}"
+    api_token_id:     "{{ proxmox_node_api_token_id }}"
+    api_token_secret: "{{ proxmox_node_api_token_secret }}"
+    validate_certs:   "{{ proxmox_node_validate_certs }}"
+    node_name:    "{{ proxmox_node_target }}"
+    power_state:  "{{ proxmox_node_power_state }}"
+  delegate_to: localhost

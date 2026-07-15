@@ -1,0 +1,27 @@
+---
+- name: acl - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_access_acls must be a non-empty list, and each item needs a 'path' key."
+  when: proxmox_access_acls | length == 0
+
+# One ACE (path x role x principal) per item. For state=absent, only `path`
+# is strictly required — if roleid/type/ugid are also set they narrow which
+# ACEs on that path get removed, otherwise ALL ACEs on that path are removed.
+- name: acl - grant/revoke access control entries
+  community.proxmox.proxmox_access_acl:
+    api_host:         "{{ proxmox_access_api_host }}"
+    api_user:         "{{ proxmox_access_api_user }}"
+    api_password:     "{{ proxmox_access_api_password }}"
+    api_token_id:     "{{ proxmox_access_api_token_id }}"
+    api_token_secret: "{{ proxmox_access_api_token_secret }}"
+    validate_certs:   "{{ proxmox_access_validate_certs }}"
+    path:      "{{ item.path }}"
+    type:      "{{ item.type | default(omit) }}"
+    ugid:      "{{ item.ugid | default(omit) }}"
+    roleid:    "{{ item.roleid | default(omit) }}"
+    propagate: "{{ item.propagate | default(omit) }}"
+    state:     "{{ item.state | default('present') }}"
+  loop: "{{ proxmox_access_acls }}"
+  loop_control:
+    label: "{{ item.path }} ({{ item.type | default('all') }}/{{ item.ugid | default('all') }})"
+  delegate_to: localhost

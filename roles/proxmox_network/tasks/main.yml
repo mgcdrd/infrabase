@@ -1,0 +1,15 @@
+---
+- name: proxmox_network - query node network interfaces
+  ansible.builtin.include_tasks: info.yml
+  when: proxmox_network_do_info | bool
+  tags: [proxmox_network, info]
+
+- name: proxmox_network - create/modify/delete node network interfaces
+  ansible.builtin.include_tasks: iface.yml
+  when: proxmox_network_do_iface | bool
+  tags: [proxmox_network, iface]
+
+- name: proxmox_network - apply staged network changes
+  ansible.builtin.include_tasks: apply.yml
+  when: proxmox_network_do_apply | bool
+  tags: [proxmox_network, apply]

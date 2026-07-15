@@ -1,0 +1,27 @@
+---
+- name: vnet - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_sdn_vnets must be a non-empty list, and each item needs 'vnet' and 'zone' keys."
+  when: proxmox_sdn_vnets | length == 0
+
+- name: vnet - create/update/delete SDN vnets
+  community.proxmox.proxmox_vnet:
+    api_host:         "{{ proxmox_sdn_api_host }}"
+    api_user:         "{{ proxmox_sdn_api_user }}"
+    api_password:     "{{ proxmox_sdn_api_password }}"
+    api_token_id:     "{{ proxmox_sdn_api_token_id }}"
+    api_token_secret: "{{ proxmox_sdn_api_token_secret }}"
+    validate_certs:   "{{ proxmox_sdn_validate_certs }}"
+    vnet:           "{{ item.vnet }}"
+    zone:           "{{ item.zone }}"
+    state:          "{{ item.state | default('present') }}"
+    update:         "{{ item.update | default(omit) }}"
+    alias:          "{{ item.alias | default(omit) }}"
+    tag:            "{{ item.tag | default(omit) }}"
+    vlanaware:      "{{ item.vlanaware | default(omit) }}"
+    isolate_ports:  "{{ item.isolate_ports | default(omit) }}"
+    delete:         "{{ item.delete | default(omit) }}"
+  loop: "{{ proxmox_sdn_vnets }}"
+  loop_control:
+    label: "{{ item.vnet }}"
+  delegate_to: localhost

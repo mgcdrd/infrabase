@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  author: mgcdrd
+  description: Manage ProxMox VE's built-in firewall — cluster/node options, rules, security groups, aliases, and IP sets — via the PVE API
+  role_name: proxmox_firewall
+
+  license: GPL-3.0-or-later
+  min_ansible_version: '2.14'
+
+  galaxy_tags:
+    - mgcdrd
+
+collections:
+  - community.proxmox

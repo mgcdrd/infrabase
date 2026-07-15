@@ -1,0 +1,20 @@
+---
+- name: proxmox_node - list nodes with detailed status
+  ansible.builtin.include_tasks: info.yml
+  when: proxmox_node_do_info | bool
+  tags: [proxmox_node, info]
+
+- name: proxmox_node - set node power state
+  ansible.builtin.include_tasks: power.yml
+  when: proxmox_node_do_power | bool
+  tags: [proxmox_node, power]
+
+- name: proxmox_node - update node certificates/DNS/subscription
+  ansible.builtin.include_tasks: config.yml
+  when: proxmox_node_do_config | bool
+  tags: [proxmox_node, config]
+
+- name: proxmox_node - list/poll tasks
+  ansible.builtin.include_tasks: task.yml
+  when: proxmox_node_do_task | bool
+  tags: [proxmox_node, task]

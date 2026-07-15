@@ -1,0 +1,24 @@
+---
+- name: role - fail if required variables are unset
+  ansible.builtin.fail:
+    msg: "proxmox_access_roles must be a non-empty list, and each item needs a 'roleid' key."
+  when: proxmox_access_roles | length == 0
+
+# privs is set/replaced wholesale on update — there's no add/remove
+# semantics, so an item's privs list here always reflects the full desired
+# set of privileges, not a delta.
+- name: role - create/update/delete IAM roles
+  community.proxmox.proxmox_role:
+    api_host:         "{{ proxmox_access_api_host }}"
+    api_user:         "{{ proxmox_access_api_user }}"
+    api_password:     "{{ proxmox_access_api_password }}"
+    api_token_id:     "{{ proxmox_access_api_token_id }}"
+    api_token_secret: "{{ proxmox_access_api_token_secret }}"
+    validate_certs:   "{{ proxmox_access_validate_certs }}"
+    roleid: "{{ item.roleid }}"
+    privs:  "{{ item.privs | default(omit) }}"
+    state:  "{{ item.state | default('present') }}"
+  loop: "{{ proxmox_access_roles }}"
+  loop_control:
+    label: "{{ item.roleid }}"
+  delegate_to: localhost

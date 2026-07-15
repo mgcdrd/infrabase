@@ -1,0 +1,10 @@
+---
+- name: proxmox_pool - create/delete pools
+  ansible.builtin.include_tasks: pool.yml
+  when: proxmox_pool_do_pool | bool
+  tags: [proxmox_pool, pool]
+
+- name: proxmox_pool - manage pool membership
+  ansible.builtin.include_tasks: member.yml
+  when: proxmox_pool_do_member | bool
+  tags: [proxmox_pool, member]

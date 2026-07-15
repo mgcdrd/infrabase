@@ -1,0 +1,79 @@
+---
+# ---- ProxMox API connection ----
+proxmox_ceph_api_host:          ""
+proxmox_ceph_api_user:          "root@pam"
+proxmox_ceph_api_password:      "{{ vault_proxmox_api_password | default(omit) }}"
+proxmox_ceph_api_token_id:      "{{ vault_proxmox_api_token_id | default(omit) }}"
+proxmox_ceph_api_token_secret:  "{{ vault_proxmox_api_token_secret | default(omit) }}"
+proxmox_ceph_validate_certs:    false
+
+# ---- EXECUTION GATES ----
+proxmox_ceph_do_mon:  false   # tag: mon
+proxmox_ceph_do_mgr:  false   # tag: mgr
+proxmox_ceph_do_mds:  false   # tag: mds
+proxmox_ceph_do_osd:  false   # tag: osd
+proxmox_ceph_do_pool: false   # tag: pool
+
+# ==============================================================
+# mon — Ceph monitor daemons (one per node; no separate mon-id or config knobs)
+# ==============================================================
+proxmox_ceph_mons: []
+# proxmox_ceph_mons:
+#   - node: pve1
+#     state: present
+
+# ==============================================================
+# mgr — Ceph manager daemons (create/delete only — no active/standby control)
+# ==============================================================
+proxmox_ceph_mgrs: []
+# proxmox_ceph_mgrs:
+#   - node: pve1
+#     state: present
+
+# ==============================================================
+# mds — Ceph metadata server daemons (for CephFS)
+# ==============================================================
+proxmox_ceph_mds: []
+# proxmox_ceph_mds:
+#   - node: pve1
+#     state: present
+
+# ==============================================================
+# osd — Ceph OSDs (fullest lifecycle control of the daemon-level modules)
+# ==============================================================
+# state choices: present | absent | in | out | scrub | start | stop | restart
+# `dev` is required for state=present; `osdid` is required for every other
+# state. Return value is only `msg` — no OSD id is handed back, so track
+# osdid yourself if you need to reference it in a later run/state=absent.
+proxmox_ceph_osds: []
+# proxmox_ceph_osds:
+#   - node: pve1
+#     state: present
+#     dev: /dev/sdb
+#     crush_device_class: ssd
+#     db_dev: /dev/nvme0n1        # separate DB device, optional
+#     db_dev_size: 10
+#     wal_dev: ""                  # separate WAL device, optional
+#     wal_dev_size: ""
+#     encrypted: false
+#     osds_per_device: 1
+#   - node: pve1
+#     state: absent
+#     osdid: 0
+#     cleanup: true
+
+# ==============================================================
+# pool — Ceph pools (the only module here with real update-in-place idempotency)
+# ==============================================================
+proxmox_ceph_pools: []
+# proxmox_ceph_pools:
+#   - node: pve1
+#     name: vm-pool
+#     state: present
+#     size: 3
+#     min_size: 2
+#     pg_num: 128
+#     pg_autoscale_mode: "on"     # on | off | warn
+#     crush_rule: replicated_rule
+#     add_storages: true           # auto-register the pool as a PVE storage
+#     timeout: 30                    # seconds to poll the PVE task queue

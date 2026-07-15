@@ -1,0 +1,20 @@
+---
+- name: proxmox_ha - query HA rules
+  ansible.builtin.include_tasks: info.yml
+  when: proxmox_ha_do_info | bool
+  tags: [proxmox_ha, info]
+
+- name: proxmox_ha - manage legacy HA groups
+  ansible.builtin.include_tasks: group.yml
+  when: proxmox_ha_do_group | bool
+  tags: [proxmox_ha, group]
+
+- name: proxmox_ha - manage HA resources
+  ansible.builtin.include_tasks: resource.yml
+  when: proxmox_ha_do_resource | bool
+  tags: [proxmox_ha, resource]
+
+- name: proxmox_ha - manage HA rules
+  ansible.builtin.include_tasks: rule.yml
+  when: proxmox_ha_do_rule | bool
+  tags: [proxmox_ha, rule]

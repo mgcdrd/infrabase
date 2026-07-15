@@ -1,0 +1,53 @@
+---
+# ---- ProxMox API connection ----
+proxmox_network_api_host:          ""
+proxmox_network_api_user:          "root@pam"
+proxmox_network_api_password:      "{{ vault_proxmox_api_password | default(omit) }}"
+proxmox_network_api_token_id:      "{{ vault_proxmox_api_token_id | default(omit) }}"
+proxmox_network_api_token_secret:  "{{ vault_proxmox_api_token_secret | default(omit) }}"
+proxmox_network_validate_certs:    false
+
+# ---- EXECUTION GATES ----
+proxmox_network_do_info:  false   # tag: info
+proxmox_network_do_iface: false   # tag: iface
+proxmox_network_do_apply: false   # tag: apply
+
+# ==============================================================
+# info — read node network interfaces, or check for staged/pending changes
+# ==============================================================
+proxmox_network_info_node:           ""      # required
+proxmox_network_info_iface:          ""      # "" = all interfaces
+proxmox_network_info_iface_type:     ""      # "" = all types
+proxmox_network_info_check_changes:  false    # true = report pending (unapplied) changes instead of live config
+
+# ==============================================================
+# iface — create/modify/delete node network interfaces
+# ==============================================================
+# proxmox_network_node is the default `node` for every item in the list
+# below; set a per-item `node` key to override it for a single interface.
+proxmox_network_node: ""
+
+# Each item mirrors community.proxmox.proxmox_node_network's parameters.
+# Only `iface` is required per item — everything else is type-dependent and
+# passed through as `omit` when unset. See README for the full field list
+# and which fields apply to which iface_type.
+proxmox_network_interfaces: []
+# proxmox_network_interfaces:
+#   - iface: vmbr0
+#     iface_type: bridge
+#     state: present
+#     cidr: "192.168.1.10/24"
+#     gateway: "192.168.1.1"
+#     bridge_ports: "eth0"
+#     bridge_vlan_aware: true
+#     autostart: true
+#   - iface: bond0
+#     iface_type: bond
+#     bond_mode: active-backup
+#     bond_primary: eth0
+#     slaves: "eth0 eth1"
+
+# ==============================================================
+# apply — push staged interface changes live (/etc/network/interfaces.new -> live)
+# ==============================================================
+proxmox_network_apply_node: ""   # required
