@@ -26,19 +26,48 @@
   notify: restart rsyslog
   when: rsyslog_remote_host | length == 0
 
-- name: rsyslog configure - Deploy receiver config
+- name: rsyslog configure - Deploy named rulesets (local routing and/or forwarding)
   ansible.builtin.template:
-    src:   90-receive.conf.j2
-    dest:  /etc/rsyslog.d/90-receive.conf
+    src:   20-rulesets.conf.j2
+    dest:  /etc/rsyslog.d/20-rulesets.conf
     owner: root
     group: root
     mode:  "0640"
   notify: restart rsyslog
-  when: rsyslog_receiver_enable
+  when: rsyslog_rulesets | length > 0
 
-- name: rsyslog configure - Remove receiver config when disabled
+- name: rsyslog configure - Remove named rulesets when unset
   ansible.builtin.file:
-    path:  /etc/rsyslog.d/90-receive.conf
+    path:  /etc/rsyslog.d/20-rulesets.conf
     state: absent
   notify: restart rsyslog
-  when: not rsyslog_receiver_enable
+  when: rsyslog_rulesets | length == 0
+
+# rsyslog_receiver_enable (simple single port pair) and rsyslog_listeners
+# (multi-port/multi-IP) are merged into one input set here so imudp/imtcp
+# are each module(load=...)'d exactly once — rsyslog errors ("module ...
+# already in this config, cannot be added") if the same module is loaded
+# from two separate drop-in files.
+- name: rsyslog configure - Build effective listener list
+  ansible.builtin.set_fact:
+    _rsyslog_effective_listeners: >-
+      {{ rsyslog_listeners
+         + ([{'port': rsyslog_receiver_tcp_port, 'protocol': 'tcp'}] if rsyslog_receiver_enable else [])
+         + ([{'port': rsyslog_receiver_udp_port, 'protocol': 'udp'}] if rsyslog_receiver_enable else []) }}
+
+- name: rsyslog configure - Deploy listeners (receiver port(s) and/or multi-port ruleset inputs)
+  ansible.builtin.template:
+    src:   30-listeners.conf.j2
+    dest:  /etc/rsyslog.d/30-listeners.conf
+    owner: root
+    group: root
+    mode:  "0640"
+  notify: restart rsyslog
+  when: _rsyslog_effective_listeners | length > 0
+
+- name: rsyslog configure - Remove listeners when unset
+  ansible.builtin.file:
+    path:  /etc/rsyslog.d/30-listeners.conf
+    state: absent
+  notify: restart rsyslog
+  when: _rsyslog_effective_listeners | length == 0

@@ -4,4 +4,6 @@
 *.* action(type="omfwd"
            target="{{ rsyslog_remote_host }}"
            port="{{ rsyslog_remote_port }}"
-           protocol="{{ rsyslog_remote_protocol }}")
+           protocol="{{ rsyslog_remote_protocol }}"{% if (rsyslog_remote_zip_level | default(0)) | int > 0 %}
+           ZipLevel="{{ rsyslog_remote_zip_level }}"{% endif %}
+           )

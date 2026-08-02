@@ -1,0 +1,47 @@
+{% import '_rsyslog_macros.j2' as m %}
+# Managed by Ansible — do not edit manually
+# Named rulesets: local file routing and/or forwarding, built from rsyslog_rulesets.
+# See the role README for the full destination option matrix.
+
+{% for rs in rsyslog_rulesets %}
+{% set ns = namespace(seen=[]) %}
+{% for dest in rs.destinations %}
+{% if dest.type == 'file' %}
+{% set tname = m.dest_template_name(dest, rs.name, loop.index) %}
+{% if tname not in ns.seen %}
+template(name="{{ tname }}" type="string" string="{{ dest.path }}")
+{% set ns.seen = ns.seen + [tname] %}
+{% endif %}
+{% endif %}
+{% endfor %}
+
+ruleset(name="{{ rs.name }}"{% if rs.queue is defined and rs.queue %} queue.spoolDirectory="{{ rs.queue.spool_directory | default('/var/spool/rsyslog') }}" queue.filename="{{ rs.queue.filename | default(rs.name) }}" queue.maxDiskSpace="{{ rs.queue.max_disk_space | default('1g') }}" queue.type="{{ rs.queue.type | default('LinkedList') }}" queue.saveOnShutdown="{{ 'on' if (rs.queue.save_on_shutdown | default(true)) else 'off' }}"{% endif %}){
+{% if rs.exclusive | default(false) %}
+{% for dest in rs.destinations %}
+{% set tname = m.dest_template_name(dest, rs.name, loop.index) %}
+{% if dest.when is defined %}
+    {{ "if" if loop.first else "} else if" }} ({{ dest.when }}) then {
+        {{ m.render_action(dest, tname) }}
+{% if loop.last %}
+    }
+{% endif %}
+{% else %}
+    } else {
+        {{ m.render_action(dest, tname) }}
+    }
+{% endif %}
+{% endfor %}
+{% else %}
+{% for dest in rs.destinations %}
+{% set tname = m.dest_template_name(dest, rs.name, loop.index) %}
+{% if dest.when is defined %}
+    if ({{ dest.when }}) then {
+        {{ m.render_action(dest, tname) }}
+    }
+{% else %}
+    {{ m.render_action(dest, tname) }}
+{% endif %}
+{% endfor %}
+{% endif %}
+}
+{% endfor %}

@@ -1,7 +1,7 @@
 ---
 galaxy_info:
   author: mgcdrd
-  description: rsyslog install, file permissions, remote forwarding, and optional receiver
+  description: rsyslog install, file permissions, single/multi-target forwarding, and single/multi-port receiver with category-based ruleset routing
   role_name: rsyslog
 
   license: GPL-3.0-or-later

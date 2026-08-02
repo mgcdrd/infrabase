@@ -3,19 +3,101 @@
 # Permissions for log files created by rsyslog (CIS 4.2.1.3).
 rsyslog_file_create_mode: "0640"
 
-# Remote syslog host to forward all messages to. Leave empty to skip forwarding.
+# --- Simple forwarding (single upstream target) -----------------------
+# Covers the common client case: ship everything to one central syslog
+# host. Leave rsyslog_remote_host empty to skip. For multiple targets
+# or per-hostname conditional relay routing, use rsyslog_forward_targets
+# via rsyslog_rulesets instead (see below).
 rsyslog_remote_host: ""
-
-# Remote syslog port.
 rsyslog_remote_port: 514
-
-# Protocol for remote forwarding: tcp or udp. TCP is preferred (reliable delivery).
 rsyslog_remote_protocol: tcp
+rsyslog_remote_zip_level: 0   # 0 = off, 1-9 = omfwd ZipLevel compression
 
-# Enable this host as a syslog receiver (log server role).
-# When true, rsyslog listens for incoming messages from other hosts.
+# --- Simple receiver (single TCP + UDP port pair) ----------------------
+# Enable this host as a syslog receiver on one port pair. For multi-port
+# / multi-IP listening bound to different rulesets, use rsyslog_listeners.
 rsyslog_receiver_enable: false
-
-# Receiver listen ports (only used when rsyslog_receiver_enable: true).
 rsyslog_receiver_tcp_port: 514
 rsyslog_receiver_udp_port: 514
+
+# --- Advanced: multi-port / multi-IP listeners --------------------------
+# One entry per input. Each optionally binds to a named ruleset (see
+# rsyslog_rulesets below) — omit ruleset to fall through to rsyslog's
+# default ruleset. address is optional (omit to listen on all interfaces).
+#
+# rsyslog_listeners:
+#   - address: 192.0.2.10
+#     port: 514
+#     protocol: udp
+#     ruleset: Unix
+#   - address: 192.0.2.10
+#     port: 1518
+#     protocol: tcp
+#     ruleset: Windows
+rsyslog_listeners: []
+
+# --- Advanced: named rulesets --------------------------------------------
+# Each ruleset routes messages to one or more destinations — a local
+# dynamic file, a forward action, or both. Use this for category-based
+# log aggregation (route by source) and/or a queue-spooled relay that
+# forwards to different upstreams based on a rainerscript condition
+# (e.g. hostname match).
+#
+# ruleset fields:
+#   name       - required, no spaces
+#   exclusive  - false (default): every destination fires independently
+#                (each optionally gated by its own `when`).
+#                true: destinations are evaluated as an if/elif/.../else
+#                chain — first match wins. A destination with no `when`
+#                is the else/default branch and must be listed last.
+#   queue      - optional dict enabling a disk-spooled queue on this
+#                ruleset (for store-and-forward relay durability):
+#                  spool_directory   (default /var/spool/rsyslog)
+#                  filename          (default ruleset name)
+#                  max_disk_space    (default 1g)
+#                  type              (default LinkedList)
+#                  save_on_shutdown  (default true)
+#   destinations - list of:
+#     when   - optional rainerscript condition string, e.g.
+#              '$hostname contains "web"' or 'prifilt("authpriv.*")'
+#     type   - "file" or "forward"
+#     # type: file
+#     name             - name for the generated template() (default
+#                        "<ruleset>_dest<N>"). Give two destinations the
+#                        same name to have them share one template() and
+#                        write to the same dynamic file.
+#     path             - dynamic file path template (rsyslog property
+#                        replacer syntax, e.g. "%HOSTNAME%-%$YEAR%...")
+#     dir_create_mode  (default 0750)
+#     file_create_mode (default 0640)
+#     owner / group    (default root/root)
+#     # type: forward
+#     target, port (default 514), protocol (default tcp), zip_level (default 0)
+#
+# Example — category routing to local files:
+# rsyslog_rulesets:
+#   - name: Security
+#     destinations:
+#       - type: file
+#         name: security_log
+#         path: "/syslog/security/%HOSTNAME:::lowercase%-%$YEAR%%$MONTH%%$DAY%.log"
+#
+# Example — store-and-forward relay, routed by hostname, first match wins:
+# rsyslog_rulesets:
+#   - name: Forwarding
+#     exclusive: true
+#     queue:
+#       spool_directory: /var/spool/rsyslog/relay
+#       max_disk_space: 5g
+#     destinations:
+#       - when: '$hostname contains "win"'
+#         type: forward
+#         target: 192.0.2.20
+#         port: 6514
+#         protocol: tcp
+#         zip_level: 9
+#       - type: forward           # default/else — no `when`, must be last
+#         target: 192.0.2.21
+#         port: 514
+#         protocol: tcp
+rsyslog_rulesets: []

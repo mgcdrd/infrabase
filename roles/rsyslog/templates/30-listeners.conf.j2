@@ -1,0 +1,15 @@
+# Managed by Ansible — do not edit manually
+# Syslog listeners — the simple rsyslog_receiver_enable port pair plus any
+# rsyslog_listeners entries, merged into one input set so imudp/imtcp are
+# each loaded exactly once (rsyslog errors if a module is loaded twice).
+
+{% if _rsyslog_effective_listeners | selectattr('protocol', 'equalto', 'udp') | list | length > 0 %}
+module(load="imudp")
+{% endif %}
+{% if _rsyslog_effective_listeners | selectattr('protocol', 'equalto', 'tcp') | list | length > 0 %}
+module(load="imtcp")
+{% endif %}
+
+{% for l in _rsyslog_effective_listeners %}
+input(type="{{ 'imudp' if l.protocol == 'udp' else 'imtcp' }}"{% if l.address is defined and l.address %} address="{{ l.address }}"{% endif %} port="{{ l.port }}"{% if l.ruleset is defined and l.ruleset %} ruleset="{{ l.ruleset }}"{% endif %})
+{% endfor %}

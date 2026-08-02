@@ -1,0 +1,11 @@
+{% macro dest_template_name(dest, rs_name, idx) -%}
+{{ dest.name | default(rs_name ~ '_dest' ~ idx) }}
+{%- endmacro %}
+
+{% macro render_action(dest, tname) -%}
+{% if dest.type == 'file' -%}
+action(type="omfile" createDirs="on" DirCreateMode="{{ dest.dir_create_mode | default('0750') }}" dirOwner="{{ dest.owner | default('root') }}" dirGroup="{{ dest.group | default('root') }}" FileCreateMode="{{ dest.file_create_mode | default('0640') }}" fileOwner="{{ dest.owner | default('root') }}" fileGroup="{{ dest.group | default('root') }}" dynaFile="{{ tname }}")
+{%- elif dest.type == 'forward' -%}
+action(type="omfwd" Target="{{ dest.target }}" Port="{{ dest.port | default(514) }}" Protocol="{{ dest.protocol | default('tcp') }}"{% if (dest.zip_level | default(0)) | int > 0 %} ZipLevel="{{ dest.zip_level }}"{% endif %})
+{%- endif %}
+{%- endmacro %}
