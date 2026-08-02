@@ -101,3 +101,26 @@ rsyslog_listeners: []
 #         port: 514
 #         protocol: tcp
 rsyslog_rulesets: []
+
+# --- Optional: log archive/rotation for rsyslog_rulesets' dynamic files -
+# Compresses, archives, and purges the dynamic *.log files written by
+# rsyslog_rulesets' file destinations (e.g. /syslog/unix/...). Off by
+# default — only relevant for receiver/aggregator hosts using dynamic
+# file routing. Classic /var/log/* rotation is handled by the OS's own
+# logrotate and is untouched by this role.
+#
+# Defaults below match the original hand-run logrotation.sh this
+# replaces: compress *.log files older than 1 day, move compressed files
+# older than 4 days from source_dir to dest_dir (mirroring the directory
+# structure), purge archived files older than 180 days. Runs daily via
+# cron. Both source_dir and dest_dir must already exist/be mounted — the
+# role does not provision storage.
+rsyslog_log_archive_enable: false
+rsyslog_log_archive_source_dir: /syslog
+rsyslog_log_archive_dest_dir: /archive
+rsyslog_log_archive_compress_after_days: 1
+rsyslog_log_archive_move_after_days: 4
+rsyslog_log_archive_delete_after_days: 180
+rsyslog_log_archive_script_path: /usr/local/sbin/logrotation.sh
+rsyslog_log_archive_cron_hour: "0"
+rsyslog_log_archive_cron_minute: "1"

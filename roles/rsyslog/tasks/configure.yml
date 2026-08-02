@@ -71,3 +71,60 @@
     state: absent
   notify: restart rsyslog
   when: _rsyslog_effective_listeners | length == 0
+
+- name: rsyslog configure - Deploy log archive/rotation script
+  ansible.builtin.template:
+    src:   logrotation.sh.j2
+    dest:  "{{ rsyslog_log_archive_script_path }}"
+    owner: root
+    group: root
+    mode:  "0750"
+  when: rsyslog_log_archive_enable
+
+# Removes the pre-Ansible unmanaged crontab line this feature replaces.
+# ansible.builtin.cron requires `name` and only ever matches/manages its
+# own "#Ansible: <name>" marker — it can't touch an unmarked legacy entry.
+# Without this, the old line and the new Ansible-managed one below would
+# both run, executing the script twice. Goes through the `crontab` command
+# rather than hardcoding /var/spool/cron paths, which differ (RedHat:
+# /var/spool/cron/root, Debian: /var/spool/cron/crontabs/root).
+- name: rsyslog configure - Check for legacy unmanaged log rotation crontab entry
+  ansible.builtin.command: crontab -l -u root
+  register: _rsyslog_current_crontab
+  changed_when: false
+  failed_when: false
+  when: rsyslog_log_archive_enable
+
+- name: rsyslog configure - Remove legacy unmanaged log rotation crontab entry
+  ansible.builtin.shell: |
+    set -o pipefail
+    crontab -l -u root | grep -v -F '{{ rsyslog_log_archive_script_path }} 2> /dev/null &1>2' | crontab -u root -
+  args:
+    executable: /bin/bash
+  when:
+    - rsyslog_log_archive_enable
+    - _rsyslog_current_crontab.stdout is defined
+    - (rsyslog_log_archive_script_path ~ ' 2> /dev/null &1>2') in _rsyslog_current_crontab.stdout
+
+- name: rsyslog configure - Schedule log archive/rotation cron job
+  ansible.builtin.cron:
+    name:   "rsyslog log archive/rotation ({{ rsyslog_log_archive_source_dir }})"
+    user:   root
+    minute: "{{ rsyslog_log_archive_cron_minute }}"
+    hour:   "{{ rsyslog_log_archive_cron_hour }}"
+    job:    "{{ rsyslog_log_archive_script_path }} >/dev/null 2>&1"
+    state:  present
+  when: rsyslog_log_archive_enable
+
+- name: rsyslog configure - Remove log archive/rotation cron job when disabled
+  ansible.builtin.cron:
+    name:  "rsyslog log archive/rotation ({{ rsyslog_log_archive_source_dir }})"
+    user:  root
+    state: absent
+  when: not rsyslog_log_archive_enable
+
+- name: rsyslog configure - Remove log archive/rotation script when disabled
+  ansible.builtin.file:
+    path:  "{{ rsyslog_log_archive_script_path }}"
+    state: absent
+  when: not rsyslog_log_archive_enable

@@ -20,6 +20,10 @@ managed files live under `/etc/rsyslog.d/`:
 | `30-listeners.conf` | Input modules (CIS 4.2.1.6) — merges `rsyslog_receiver_enable`'s port pair and `rsyslog_listeners` into one file so `imudp`/`imtcp` are each loaded once | Either is set |
 | `50-remote.conf` | Single-target forwarding (CIS 4.2.1.5) | `rsyslog_remote_host` is set |
 
+`rsyslog_log_archive_*` deploys a log compress/archive/purge script (default
+path `/usr/local/sbin/logrotation.sh`) plus a daily root cron job — see
+below. Not part of the `/etc/rsyslog.d/` drop-in set above.
+
 Tested on: Debian 12/13, Rocky Linux 9/10
 
 
@@ -180,6 +184,41 @@ rsyslog_rulesets:
 ```
 
 
+Role Variables — log archive/rotation
+---------------------------------------
+
+Off by default. Only relevant on a receiver/aggregator host using
+`rsyslog_rulesets`' dynamic file destinations (e.g. `/syslog/unix/...`) —
+classic `/var/log/*` rotation is handled by the OS's own `logrotate` and is
+untouched by this role.
+
+When enabled, deploys a script that daily: gzips `*.log` files older than
+`compress_after_days`, moves `*.gz` files older than `move_after_days` from
+`source_dir` to `dest_dir` (mirroring the directory structure underneath),
+then deletes archived `*.log.gz` files older than `delete_after_days` from
+`dest_dir`. Runs via a root cron job at `cron_hour:cron_minute`.
+
+| Variable | Default | Description |
+|---|---|---|
+| `rsyslog_log_archive_enable` | `false` | Deploy the script and its cron job. |
+| `rsyslog_log_archive_source_dir` | `/syslog` | Directory tree scanned for `*.log` files — should match/contain the `path` values used in `rsyslog_rulesets`. |
+| `rsyslog_log_archive_dest_dir` | `/archive` | Where compressed files land once they age past `move_after_days`. |
+| `rsyslog_log_archive_compress_after_days` | `1` | `find -mtime` threshold for gzip compression. |
+| `rsyslog_log_archive_move_after_days` | `4` | `find -mtime` threshold for moving to `dest_dir`. |
+| `rsyslog_log_archive_delete_after_days` | `180` | `find -mtime` threshold for deletion from `dest_dir`. |
+| `rsyslog_log_archive_script_path` | `/usr/local/sbin/logrotation.sh` | Where the script gets installed. |
+| `rsyslog_log_archive_cron_hour` | `"0"` | Cron hour field. |
+| `rsyslog_log_archive_cron_minute` | `"1"` | Cron minute field. |
+
+Both `source_dir` and `dest_dir` must already exist/be mounted — the role
+does not provision storage.
+
+```yaml
+rsyslog_log_archive_enable: true
+# defaults otherwise match the retention policy above
+```
+
+
 Dependencies
 ------------
 
@@ -332,5 +371,6 @@ Notes
   safe.
 - **Removing config**: clear the corresponding variable (`rsyslog_remote_host:
   ""`, `rsyslog_receiver_enable: false`, `rsyslog_rulesets: []`,
-  `rsyslog_listeners: []`) and re-run to remove the matching drop-in file and
-  restart rsyslog. The role is fully reversible.
+  `rsyslog_listeners: []`, `rsyslog_log_archive_enable: false`) and re-run to
+  remove the matching drop-in file/script/cron job and restart rsyslog. The
+  role is fully reversible.

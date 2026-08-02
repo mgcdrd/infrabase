@@ -1,0 +1,76 @@
+#!/bin/bash
+# Managed by Ansible — do not edit manually
+#--------------------------------------------------------------------#
+# Syslog_Archive - Archives syslog messages after a defined number of
+#                  days. Deployed by mgcdrd.infrabase.rsyslog
+#                  (rsyslog_log_archive_* variables).
+#--------------------------------------------------------------------#
+
+#--------------------------------------------------------------------#
+# Global Variables
+#--------------------------------------------------------------------#
+
+  #-------------------#
+  #   Log Locations   #
+  #-------------------#
+  syslog_dir={{ rsyslog_log_archive_source_dir }}
+  arch_dir={{ rsyslog_log_archive_dest_dir }}
+
+  #---------------------#
+  #   Retention Policy  #
+  #---------------------#
+  compress_after_days={{ rsyslog_log_archive_compress_after_days }}
+  move_after_days={{ rsyslog_log_archive_move_after_days }}
+  delete_after_days={{ rsyslog_log_archive_delete_after_days }}
+
+#--------------------------------------------------------------------#
+# Log Compression Function - Compress logs after number of days
+#                            defined by the $compress_after_days
+#                            variable to save space.
+#--------------------------------------------------------------------#
+Log_Compression()
+ {
+    find "$syslog_dir" -type f -name "*.log" ! -mtime \
+         -$compress_after_days -exec gzip -f9 {} \;
+ }
+
+#--------------------------------------------------------------------#
+# Log Archive Function - Moves logs that have reached archival time
+#                        to the archive.
+#--------------------------------------------------------------------#
+Log_Archive()
+ {
+    archive_files=$(find "$syslog_dir" -type f -name "*.gz" ! -mtime \
+                    -$move_after_days -print)
+
+    for x in $archive_files
+      do
+
+         newfile=$(echo "$x" | sed "s|$syslog_dir|$arch_dir|")
+         newdir=$(dirname "$newfile")
+         if [ ! -d "$newdir" ]; then
+           mkdir -p "$newdir"
+         fi
+         mv -f "$x" "$newfile"
+
+      done
+
+ }
+
+#--------------------------------------------------------------------#
+# Log Purge Function - Removes logs from archive that have reached
+#                      maximum retention period.
+#--------------------------------------------------------------------#
+Log_Purge()
+ {
+    find "$arch_dir" -type f -name "*.log.gz" ! -mtime \
+         -$delete_after_days -exec rm -f {} \;
+
+ }
+
+#--------------------------------------------------------------------#
+# Main Function
+#--------------------------------------------------------------------#
+Log_Compression
+Log_Archive
+Log_Purge
