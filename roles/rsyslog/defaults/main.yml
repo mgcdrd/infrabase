@@ -3,6 +3,14 @@
 # Permissions for log files created by rsyslog (CIS 4.2.1.3).
 rsyslog_file_create_mode: "0640"
 
+# Keep the full FQDN in hostnames rather than truncating to the short name —
+# both for this host's own locally-generated messages and for FQDNs arriving
+# in received messages. Every host in the domain has an FQDN already (IPA
+# enrollment sets it), so this should stay on everywhere rather than relying
+# on the syslog receiver reverse-resolving short names via DNS — that adds a
+# PowerDNS dependency to every log line, and PowerDNS can go down.
+rsyslog_preserve_fqdn: true
+
 # --- Simple forwarding (single upstream target) -----------------------
 # Covers the common client case: ship everything to one central syslog
 # host. Leave rsyslog_remote_host empty to skip. For multiple targets

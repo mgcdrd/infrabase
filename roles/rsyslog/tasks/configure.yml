@@ -1,5 +1,14 @@
 ---
 
+- name: rsyslog configure - Set global directives (PreserveFQDN)
+  ansible.builtin.template:
+    src:   05-global.conf.j2
+    dest:  /etc/rsyslog.d/05-global.conf
+    owner: root
+    group: root
+    mode:  "0640"
+  notify: restart rsyslog
+
 - name: rsyslog configure - Set log file creation mode (CIS 4.2.1.3)
   ansible.builtin.template:
     src:   10-file-mode.conf.j2

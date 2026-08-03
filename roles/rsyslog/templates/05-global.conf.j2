@@ -1,0 +1,4 @@
+# Managed by Ansible — do not edit manually
+# Keep full FQDNs in hostnames instead of truncating to the short name.
+
+$PreserveFQDN {{ 'on' if rsyslog_preserve_fqdn else 'off' }}

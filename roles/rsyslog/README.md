@@ -15,6 +15,7 @@ managed files live under `/etc/rsyslog.d/`:
 
 | File | Purpose | Deployed when |
 |------|---------|---------------|
+| `05-global.conf` | `$PreserveFQDN` | Always |
 | `10-file-mode.conf` | `$FileCreateMode` (CIS 4.2.1.3) | Always |
 | `20-rulesets.conf` | Named rulesets — local file routing and/or forwarding | `rsyslog_rulesets` is non-empty |
 | `30-listeners.conf` | Input modules (CIS 4.2.1.6) — merges `rsyslog_receiver_enable`'s port pair and `rsyslog_listeners` into one file so `imudp`/`imtcp` are each loaded once | Either is set |
@@ -54,6 +55,7 @@ Role Variables — simple
 | Variable | Default | Description |
 |---|---|---|
 | `rsyslog_file_create_mode` | `0640` | Permissions for log files created by rsyslog. |
+| `rsyslog_preserve_fqdn` | `true` | Keep full FQDNs in hostnames (local and received) instead of truncating to the short name. |
 | `rsyslog_remote_host` | `""` | Remote syslog server FQDN or IP. Leave empty to skip forwarding. |
 | `rsyslog_remote_port` | `514` | Remote syslog port. |
 | `rsyslog_remote_protocol` | `tcp` | `tcp` or `udp`. TCP is preferred for reliable delivery. |
