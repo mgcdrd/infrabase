@@ -17,6 +17,7 @@ managed files live under `/etc/rsyslog.d/`:
 |------|---------|---------------|
 | `05-global.conf` | `$PreserveFQDN` | Always |
 | `10-file-mode.conf` | `$FileCreateMode` (CIS 4.2.1.3) | Always |
+| `15-file-inputs.conf` | File inputs (`imfile`) — tails flat files with no native syslog output | `rsyslog_file_inputs` is non-empty |
 | `20-rulesets.conf` | Named rulesets — local file routing and/or forwarding | `rsyslog_rulesets` is non-empty |
 | `30-listeners.conf` | Input modules (CIS 4.2.1.6) — merges `rsyslog_receiver_enable`'s port pair and `rsyslog_listeners` into one file so `imudp`/`imtcp` are each loaded once | Either is set |
 | `50-remote.conf` | Single-target forwarding (CIS 4.2.1.5) | `rsyslog_remote_host` is set |
@@ -183,6 +184,28 @@ rsyslog_rulesets:
         target: 192.0.2.21
         port: 514
         protocol: tcp
+```
+
+### `rsyslog_file_inputs`
+
+Tails a flat file (or glob) via `imfile` and injects it into the local
+rsyslog pipeline — for services with no native syslog output. Resulting
+messages flow through the same `rsyslog_rulesets`/`rsyslog_remote_host`
+forwarding as everything else, tagged and faceted like any other message.
+
+| Field | Default | Description |
+|---|---|---|
+| `path` | — required | File path or glob — `imfile` supports wildcards. |
+| `tag` | — required | Becomes `%programname%` downstream — use this to route/name dynamic files by source. |
+| `facility` | `local3` | `local0`–`local7`. |
+| `severity` | `info` | Set precisely (e.g. `notice`) only when matching an existing exact-severity rule elsewhere in `rsyslog_rulesets`. |
+| `ruleset` | *(default ruleset)* | Named ruleset from `rsyslog_rulesets` to route into. Omit for the default ruleset. |
+
+```yaml
+rsyslog_file_inputs:
+  - path: /var/log/example/production.log
+    tag: example-app
+    facility: local4
 ```
 
 

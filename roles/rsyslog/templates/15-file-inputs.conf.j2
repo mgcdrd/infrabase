@@ -1,0 +1,16 @@
+# Managed by Ansible — do not edit manually
+# File inputs (imfile) — tails flat files with no native syslog output and
+# injects them into the local rsyslog pipeline.
+
+{% if rsyslog_file_inputs | length > 0 %}
+module(load="imfile" mode="polling" PollingInterval="10")
+{% for f in rsyslog_file_inputs %}
+
+input(type="imfile"
+      File="{{ f.path }}"
+      Tag="{{ f.tag }}:"
+      Facility="{{ f.facility | default('local3') }}"
+      Severity="{{ f.severity | default('info') }}"{% if f.ruleset is defined and f.ruleset %}
+      ruleset="{{ f.ruleset }}"{% endif %})
+{% endfor %}
+{% endif %}

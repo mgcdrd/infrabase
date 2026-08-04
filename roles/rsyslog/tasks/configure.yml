@@ -52,6 +52,23 @@
   notify: restart rsyslog
   when: rsyslog_rulesets | length == 0
 
+- name: rsyslog configure - Deploy file inputs (imfile)
+  ansible.builtin.template:
+    src:   15-file-inputs.conf.j2
+    dest:  /etc/rsyslog.d/15-file-inputs.conf
+    owner: root
+    group: root
+    mode:  "0640"
+  notify: restart rsyslog
+  when: rsyslog_file_inputs | length > 0
+
+- name: rsyslog configure - Remove file inputs when unset
+  ansible.builtin.file:
+    path:  /etc/rsyslog.d/15-file-inputs.conf
+    state: absent
+  notify: restart rsyslog
+  when: rsyslog_file_inputs | length == 0
+
 # rsyslog_receiver_enable (simple single port pair) and rsyslog_listeners
 # (multi-port/multi-IP) are merged into one input set here so imudp/imtcp
 # are each module(load=...)'d exactly once — rsyslog errors ("module ...

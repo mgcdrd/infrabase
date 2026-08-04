@@ -44,6 +44,20 @@ rsyslog_receiver_udp_port: 514
 #     ruleset: Windows
 rsyslog_listeners: []
 
+# --- Advanced: file inputs (imfile) -------------------------------------
+# Tails a flat file (or glob) and injects it into the local rsyslog
+# pipeline, tagged and faceted like any other message. For services with
+# no native syslog output — the resulting messages flow through the same
+# rsyslog_rulesets/rsyslog_remote_host forwarding as everything else.
+#
+# rsyslog_file_inputs:
+#   - path: /var/log/example/production.log
+#     tag: example-app             # becomes %programname% downstream
+#     facility: local4             # default local3
+#     severity: info               # default info
+#     ruleset: Unix                # optional, omit for the default ruleset
+rsyslog_file_inputs: []
+
 # --- Advanced: named rulesets --------------------------------------------
 # Each ruleset routes messages to one or more destinations — a local
 # dynamic file, a forward action, or both. Use this for category-based
