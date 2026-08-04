@@ -61,6 +61,13 @@ The following are validated before any action is taken:
 All operations use `state: present` and are idempotent — safe to re-run if
 provisioning is interrupted or repeated.
 
+On SELinux-enabled hosts (Rocky 9/10), every mounted volume is relabeled with
+`restorecon -R` against existing fcontext policy right after mounting. A
+freshly formatted filesystem has no labels (`unlabeled_t`) until this runs,
+which silently blocks confined daemons (e.g. `rsyslogd` under `syslogd_t`)
+from writing to it even though the mount, permissions, and ownership are
+all correct. No-op on Debian.
+
 
 Dependencies
 ------------

@@ -26,3 +26,17 @@
     state: mounted
   loop: "{{ lvm_provision_volumes }}"
   when: item.mount is defined
+
+# A freshly formatted volume has no SELinux labels (unlabeled_t) until
+# relabeled against existing fcontext policy — without this, confined
+# daemons writing to the new mount point are silently denied.
+- name: lvm2_provision mount - Relabel new mount point per SELinux policy
+  ansible.builtin.command: "restorecon -R -v {{ item.mount }}"
+  register: _lvm2_provision_restorecon
+  changed_when: _lvm2_provision_restorecon.stdout != ""
+  loop: "{{ lvm_provision_volumes }}"
+  when:
+    - item.mount is defined
+    - ansible_selinux is defined
+    - ansible_selinux.status is defined
+    - ansible_selinux.status == 'enabled'
