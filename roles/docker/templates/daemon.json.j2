@@ -1,0 +1,8 @@
+{
+  "log-driver": "{{ docker_log_driver }}",
+  "log-opts": {
+    "syslog-address": "unixgram:///dev/log",
+    "syslog-facility": "{{ docker_syslog_facility }}",
+    "tag": "{% raw %}{{.Name}}{% endraw %}"
+  }
+}

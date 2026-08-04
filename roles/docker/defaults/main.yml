@@ -5,3 +5,13 @@ docker_apt_arch: >-
   {{ 'amd64' if ansible_architecture == 'x86_64'
      else 'arm64' if ansible_architecture == 'aarch64'
      else ansible_architecture }}
+
+# Default logging driver for every container on this host — ships container
+# stdout/stderr straight to local rsyslog (and from there, wherever
+# rsyslog_remote_host forwards to) instead of Docker's default json-file.
+# Note: `docker logs <container>` does not work with the syslog driver —
+# the CLI can only read back from json-file/local. Also note: log-driver is
+# set at container *create* time — existing containers need to be recreated
+# (e.g. `docker compose up -d --force-recreate`) to pick this up.
+docker_log_driver: syslog
+docker_syslog_facility: local3

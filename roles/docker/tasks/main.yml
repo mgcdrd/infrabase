@@ -8,6 +8,15 @@
   import_tasks: install-redhat.yml
   when: ansible_facts['os_family'] == 'RedHat'
 
+- name: docker main - Configure default logging driver
+  ansible.builtin.template:
+    src:   daemon.json.j2
+    dest:  /etc/docker/daemon.json
+    owner: root
+    group: root
+    mode:  "0644"
+  notify: docker restart
+
 - name: docker main - Enable and start docker service
   ansible.builtin.systemd_service:
     name:         docker.service
