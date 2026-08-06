@@ -178,6 +178,12 @@
       - "{{ _acme_cert_dir }}/ca.pem"
       - -l
       - "{{ _acme_cert_dir }}/cert.pem"
+      - -c
+      - "{{ _cert.root_cn | default(acme_sh_root_cn) }}"
+      - -p
+      - "{{ _cert.root_fingerprint | default(acme_sh_root_fingerprint) }}"
+      - -r
+      - "{{ (_cert.root_urls | default(acme_sh_root_urls)) | join(',') }}"
   when:
     - _acme_state == 'present'
     - _acme_issue.rc == 0 or _acme_registered.rc != 0

@@ -32,6 +32,20 @@ acme_sh_eab_enabled:  false
 acme_sh_eab_kid:      ""
 acme_sh_eab_hmac_key: ""
 
+# ---- ROOT CA (chain completion for complete_chain: true certs) ----
+# Pinned root used by complete-le-chain.sh to root the deployed chain.
+# Defaults match Let's Encrypt's self-signed ISRG Root X1. Override
+# per-cert (root_cn/root_fingerprint/root_urls on the acme_sh_certs entry)
+# when a cert's CA differs, e.g. Google Public CA's GTS Root R1:
+#   root_cn: "GTS Root R1"
+#   root_fingerprint: "D9:47:43:2A:BD:E7:B7:FA:90:FC:2E:6B:59:10:1B:12:80:E0:E1:C7:E4:E4:0F:A3:C6:88:7F:FF:57:A7:F4:CF"
+#   root_urls: ["https://pki.goog/repo/certs/gtsr1.pem"]
+acme_sh_root_cn: "ISRG Root X1"
+acme_sh_root_fingerprint: "96:BC:EC:06:26:49:76:F3:74:60:77:9A:CF:28:C5:A7:CF:E8:A3:C0:AA:E1:1A:8F:FC:EE:05:C0:BD:DF:08:C6"
+acme_sh_root_urls:
+  - "https://letsencrypt.org/certs/isrgrootx1.pem"
+  - "https://letsencrypt.org/certs/isrgrootx1.pem.txt"
+
 # ---- KEY TYPE ----
 
 # Key length passed to acme.sh --issue. RSA (2048 or higher) keeps the
@@ -50,10 +64,13 @@ acme_sh_keylength: "2048"
 #     webroot_path: ""        # webroot challenge only
 #     reload_cmd: ""          # e.g. "systemctl reload nginx"
 #     keylength: "2048"       # per-cert override of acme_sh_keylength
-#     complete_chain: false   # true: ca.pem = full chain rooted with ISRG
-#                             # Root X1 (via complete-le-chain.sh) and no
-#                             # fullchain.pem is deployed. Needed by
+#     complete_chain: false   # true: ca.pem = full chain rooted with the
+#                             # pinned root CA (via complete-le-chain.sh)
+#                             # and no fullchain.pem is deployed. Needed by
 #                             # consumers that validate the chain to a
 #                             # self-contained root (e.g. katello-certs).
+#     root_cn: ""             # per-cert override of acme_sh_root_cn
+#     root_fingerprint: ""    # per-cert override of acme_sh_root_fingerprint
+#     root_urls: []           # per-cert override of acme_sh_root_urls
 #     state: present          # present (default) | absent
 acme_sh_certs: []

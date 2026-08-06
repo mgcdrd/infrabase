@@ -48,10 +48,11 @@ acme_sh_staging: false          # true = use staging CA (for testing)
 ### CA
 
 ```yaml
-acme_sh_ca: letsencrypt    # letsencrypt | zerossl | buypass | sslcom
+acme_sh_ca: letsencrypt    # letsencrypt | zerossl | buypass | sslcom | google
                            # Full ACME directory URLs are also valid:
                            #   https://acme.sectigo.com/v2/DV
                            #   https://acme.sectigo.com/v2/OV
+                           #   https://dv.acme-v02.api.pki.goog/directory
 ```
 
 ### EAB (External Account Binding)
@@ -97,6 +98,9 @@ acme_sh_certs:
                              # e.g. "systemctl reload nginx"
     keylength: "2048"        # per-cert override of acme_sh_keylength
     complete_chain: false    # see "Complete chain" below
+    root_cn: ""               # per-cert override of acme_sh_root_cn
+    root_fingerprint: ""      # per-cert override of acme_sh_root_fingerprint
+    root_urls: []             # per-cert override of acme_sh_root_urls
     state: present           # present (default) | absent
 ```
 
@@ -121,12 +125,21 @@ Issued certs are deployed to `{{ acme_sh_cert_base_dir }}/{{ primary_domain }}/`
 
 With `complete_chain: true`, `ca.pem` receives the full chain instead of
 just the intermediates, and `/usr/local/sbin/complete-le-chain.sh` (deployed
-by this role) appends the fingerprint-pinned ISRG Root X1 and validates the
+by this role) appends the fingerprint-pinned root CA and validates the
 result. No `fullchain.pem` is deployed. Use this for consumers that must
 validate the chain to a self-contained root (e.g. `katello-certs-check`).
-Renewal hooks should re-run
-`complete-le-chain.sh -f <dir>/ca.pem -l <dir>/cert.pem` as their first step
-since acme.sh re-copies the un-rooted chain on every renewal.
+
+The root pinned is Let's Encrypt's ISRG Root X1 by default
+(`acme_sh_root_cn`/`acme_sh_root_fingerprint`/`acme_sh_root_urls`),
+overridable globally or per-cert (`root_cn`/`root_fingerprint`/`root_urls`
+on the `acme_sh_certs` entry) for other CAs. Renewal hooks should re-run
+`complete-le-chain.sh` with the matching `-c`/`-p`/`-r` flags as their first
+step since acme.sh re-copies the un-rooted chain on every renewal:
+
+```
+complete-le-chain.sh -f <dir>/ca.pem -l <dir>/cert.pem \
+  -c "<root_cn>" -p "<root_fingerprint>" -r "<root_urls, comma-separated>"
+```
 
 acme.sh installs its own cron job for auto-renewal during the initial install.
 The `reload_cmd` is registered with `--install-cert` after a new issue, or on
@@ -172,6 +185,26 @@ acme_sh_certs:
   - domains:
       - "example.com"
     challenge: dns_cf
+    state: present
+```
+
+**Google Public CA with EAB, rooted for katello-certs-check:**
+
+```yaml
+acme_sh_email: "admin@acme.com"
+acme_sh_ca: google
+acme_sh_eab_enabled:  true
+acme_sh_eab_kid:      "{{ vault_google_eab_kid }}"
+acme_sh_eab_hmac_key: "{{ vault_google_eab_hmac_key }}"
+acme_sh_certs:
+  - domains:
+      - "foreman.acme.com"
+    challenge: dns_cf
+    complete_chain: true
+    root_cn: "GTS Root R1"
+    root_fingerprint: "D9:47:43:2A:BD:E7:B7:FA:90:FC:2E:6B:59:10:1B:12:80:E0:E1:C7:E4:E4:0F:A3:C6:88:7F:FF:57:A7:F4:CF"
+    root_urls:
+      - "https://pki.goog/repo/certs/gtsr1.pem"
     state: present
 ```
 

@@ -2,25 +2,35 @@
 #
 # complete-le-chain.sh
 #
-# Ensures the Let's Encrypt RSA chain in fullchain.cer is rooted by
-# appending "ISRG Root X1" (self-signed) if it is not already present.
+# Ensures the CA chain in fullchain.cer is rooted by appending the CA's
+# self-signed root if it is not already present. Root defaults to Let's
+# Encrypt's "ISRG Root X1"; pass -c/-p/-r to pin a different CA (e.g.
+# Google Public CA's "GTS Root R1").
 #
 # Source order:
 #   1. System CA trust bundle (RHEL/CentOS/Fedora and Debian/Ubuntu paths)
-#   2. Known Let's Encrypt URLs (curl, then wget)
+#   2. Known root download URLs (curl, then wget)
 #
-# The acquired root is verified against the published SHA-256 fingerprint
-# of ISRG Root X1 before anything is appended.
+# The acquired root is verified against the pinned SHA-256 fingerprint
+# before anything is appended.
 #
 # Finally validates:  openssl verify -CAfile fullchain.cer <leaf>.cer
 #
 # Usage:
-#   ./complete-le-chain.sh [-d CERT_DIR] [-f FULLCHAIN] [-l LEAF_CERT] [-n]
+#   ./complete-le-chain.sh [-d CERT_DIR] [-f FULLCHAIN] [-l LEAF_CERT]
+#                           [-c ROOT_CN] [-p ROOT_FINGERPRINT] [-r ROOT_URLS] [-n]
 #
 #   -d CERT_DIR   Directory containing the certs
 #                 (default: ~/.acme.sh/$(hostname -f))
 #   -f FULLCHAIN  Path to fullchain file (default: CERT_DIR/fullchain.cer)
 #   -l LEAF_CERT  Path to leaf cert     (default: CERT_DIR/$(hostname -f).cer)
+#   -c ROOT_CN    Label for the root CA, used only in log messages
+#                 (default: "ISRG Root X1")
+#   -p ROOT_FPR   SHA-256 fingerprint (colon-separated, uppercase) of the
+#                 root CA to pin (default: ISRG Root X1's fingerprint)
+#   -r ROOT_URLS  Comma-separated list of URLs to download the root from if
+#                 it isn't found in the system trust store (default: the
+#                 Let's Encrypt ISRG Root X1 URLs)
 #   -n            No network. Only use the system trust store, never download.
 #
 # Exit codes: 0 = chain complete and verified, non-zero = failure.
@@ -28,7 +38,7 @@
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
-# Constants
+# Defaults (Let's Encrypt's ISRG Root X1 — override with -c/-p/-r for other CAs)
 # ---------------------------------------------------------------------------
 ROOT_CN="ISRG Root X1"
 
@@ -57,12 +67,15 @@ FULLCHAIN=""
 LEAF=""
 NO_NET=0
 
-while getopts ":d:f:l:nh" opt; do
+while getopts ":c:d:f:l:np:r:h" opt; do
   case "$opt" in
+    c) ROOT_CN="$OPTARG" ;;
     d) CERT_DIR="$OPTARG" ;;
     f) FULLCHAIN="$OPTARG" ;;
     l) LEAF="$OPTARG" ;;
     n) NO_NET=1 ;;
+    p) ROOT_FPR="$OPTARG" ;;
+    r) IFS=',' read -r -a ROOT_URLS <<< "$OPTARG" ;;
     h) grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "Unknown option: -$OPTARG" >&2; exit 2 ;;
   esac
