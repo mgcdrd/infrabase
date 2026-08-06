@@ -9,6 +9,7 @@ Supported challenge types:
 | Challenge | Description |
 |-----------|-------------|
 | `dns_cf`  | Cloudflare DNS API (wildcard-capable) |
+| `dns_pdns` | PowerDNS API (wildcard-capable) |
 | `standalone` | acme.sh built-in HTTP server (port 80 must be free) |
 | `webroot` | Drop challenge files into an existing web root |
 | `nginx`   | acme.sh configures nginx directly |
@@ -24,6 +25,8 @@ Requirements
 - `gather_facts: true` — needed for the package manager.
 - Port 80 must be available during issuance for `standalone` challenge.
 - Cloudflare API token (or Global API key) with `DNS:Edit` permission for `dns_cf`.
+- PowerDNS API enabled on the authoritative server (`webserver`/`api-key` in
+  `pdns.conf`) for `dns_pdns`.
 
 
 Role Variables
@@ -85,14 +88,23 @@ acme_sh_cf_key:   ""   # Cloudflare Global API Key
 acme_sh_cf_email: ""   # Cloudflare account email
 ```
 
+### PowerDNS API credentials (dns_pdns challenge)
+
+```yaml
+acme_sh_pdns_url:       ""            # PowerDNS API base URL, e.g. http://dns.lab.acme.com:8081
+acme_sh_pdns_server_id: "localhost"   # PowerDNS server-id
+acme_sh_pdns_token:     ""            # PowerDNS API key
+acme_sh_pdns_ttl:       ""            # optional, acme.sh defaults to 60s
+```
+
 ### Certificates
 
 ```yaml
 acme_sh_certs:
   - domains:
       - "example.com"        # primary domain (CN)
-      - "*.example.com"      # additional SANs (optional, dns_cf required for wildcards)
-    challenge: dns_cf        # dns_cf | standalone | webroot | nginx | apache
+      - "*.example.com"      # additional SANs (optional, dns_cf/dns_pdns required for wildcards)
+    challenge: dns_cf        # dns_cf | dns_pdns | standalone | webroot | nginx | apache
     webroot_path: ""         # required for webroot challenge only
     reload_cmd: ""           # shell command run after cert install/renew
                              # e.g. "systemctl reload nginx"
@@ -261,6 +273,6 @@ Notes
 - The `--install-cert` step (deploy to `acme_sh_cert_base_dir`) only runs when a
   new or renewed cert is issued. The `reload_cmd` is registered regardless so
   acme.sh will call it on future automatic renewals.
-- Cloudflare credentials are passed via environment variables to the acme.sh
-  command, not on the command line, so they do not appear in process listings
-  or Ansible output.
+- Cloudflare and PowerDNS credentials are passed via environment variables to
+  the acme.sh command, not on the command line, so they do not appear in
+  process listings or Ansible output.

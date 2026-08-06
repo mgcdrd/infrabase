@@ -14,8 +14,8 @@
     _acme_state:    "{{ _cert.state | default('present') }}"
     _acme_cert_dir: "{{ acme_sh_cert_base_dir }}/{{ _acme_domains | first }}"
 
-# Reset every iteration so credentials don't bleed from a dns_cf cert
-# into a subsequent cert that uses a different challenge.
+# Reset every iteration so credentials don't bleed from a dns_cf/dns_pdns
+# cert into a subsequent cert that uses a different challenge.
 - name: "acme_sh cert - Reset credential environment"
   become: false
   ansible.builtin.set_fact:
@@ -28,6 +28,20 @@
   when:
     - _acme_state == 'present'
     - _cert.challenge == 'dns_cf'
+
+- name: "acme_sh cert - Set PowerDNS credentials for {{ _acme_primary }}"
+  become: false
+  ansible.builtin.set_fact:
+    _acme_env: >-
+      {{
+        {'PDNS_Url': acme_sh_pdns_url | trim,
+         'PDNS_ServerId': acme_sh_pdns_server_id | trim,
+         'PDNS_Token': acme_sh_pdns_token | trim}
+        | combine({'PDNS_Ttl': acme_sh_pdns_ttl | trim} if acme_sh_pdns_ttl | trim | length > 0 else {})
+      }}
+  when:
+    - _acme_state == 'present'
+    - _cert.challenge == 'dns_pdns'
 
 # acme.sh reads SAVED_CF_Token from account.conf before deciding which mode to
 # use, so a stale token takes precedence over CF_Key/CF_Email in the environment.
@@ -84,6 +98,7 @@
       /root/.acme.sh/acme.sh --issue
       {{ _acme_domains | map('regex_replace', '^(.*)$', '-d \1') | join(' ') }}
       {% if _cert.challenge == 'dns_cf' %}--dns dns_cf
+      {% elif _cert.challenge == 'dns_pdns' %}--dns dns_pdns
       {% elif _cert.challenge == 'standalone' %}--standalone
       {% elif _cert.challenge == 'webroot' %}--webroot {{ _cert.webroot_path | default('') }}
       {% elif _cert.challenge == 'nginx' %}--nginx

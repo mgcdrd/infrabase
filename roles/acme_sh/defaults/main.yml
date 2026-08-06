@@ -25,6 +25,14 @@ acme_sh_cf_token: ""
 acme_sh_cf_key: ""
 acme_sh_cf_email: ""
 
+# ---- POWERDNS (dns_pdns challenge) ----
+# API must be enabled on the PowerDNS server (webserver + api-key in pdns.conf).
+
+acme_sh_pdns_url: ""
+acme_sh_pdns_server_id: "localhost"
+acme_sh_pdns_token: ""
+acme_sh_pdns_ttl: ""
+
 # ---- EAB (External Account Binding) ----
 # Required by some commercial CAs (Sectigo, DigiCert, etc.).
 
@@ -60,7 +68,7 @@ acme_sh_keylength: "2048"
 #   - domains:
 #       - "example.com"
 #       - "*.example.com"     # SANs (optional)
-#     challenge: dns_cf       # dns_cf | standalone | webroot | nginx | apache
+#     challenge: dns_cf       # dns_cf | dns_pdns | standalone | webroot | nginx | apache
 #     webroot_path: ""        # webroot challenge only
 #     reload_cmd: ""          # e.g. "systemctl reload nginx"
 #     keylength: "2048"       # per-cert override of acme_sh_keylength

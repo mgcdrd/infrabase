@@ -22,10 +22,9 @@
       - --register-account
       - --server
       - "{{ acme_sh_ca }}"
-      - --eab
-      - --kid
+      - --eab-kid
       - "{{ acme_sh_eab_kid }}"
-      - --hmackey
+      - --eab-hmac-key
       - "{{ acme_sh_eab_hmac_key }}"
   register: _acme_sh_register
   changed_when: "'Registered' in _acme_sh_register.stdout"
