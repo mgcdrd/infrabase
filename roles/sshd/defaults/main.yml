@@ -14,6 +14,13 @@ sshd_max_auth_tries:           4
 sshd_max_sessions:             10
 sshd_pubkey_authentication:    "yes"
 sshd_authorized_keys_file:     ".ssh/authorized_keys"
+# Path to a lookup program (e.g. for Vault/LDAP-backed keys). Empty = not set
+# by this role — leaves it to an external drop-in (e.g. ipa-client-install).
+# sshd requires the binary be owned by root, not writable by group/other, and
+# not itself a symlink or in a group/world-writable directory, or it refuses
+# to start.
+sshd_authorized_keys_command:      ""
+sshd_authorized_keys_command_user: "nobody"
 sshd_password_authentication:  "no"
 sshd_permit_empty_passwords:   "no"
 sshd_use_pam:                  "yes"

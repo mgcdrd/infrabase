@@ -25,6 +25,10 @@ MaxSessions {{ sshd_max_sessions }}
 
 PubkeyAuthentication {{ sshd_pubkey_authentication }}
 AuthorizedKeysFile {{ sshd_authorized_keys_file }}
+{% if sshd_authorized_keys_command %}
+AuthorizedKeysCommand {{ sshd_authorized_keys_command }}
+AuthorizedKeysCommandUser {{ sshd_authorized_keys_command_user }}
+{% endif %}
 
 HostbasedAuthentication no
 IgnoreUserKnownHosts no

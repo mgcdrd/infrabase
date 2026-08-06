@@ -47,6 +47,8 @@ Role Variables
 | `sshd_max_sessions` | `10` | Max multiplexed sessions per connection |
 | `sshd_pubkey_authentication` | `yes` | Enable public key auth |
 | `sshd_authorized_keys_file` | `.ssh/authorized_keys` | AuthorizedKeysFile path |
+| `sshd_authorized_keys_command` | `""` | Path to an AuthorizedKeysCommand lookup program; empty = not set by this role (leaves it to an external drop-in, e.g. `ipa-client-install`) |
+| `sshd_authorized_keys_command_user` | `nobody` | User the command runs as; only written when `sshd_authorized_keys_command` is set |
 | `sshd_password_authentication` | `no` | Enable password auth |
 | `sshd_permit_empty_passwords` | `no` | Permit empty passwords |
 | `sshd_use_pam` | `yes` | Enable PAM |
@@ -176,3 +178,8 @@ Notes
   `/etc/ssh/sshd_config.d/01-permitrootlogin.conf` is removed — it exists
   only to let root log in during/after kickstart and has no purpose once
   this role manages the host.
+- If setting `sshd_authorized_keys_command`, the target binary must be owned
+  by root, not writable by group or other, and not itself a symlink or in a
+  group/world-writable directory — sshd refuses to start otherwise. On an
+  IPA-enrolled host, leave `sshd_authorized_keys_command` unset and let
+  `ipa-client-install`'s drop-in supply it instead.
