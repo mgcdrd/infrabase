@@ -1,5 +1,14 @@
 ---
 
+- name: hardened_services services - Reload systemd unit cache
+  # On a freshly provisioned host this is the first systemd_service query in
+  # the run — systemd's unit cache can still be stale relative to disk, so a
+  # unit that genuinely exists (and that service_facts/systemctl can see)
+  # reads back as LoadState=not-found and fails_json's here. Reruns are
+  # unaffected since the cache is warm by then.
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+
 - name: hardened_services services - Gather service facts
   ansible.builtin.service_facts:
 
