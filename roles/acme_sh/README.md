@@ -141,6 +141,14 @@ by this role) appends the fingerprint-pinned root CA and validates the
 result. No `fullchain.pem` is deployed. Use this for consumers that must
 validate the chain to a self-contained root (e.g. `katello-certs-check`).
 
+`--issue` also passes `--preferred-chain "<root_cn>"`, so acme.sh requests
+the chain whose top-level issuer matches `root_cn` rather than whatever the
+CA offers by default. This matters for CAs that serve multiple valid chains
+for the same leaf — e.g. Google Public CA defaults to a chain cross-signed
+by GlobalSign Root CA (for legacy client compatibility) instead of the
+shorter chain terminating at the self-signed GTS Root R1 that
+`complete-le-chain.sh`'s fingerprint pin expects.
+
 The root pinned is Let's Encrypt's ISRG Root X1 by default
 (`acme_sh_root_cn`/`acme_sh_root_fingerprint`/`acme_sh_root_urls`),
 overridable globally or per-cert (`root_cn`/`root_fingerprint`/`root_urls`

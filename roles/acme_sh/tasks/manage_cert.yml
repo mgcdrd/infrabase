@@ -105,6 +105,7 @@
       {% elif _cert.challenge == 'apache' %}--apache
       {% endif %}
       {% if _cert.keylength | default(acme_sh_keylength) | length > 0 %}--keylength {{ _cert.keylength | default(acme_sh_keylength) }}{% endif %}
+      {% if _cert.complete_chain | default(false) | bool %}--preferred-chain "{{ _cert.root_cn | default(acme_sh_root_cn) }}"{% endif %}
       {% if acme_sh_staging | bool %}--staging{% endif %}
     chdir: /root/.acme.sh
   environment: "{{ _acme_env }}"
