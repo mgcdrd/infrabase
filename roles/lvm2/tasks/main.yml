@@ -15,6 +15,21 @@
       - hardware
 
 # =====================
+# Grow partitions/PVs to consume newly available disk space (e.g. after the
+# underlying block device was resized) before anything else needs the room.
+- name: lvm2 main - Grow PVs to consume available disk space
+  import_tasks: grow_pv.yml
+  when: lvm_pv_grow | length > 0
+
+# Refresh LVM facts after PV growth so VG free-space checks below reflect it
+- name: lvm2 main - Refresh hardware facts after PV growth
+  ansible.builtin.setup:
+    gather_subset:
+      - '!all'
+      - hardware
+  when: lvm_pv_grow | length > 0
+
+# =====================
 # Detect the OS volume group from the root mount unless overridden
 - name: lvm2 main - Detect OS volume group
   import_tasks: detect_os_vg.yml

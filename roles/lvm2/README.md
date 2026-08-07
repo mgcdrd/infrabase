@@ -20,8 +20,9 @@ Tested on: Debian 12/13, Rocky Linux 9/10
 Requirements
 ------------
 
-Role uses `community.general.lvol` and `community.general.lvg` and requires the
-`community.general` collection.
+Role uses `community.general.lvol`, `community.general.lvg`,
+`community.general.parted`, and `community.general.lvm_pv` (>= 11.0.0) and
+requires the `community.general` collection.
 
 `gather_facts: true` is required as LVM and mount facts are used for pre-flight
 validation and threshold checks.
@@ -37,6 +38,18 @@ Role Variables
 # The role detects this from the root mount device at runtime.
 # Set explicitly if auto-detection fails or you are targeting a non-OS VG.
 lvm_os_vg: ""
+
+# ---- PHYSICAL VOLUME OPERATIONS ----
+
+# Grow a partition (and the PV on it) to consume space added to the
+# underlying disk since it was partitioned — e.g. a VM template built with
+# a small root disk, later grown by the hypervisor. Runs before VG/LV
+# extension so the extra space is available to them.
+lvm_pv_grow: []
+# lvm_pv_grow:
+#   - disk: /dev/sda                # whole-disk device (required)
+#     partition: 3                  # partition number backing the PV (required)
+#     pv: /dev/sda3                 # the PV device — disk+partition above (required)
 
 # ---- LOGICAL VOLUME OPERATIONS ----
 
@@ -77,6 +90,8 @@ The following are validated before any action is taken:
 - VG has sufficient free space for the requested extension
 - Absolute sizes are not smaller than the current LV size (anti-shrink guard unless `shrink: true`)
 - PV block devices exist and are not already claimed by a different VG
+- `lvm_pv_grow` entries have `disk`, `partition`, and `pv` defined, and both
+  `disk` and `pv` exist as block devices
 
 
 Dependencies
@@ -160,6 +175,25 @@ lvm_volumes:
 
 VG extension runs first, facts are refreshed, then the LV is extended into the
 newly available space — all in a single play.
+
+**Grow the OS root partition after the hypervisor resized the underlying disk,
+then extend `lv_root` into the new space:**
+
+```yaml
+lvm_pv_grow:
+  - disk: /dev/sda
+    partition: 3
+    pv: /dev/sda3
+
+lvm_volumes:
+  - lv: lv_root
+    size: +10G
+```
+
+PV growth runs first, facts are refreshed, then the LV is extended — same
+pattern as VG extension above. Safe to run on every deploy: both the
+partition resize and the PV resize compare current vs. target size and
+no-op when the disk hasn't grown.
 
 **Multiple volumes with mixed threshold and explicit extension:**
 

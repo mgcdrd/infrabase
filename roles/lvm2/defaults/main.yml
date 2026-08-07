@@ -5,6 +5,19 @@
 # Set explicitly if auto-detection fails or the role is used for non-OS VGs.
 lvm_os_vg: ""
 
+# ---- PHYSICAL VOLUME OPERATIONS ----
+
+# Grow a partition (and the PV on it) to consume space added to the
+# underlying disk since it was partitioned — e.g. a VM template built with
+# a small root disk, later grown by the hypervisor. Runs before VG/LV
+# extension so the extra space is available to them. No-ops cleanly when
+# the partition is already at full size.
+lvm_pv_grow: []
+# lvm_pv_grow:
+#   - disk: /dev/sda                # whole-disk device (required)
+#     partition: 3                  # partition number backing the PV (required)
+#     pv: /dev/sda3                 # the PV device — the disk+partition above (required)
+
 # ---- LOGICAL VOLUME OPERATIONS ----
 
 # Logical volumes to extend. Role only extends existing LVs — it does not create them.

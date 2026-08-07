@@ -1,0 +1,54 @@
+---
+
+# Grows the partition backing a PV to consume newly available disk space
+# (e.g. after the underlying block device was resized by the hypervisor),
+# then grows the PV to match. Both community.general.parted (resize) and
+# community.general.lvm_pv (resize) compare current vs. target size before
+# acting, so this is a clean no-op on a disk already at full size.
+
+- name: lvm2 grow_pv - Assert all lvm_pv_grow entries have required keys
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.disk is defined and item.disk | length > 0
+      - item.partition is defined
+      - item.pv is defined and item.pv | length > 0
+    fail_msg: >-
+      lvm_pv_grow entry is missing required keys.
+      Each entry must have 'disk' (e.g. /dev/sda), 'partition' (partition
+      number, e.g. 3) and 'pv' (the partition device, e.g. /dev/sda3).
+  loop: "{{ lvm_pv_grow }}"
+
+- name: lvm2 grow_pv - Check disk and PV block devices exist
+  ansible.builtin.stat:
+    path: "{{ dev }}"
+  register: _lvm_grow_pv_stat
+  loop: "{{ (lvm_pv_grow | map(attribute='disk') | list) + (lvm_pv_grow | map(attribute='pv') | list) }}"
+  loop_control:
+    loop_var: dev
+
+- name: lvm2 grow_pv - Fail on missing disk or PV block devices
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.stat.exists
+      - item.stat.isblk
+    fail_msg: >-
+      Block device '{{ item.dev }}' does not exist or is not a block device.
+      Check the disk/pv paths in lvm_pv_grow.
+  loop: "{{ _lvm_grow_pv_stat.results }}"
+
+- name: lvm2 grow_pv - Grow partition to consume available disk space
+  community.general.parted:
+    device: "{{ item.disk }}"
+    number: "{{ item.partition }}"
+    part_end: "100%"
+    resize: true
+    state: present
+  loop: "{{ lvm_pv_grow }}"
+
+- name: lvm2 grow_pv - Resize physical volume to match grown partition
+  community.general.lvm_pv:
+    device: "{{ item.pv }}"
+    resize: true
+  loop: "{{ lvm_pv_grow }}"
