@@ -1,0 +1,42 @@
+---
+# ---- ProxMox API connection ----
+# proxmox_nic_api_host must be set by the caller (any PVE node or the cluster VIP).
+#
+# Two auth methods are supported — set one pair, leave the other unset:
+#   - API token (recommended): proxmox_nic_api_token_id + proxmox_nic_api_token_secret
+#   - Password:                 proxmox_nic_api_user (default root@pam) + proxmox_nic_api_password
+# Unset vault_* variables resolve to `omit` so only the method you configure
+# is sent to the module.
+proxmox_nic_api_host:          ""
+proxmox_nic_api_user:          "root@pam"
+proxmox_nic_api_password:      "{{ vault_proxmox_api_password | default(omit) }}"
+proxmox_nic_api_token_id:      "{{ vault_proxmox_api_token_id | default(omit) }}"
+proxmox_nic_api_token_secret:  "{{ vault_proxmox_api_token_secret | default(omit) }}"
+proxmox_nic_validate_certs:    false
+
+# ---- VM targeting ----
+# The role looks up the VM by name to discover its VMID automatically.
+# Override proxmox_nic_vm_name if the VM's name in PVE differs from inventory_hostname.
+proxmox_nic_vm_name: "{{ inventory_hostname }}"
+
+# Set this directly to skip discovery entirely (e.g. when this role runs
+# right after proxmox_vm's clone task and the VMID is already known).
+proxmox_nic_vmid: ""
+
+# ---- NIC configuration ----
+# One entry per interface slot to manage (net0-net31). net0 is normally owned
+# by proxmox_vm at clone time (proxmox_vm_net0) — only list it here for
+# post-creation changes. Deleting a NIC just needs interface + state: absent.
+#
+# proxmox_nic_interfaces:
+#   - interface: net1
+#     bridge: vmbr1
+#     model: virtio       # e1000 | rtl8139 | virtio (default) | ...
+#     tag: 100             # VLAN tag
+#     firewall: false
+#     mtu: ""              # virtio only; "" leaves it unset
+#     mac: ""              # "" lets PVE generate one / keeps the existing one
+#     state: present        # present | absent
+#   - interface: net2
+#     state: absent
+proxmox_nic_interfaces: []

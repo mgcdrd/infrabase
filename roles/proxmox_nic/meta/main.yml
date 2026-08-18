@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  author: mgcdrd
+  description: Add, update, or remove VM network interfaces (net0-net31) via the PVE API
+  role_name: proxmox_nic
+
+  license: GPL-3.0-or-later
+  min_ansible_version: '2.14'
+
+  galaxy_tags:
+    - mgcdrd
+
+collections:
+  - community.proxmox

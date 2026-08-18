@@ -1,0 +1,38 @@
+---
+# Look up the VM by name across the cluster and set _proxmox_nic_vmid.
+# Skipped entirely if the caller already set proxmox_nic_vmid (see main.yml).
+#
+# The resolved value is kept separate from proxmox_nic_vmid (the user-facing
+# override) rather than written back into it — set_fact persists as a host
+# fact for the rest of the play, so if this role runs in a loop over several
+# VM names in one play, reusing proxmox_nic_vmid here would make every
+# iteration after the first skip discovery and silently reuse the wrong VMID.
+
+- name: discover - look up VM by name in ProxMox
+  community.proxmox.proxmox_vm_info:
+    api_host:         "{{ proxmox_nic_api_host }}"
+    api_user:         "{{ proxmox_nic_api_user }}"
+    api_password:     "{{ proxmox_nic_api_password }}"
+    api_token_id:     "{{ proxmox_nic_api_token_id }}"
+    api_token_secret: "{{ proxmox_nic_api_token_secret }}"
+    validate_certs:   "{{ proxmox_nic_validate_certs }}"
+    name: "{{ proxmox_nic_vm_name }}"
+  register: proxmox_nic_vm_info
+  delegate_to: localhost
+
+- name: discover - fail if VM not found
+  ansible.builtin.fail:
+    msg: "No VM named '{{ proxmox_nic_vm_name }}' found in ProxMox."
+  when: proxmox_nic_vm_info.proxmox_vms | length == 0
+
+- name: discover - fail if multiple VMs match
+  ansible.builtin.fail:
+    msg: >
+      Multiple VMs named '{{ proxmox_nic_vm_name }}' found
+      ({{ proxmox_nic_vm_info.proxmox_vms | map(attribute='vmid') | list }}).
+      Set proxmox_nic_vmid explicitly or use a more specific name.
+  when: proxmox_nic_vm_info.proxmox_vms | length > 1
+
+- name: discover - set VMID fact
+  ansible.builtin.set_fact:
+    _proxmox_nic_vmid: "{{ proxmox_nic_vm_info.proxmox_vms[0].vmid }}"

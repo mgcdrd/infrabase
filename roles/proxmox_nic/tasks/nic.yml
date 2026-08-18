@@ -1,0 +1,23 @@
+---
+- name: nic - configure VM network interface
+  community.proxmox.proxmox_nic:
+    api_host:         "{{ proxmox_nic_api_host }}"
+    api_user:         "{{ proxmox_nic_api_user }}"
+    api_password:     "{{ proxmox_nic_api_password }}"
+    api_token_id:     "{{ proxmox_nic_api_token_id }}"
+    api_token_secret: "{{ proxmox_nic_api_token_secret }}"
+    validate_certs:   "{{ proxmox_nic_validate_certs }}"
+    vmid:      "{{ proxmox_nic_vmid | default(_proxmox_nic_vmid, true) }}"
+    interface: "{{ nic_item.interface }}"
+    bridge:    "{{ nic_item.bridge | default(omit, true) }}"
+    model:     "{{ nic_item.model | default('virtio') }}"
+    tag:       "{{ nic_item.tag | default(omit, true) }}"
+    firewall:  "{{ nic_item.firewall | default(omit, true) }}"
+    mtu:       "{{ nic_item.mtu | default(omit, true) }}"
+    mac:       "{{ nic_item.mac | default(omit, true) }}"
+    state:     "{{ nic_item.state | default('present') }}"
+  loop: "{{ proxmox_nic_interfaces }}"
+  loop_control:
+    loop_var: nic_item
+    label: "{{ nic_item.interface }} ({{ nic_item.state | default('present') }})"
+  delegate_to: localhost

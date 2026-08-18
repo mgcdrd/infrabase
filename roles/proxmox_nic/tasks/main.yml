@@ -1,0 +1,15 @@
+---
+- name: proxmox_nic - fail if no interfaces defined
+  ansible.builtin.fail:
+    msg: "proxmox_nic_interfaces must contain at least one entry."
+  when: proxmox_nic_interfaces | length == 0
+  tags: [proxmox_nic, network]
+
+- name: proxmox_nic - discover VM in ProxMox
+  import_tasks: discover.yml
+  when: not proxmox_nic_vmid
+  tags: [proxmox_nic, network]
+
+- name: proxmox_nic - configure NICs
+  import_tasks: nic.yml
+  tags: [proxmox_nic, network]
