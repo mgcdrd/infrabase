@@ -63,9 +63,19 @@ acme_sh_ca: letsencrypt    # letsencrypt | zerossl | buypass | sslcom | google
 Required by commercial CAs such as Sectigo and DigiCert. Obtain the KID and
 HMAC key from the CA's portal after creating an ACME account there.
 
+For Google Public CA, use
+[`mgcdrd.infrasvc.google_publicca_eab`](../../../../infrasvc/roles/google_publicca_eab)
+to mint a key and store it in Vault instead of a manual portal step. Google
+EAB keys are single-use (one key registers exactly one ACME account and is
+then invalid) and expire after 7 days unused — mint one only when actually
+registering or recovering an account, not routinely.
+
 EAB binds at **account registration** — it applies to all certs issued under
 this account. You do not need to re-supply EAB keys on subsequent runs once
-the account is registered.
+the account is registered. If `acme_sh_ca` is Google Public CA and no local
+account is registered yet, this role fails fast during preflight when EAB
+credentials aren't supplied, rather than letting `--issue` fail later with
+an opaque ACME error.
 
 ```yaml
 acme_sh_eab_enabled:  true

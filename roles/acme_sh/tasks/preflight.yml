@@ -18,6 +18,46 @@
     fail_msg: "acme_sh_eab_kid and acme_sh_eab_hmac_key must both be set when acme_sh_eab_enabled is true."
   when: acme_sh_eab_enabled
 
+# Google Public CA requires EAB to register an account. If no local
+# account exists yet (fresh host, or one recovering from lost
+# /root/.acme.sh state) and acme_sh_eab_enabled wasn't set, --issue would
+# otherwise fail later with an opaque ACME error from Google.
+- name: acme_sh preflight - Check whether the acme.sh CA directory exists yet
+  become: true
+  ansible.builtin.stat:
+    path: /root/.acme.sh/ca
+  register: _acme_sh_ca_dir
+  when: acme_sh_ca == 'google' or 'pki.goog' in acme_sh_ca
+
+- name: acme_sh preflight - Check for an already-registered Google Public CA account
+  become: true
+  ansible.builtin.find:
+    paths: /root/.acme.sh/ca
+    patterns: "account.json"
+    recurse: true
+    file_type: file
+  register: _acme_sh_google_account_files
+  when:
+    - acme_sh_ca == 'google' or 'pki.goog' in acme_sh_ca
+    - _acme_sh_ca_dir.stat.exists | default(false)
+
+- name: acme_sh preflight - Fail if Google Public CA needs EAB and no account is registered yet
+  become: false
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - >-
+        acme_sh_eab_enabled | bool
+        or (_acme_sh_google_account_files.files | default([]) | selectattr('path', 'search', 'pki.goog') | list | length > 0)
+    fail_msg: >-
+      acme_sh_ca is Google Public CA but no local acme.sh account is
+      registered yet on this host and acme_sh_eab_enabled is false.
+      Google requires an EAB key for first-time account registration.
+      Run mgcdrd.infrasvc.google_publicca_eab to mint one into Vault,
+      then set acme_sh_eab_enabled: true with acme_sh_eab_kid /
+      acme_sh_eab_hmac_key pointing at it.
+  when: acme_sh_ca == 'google' or 'pki.goog' in acme_sh_ca
+
 - name: acme_sh preflight - Assert Cloudflare credentials for dns_cf certs
   become: false
   ansible.builtin.assert:
