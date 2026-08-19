@@ -50,9 +50,9 @@ declared explicitly per host, never assumed.
 | `dns4` | no | List of IPv4 DNS servers |
 | `mtu` | no | Interface MTU |
 
-| Key (`type: physical`) | Required | Description |
-|---|---|---|
-| `device` | no | Kernel interface name. Defaults to `name` |
+| Key (`type: physical`) | Required | Description                               |
+| ---------------------- | -------- | ----------------------------------------- |
+| `device`               | no       | Kernel interface name. Defaults to `name` |
 
 | Key (`type: bond`) | Required | Description |
 |---|---|---|
@@ -121,14 +121,27 @@ network_interfaces:
 ```
 
 
+Activation
+----------
+
+Creating or modifying an nmcli connection profile doesn't apply it live —
+changes wouldn't take effect until next boot otherwise. After
+`configure.yml`, the role runs `nmcli connection up` on every interface
+that actually changed this run (skipped if unchanged, and skipped
+entirely for `state: absent` entries — nmcli already took those down),
+in the same dependency order: physical/bond parents before bond member
+slaves and VLAN subinterfaces.
+
+
 Notes
 -----
 
 - **SSH lockout risk**: applying this role to the interface your current
-  SSH session is on can drop the connection — nmcli reactivates a modified
-  connection profile to apply changes. Prefer running it over an
-  out-of-band NIC (like `mgmt0` in the example above), or via console/IPMI
-  access, not over the interface being reconfigured.
+  SSH session is on can drop the connection — the activation step above
+  reactivates a changed connection profile to apply it, which is exactly
+  what severs the session if that's the interface in use. Prefer running
+  it over an out-of-band NIC (like `mgmt0` in the example above), or via
+  console/IPMI access, not over the interface being reconfigured.
 - **Bond members must not carry their own connection**: NetworkManager
   will refuse (or silently conflict) if a device already has an active,
   unrelated connection profile when this role tries to enslave it. Don't

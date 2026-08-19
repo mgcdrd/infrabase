@@ -1,0 +1,56 @@
+---
+
+# nmcli's `present` state only ensures the connection *profile* matches —
+# modifying an already-existing connection's settings doesn't reactivate
+# it, so changes wouldn't take effect until next boot without this. Only
+# reactivates entries this run actually changed (state: absent entries are
+# skipped — nmcli already took them down), in the same dependency order
+# as configure.yml (parents before slaves/VLANs).
+#
+# This is exactly the SSH-lockout case in the README: if the changed
+# interface carries the current session, `nmcli connection up` here is
+# what drops it — the risk isn't hypothetical once this task runs.
+
+- name: network_interfaces activate - Bring up changed physical interfaces
+  ansible.builtin.command:
+    argv: [nmcli, connection, up, "{{ item.item.name }}"]
+  loop: "{{ _network_interfaces_physical.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  when:
+    - item.changed
+    - (item.item.state | default('present')) == 'present'
+  changed_when: true
+
+- name: network_interfaces activate - Bring up changed bond interfaces
+  ansible.builtin.command:
+    argv: [nmcli, connection, up, "{{ item.item.name }}"]
+  loop: "{{ _network_interfaces_bond.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  when:
+    - item.changed
+    - (item.item.state | default('present')) == 'present'
+  changed_when: true
+
+- name: network_interfaces activate - Bring up changed bond member slaves
+  ansible.builtin.command:
+    argv: [nmcli, connection, up, "{{ item.item.0.name }}-slave-{{ item.item.1 }}"]
+  loop: "{{ _network_interfaces_bond_slaves.results }}"
+  loop_control:
+    label: "{{ item.item.0.name }}-slave-{{ item.item.1 }}"
+  when:
+    - item.changed
+    - (item.item.0.state | default('present')) == 'present'
+  changed_when: true
+
+- name: network_interfaces activate - Bring up changed VLAN subinterfaces
+  ansible.builtin.command:
+    argv: [nmcli, connection, up, "{{ item.item.name }}"]
+  loop: "{{ _network_interfaces_vlan.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  when:
+    - item.changed
+    - (item.item.state | default('present')) == 'present'
+  changed_when: true

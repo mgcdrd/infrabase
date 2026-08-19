@@ -5,3 +5,6 @@
 
 - name: network_interfaces main - Configure interfaces
   ansible.builtin.import_tasks: configure.yml
+
+- name: network_interfaces main - Activate changed interfaces
+  ansible.builtin.import_tasks: activate.yml

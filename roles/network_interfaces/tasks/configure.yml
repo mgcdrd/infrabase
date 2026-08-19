@@ -19,6 +19,7 @@
   loop: "{{ network_interfaces | selectattr('type', 'equalto', 'physical') | list }}"
   loop_control:
     label: "{{ item.name }}"
+  register: _network_interfaces_physical
 
 - name: network_interfaces configure - Configure bond interfaces
   community.general.nmcli:
@@ -37,6 +38,7 @@
   loop: "{{ network_interfaces | selectattr('type', 'equalto', 'bond') | list }}"
   loop_control:
     label: "{{ item.name }}"
+  register: _network_interfaces_bond
 
 - name: network_interfaces configure - Enslave member NICs to their bond
   community.general.nmcli:
@@ -50,6 +52,7 @@
   loop: "{{ network_interfaces | selectattr('type', 'equalto', 'bond') | list | subelements('bond_members') }}"
   loop_control:
     label: "{{ item.0.name }} <- {{ item.1 }}"
+  register: _network_interfaces_bond_slaves
 
 - name: network_interfaces configure - Configure VLAN subinterfaces
   community.general.nmcli:
@@ -67,3 +70,4 @@
   loop: "{{ network_interfaces | selectattr('type', 'equalto', 'vlan') | list }}"
   loop_control:
     label: "{{ item.name }}"
+  register: _network_interfaces_vlan
