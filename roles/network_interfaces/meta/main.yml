@@ -1,0 +1,15 @@
+---
+galaxy_info:
+  author: mgcdrd
+  description: Host network interfaces (physical, LACP bonds, VLAN subinterfaces) via NetworkManager/nmcli
+  role_name: network_interfaces
+
+  license: GPL-3.0-or-later
+
+  min_ansible_version: '2.14'
+
+  galaxy_tags:
+    - mgcdrd
+
+collections:
+  - community.general

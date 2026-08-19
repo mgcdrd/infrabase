@@ -1,0 +1,7 @@
+---
+
+- name: network_interfaces main - Install and enable NetworkManager
+  ansible.builtin.import_tasks: install.yml
+
+- name: network_interfaces main - Configure interfaces
+  ansible.builtin.import_tasks: configure.yml
