@@ -1,0 +1,15 @@
+---
+galaxy_info:
+  author: mgcdrd
+  description: Orchestrates disk/NIC/snapshot changes on an existing ProxMox VM via proxmox_disk, proxmox_nic, and proxmox_snapshot
+  role_name: proxmox_vm_manage
+
+  license: GPL-3.0-or-later
+  min_ansible_version: '2.14'
+
+  galaxy_tags:
+    - mgcdrd
+
+collections:
+  - community.general
+  - community.proxmox

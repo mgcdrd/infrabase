@@ -1,0 +1,69 @@
+---
+# ---- ProxMox API connection (shared across all three underlying roles) ----
+# proxmox_vm_manage_api_host must be set by the caller.
+#
+# Two auth methods are supported for the NIC/snapshot sub-roles — set one
+# pair, leave the other unset (unset vault_* variables resolve to `omit`):
+#   - API token (recommended): proxmox_vm_manage_api_token_id + _secret
+#   - Password:                 proxmox_vm_manage_api_user (default root@pam) + _password
+# The disk sub-role only supports password auth (community.general's
+# proxmox_disk/proxmox_vm_info predate token support) — proxmox_vm_manage_api_user
+# and _api_password are always passed to it regardless of which method you use
+# for NICs/snapshots.
+proxmox_vm_manage_api_host:          ""
+proxmox_vm_manage_api_user:          "root@pam"
+proxmox_vm_manage_api_password:      "{{ vault_proxmox_api_password | default(omit) }}"
+proxmox_vm_manage_api_token_id:      "{{ vault_proxmox_api_token_id | default(omit) }}"
+proxmox_vm_manage_api_token_secret:  "{{ vault_proxmox_api_token_secret | default(omit) }}"
+proxmox_vm_manage_validate_certs:    false
+
+# ---- VM targeting ----
+# Defaults to inventory_hostname — override if the VM name in PVE differs.
+proxmox_vm_manage_vm_name: "{{ inventory_hostname }}"
+
+# Set directly to skip the by-name lookup for the NIC/snapshot sub-roles
+# (e.g. right after a proxmox_vm clone, when the VMID is already known).
+# The disk sub-role always looks up by name — it has no VMID passthrough.
+proxmox_vm_manage_vmid: ""
+
+# ==============================================================
+# Disks — one entry per disk to add or resize. Each entry runs a full
+# proxmox_disk invocation (including its own by-name VM discovery), so N
+# entries means N discovery calls — a limitation of the wrapped role, not
+# this one.
+# ==============================================================
+# proxmox_vm_manage_disks:
+#   - slot: virtio1               # PVE disk slot — must not already be occupied for state=present
+#     storage: truenas             # PVE storage backend
+#     size: "400"                  # GiB integer for state=present, "+XG" form for state=resized
+#     state: present                # present | resized
+#     resize_device: /dev/vdb       # resized only — block device to pvresize
+#     resize_vg: vg_data            # resized only — VG containing the LVs to extend
+#     resize_lvs:                   # resized only — LVs to extend and grow filesystem on
+#       - lv: lv_data
+#         size: 500G
+#         mount: /data
+#         fstype: xfs
+proxmox_vm_manage_disks: []
+
+# ==============================================================
+# NICs — passed straight through to proxmox_nic_interfaces. See that role's
+# README for the full per-entry key list (bridge, model, tag, firewall, mtu, mac).
+# ==============================================================
+# proxmox_vm_manage_nics:
+#   - interface: net1
+#     bridge: vmbr1
+#     tag: 100
+#     state: present                # present | absent
+proxmox_vm_manage_nics: []
+
+# ==============================================================
+# Snapshots — passed straight through to proxmox_snapshot_snapshots. See that
+# role's README for the full per-entry key list (vmstate, retention, force, unbind).
+# ==============================================================
+# proxmox_vm_manage_snapshots:
+#   - snapname: pre-updates
+#     state: present                 # present | absent | rollback
+#     description: "Before OS updates"
+#     retention: 5
+proxmox_vm_manage_snapshots: []

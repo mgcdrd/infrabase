@@ -49,6 +49,30 @@
   loop: "{{ firewall_zones | subelements('allowed_services', skip_missing=True) }}"
   when: ansible_facts['os_family'] == 'RedHat'
 
+- name: firewall configure - Enable masquerade per zone (RedHat)
+  ansible.posix.firewalld:
+    zone:       "{{ item.name }}"
+    masquerade: true
+    state:      enabled
+    permanent:  true
+    immediate:  true
+  loop: "{{ firewall_zones | selectattr('masquerade', 'defined') | selectattr('masquerade') | list }}"
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: firewall configure - Add port forwards per zone (RedHat)
+  ansible.posix.firewalld:
+    zone: "{{ item.0.name }}"
+    port_forward:
+      - port:    "{{ item.1.port }}"
+        proto:   "{{ item.1.proto }}"
+        toport:  "{{ item.1.to_port }}"
+        toaddr:  "{{ item.1.to_addr | default(omit) }}"
+    state:      enabled
+    permanent:  true
+    immediate:  true
+  loop: "{{ firewall_zones | subelements('forward_ports', skip_missing=True) }}"
+  when: ansible_facts['os_family'] == 'RedHat'
+
 - name: firewall configure - Assign loopback interface to trusted zone (RedHat)
   ansible.posix.firewalld:
     zone:      trusted

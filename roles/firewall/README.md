@@ -47,6 +47,17 @@ and what traffic it permits.
 | `allowed_tcp_ports` | no | TCP ports to allow inbound on this zone's interfaces. |
 | `allowed_udp_ports` | no | UDP ports to allow inbound on this zone's interfaces. |
 | `allowed_services` | no | firewalld named services to allow (e.g. `http`, `https`). **RedHat only.** |
+| `masquerade` | no | Enable source NAT for traffic forwarded out this zone's interfaces. Requires `interfaces` to be set. |
+| `forward_ports` | no | Port forwards (DNAT) into this zone. Requires `interfaces` to be set. |
+
+`forward_ports` entries:
+
+| Key | Required | Description |
+|-----|----------|-------------|
+| `port` | yes | External port to forward from. |
+| `proto` | yes | `tcp` or `udp`. |
+| `to_port` | yes | Destination port. |
+| `to_addr` | no | Destination address. Omit to redirect to the same host on `to_port` instead of DNAT'ing to another host. |
 
 Default (single-interface, SSH only):
 
@@ -147,6 +158,26 @@ firewall_zones:
     allowed_tcp_ports: [80, 443]
 ```
 
+**NAT gateway (masquerade + port forward):**
+
+```yaml
+# eth0 faces the internal LAN, eth1 is the WAN uplink. LAN traffic is
+# masqueraded out eth1; inbound 8080/tcp on eth1 is DNAT'd to an internal host.
+firewall_zones:
+  - name: lan
+    interfaces: [eth0]
+    allowed_tcp_ports: [22]
+  - name: wan
+    interfaces: [eth1]
+    allowed_tcp_ports: [22]
+    masquerade: true
+    forward_ports:
+      - port: 8080
+        proto: tcp
+        to_port: 80
+        to_addr: 10.0.0.5
+```
+
 
 Notes
 -----
@@ -161,11 +192,24 @@ Notes
 - **SSH lockout**: The default zone includes port 22. If your `sshd_port`
   differs from 22, update `firewall_zones` before applying or you will lose
   SSH access when nftables reloads.
-- **K8s forward chain**: The nftables forward chain defaults to `policy drop`.
-  This will break Kubernetes pod networking, which needs forwarding between
-  the node and CNI interfaces. Either set the forward policy to `accept` in a
-  wrapper or manage K8s nodes with firewalld (RHEL) where masquerade handles
-  this.
+- **K8s forward chain**: The nftables forward chain defaults to `policy drop`,
+  and only opens up for zones with `masquerade` or `forward_ports` set. This
+  will break Kubernetes pod networking, which needs forwarding between the
+  node and CNI interfaces (typically a `cni0`/`flannel.1`/etc. interface, not
+  a zone you'd otherwise define). Either add a zone covering the CNI
+  interface with `masquerade: true`, or set the forward policy to `accept` in
+  a wrapper. On RHEL, `firewalld` handles this the same way — via `masquerade`
+  on the relevant zone.
+- **Masquerade / port forwarding**: Both `masquerade` and `forward_ports`
+  require `interfaces` to be set on the zone — NAT is inherently tied to a
+  specific interface (the egress interface for masquerade, the ingress
+  interface for DNAT), so the "applies to all interfaces" empty-list
+  convention used for plain port rules doesn't apply here. On Debian, these
+  add a `table inet nat` (prerouting DNAT / postrouting masquerade) alongside
+  the existing filter table, and the zone's interfaces get explicit forward-chain
+  accepts. On RHEL, they map directly to `ansible.posix.firewalld`'s
+  `masquerade` and `port_forward` parameters — additive, same as the rest of
+  the RedHat path.
 - **nftables on RHEL**: firewalld uses nftables as its backend on RHEL 8+.
   Do not deploy a standalone nftables ruleset alongside firewalld on RHEL —
   the two will conflict.

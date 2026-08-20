@@ -12,6 +12,16 @@ firewall_default_zone: public
 # allowed_tcp_ports:  TCP ports to allow inbound on this zone's interfaces.
 # allowed_udp_ports:  UDP ports to allow inbound on this zone's interfaces.
 # allowed_services:   firewalld named services (e.g. http, https). RedHat only.
+# masquerade:         Enable source NAT (masquerade) for traffic forwarded out
+#                     this zone's interfaces. Requires interfaces to be set.
+# forward_ports:      Port forwards (DNAT) into this zone. Requires interfaces
+#                     to be set. Each entry:
+#                       port:    external port to forward from
+#                       proto:   tcp or udp
+#                       to_port: destination port
+#                       to_addr: destination address. Omit to redirect to the
+#                                same host on to_port instead of DNAT'ing
+#                                to another host.
 #
 firewall_zones:
   - name: public

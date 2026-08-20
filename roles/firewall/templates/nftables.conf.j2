@@ -47,6 +47,19 @@ table inet filter {
 
   chain forward {
     type filter hook forward priority 0; policy drop;
+
+    ct state established,related accept
+    ct state invalid drop
+
+{% for zone in firewall_zones %}
+{% set ifaces = zone.interfaces | default([]) %}
+{% set has_nat = (zone.masquerade | default(false)) or (zone.forward_ports | default([]) | length > 0) %}
+{% if has_nat and ifaces | length > 0 %}
+    # {{ zone.name }} ({{ ifaces | join(', ') }}) — routed/NAT'd traffic
+    iifname { {{ ifaces | map('tojson') | join(', ') }} } accept
+    oifname { {{ ifaces | map('tojson') | join(', ') }} } accept
+{% endif %}
+{% endfor %}
   }
 
   chain output {
@@ -54,3 +67,34 @@ table inet filter {
   }
 
 }
+
+{% set nat_zones = firewall_zones | selectattr('interfaces', 'defined') | selectattr('interfaces') | list %}
+{% if nat_zones | selectattr('masquerade', 'defined') | selectattr('masquerade') | list | length > 0
+   or nat_zones | selectattr('forward_ports', 'defined') | rejectattr('forward_ports', 'equalto', []) | list | length > 0 %}
+table inet nat {
+
+  chain prerouting {
+    type nat hook prerouting priority dstnat; policy accept;
+
+{% for zone in nat_zones %}
+{% for fp in zone.forward_ports | default([]) %}
+{% if fp.to_addr is defined %}
+    iifname { {{ zone.interfaces | map('tojson') | join(', ') }} } {{ fp.proto }} dport {{ fp.port }} dnat to {{ fp.to_addr }}:{{ fp.to_port }}
+{% else %}
+    iifname { {{ zone.interfaces | map('tojson') | join(', ') }} } {{ fp.proto }} dport {{ fp.port }} redirect to :{{ fp.to_port }}
+{% endif %}
+{% endfor %}
+{% endfor %}
+  }
+
+  chain postrouting {
+    type nat hook postrouting priority srcnat; policy accept;
+
+{% for zone in nat_zones %}
+{% if zone.masquerade | default(false) %}
+    oifname { {{ zone.interfaces | map('tojson') | join(', ') }} } masquerade
+{% endif %}
+{% endfor %}
+  }
+}
+{% endif %}
