@@ -1,0 +1,24 @@
+galaxy_info:
+  author: mgcdrd
+  description: >-
+    Manages per-user crontab entries from a variable list. Generic — not
+    tied to any specific deployment's job set. Complements the 'cron' role
+    (which hardens cron/at access) but does not depend on it.
+
+  license: GPL-3.0-or-later
+
+  min_ansible_version: "2.14"
+
+  platforms:
+    - name: EL
+      versions:
+        - '9'
+        - '10'
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+
+  galaxy_tags:
+    - mgcdrd
+    - cron

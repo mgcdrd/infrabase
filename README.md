@@ -19,8 +19,10 @@ This collection contains common infrastructure roles used to standardize and aut
 | `auditd` | Installs auditd with CIS-aligned audit rules — syscall groups, watchpoints, and conf settings are variable-driven |
 | `crio` | Installs CRI-O container runtime, version-pinned to the Kubernetes minor version |
 | `cron` | CIS cron access hardening — removes `cron.deny`, creates `cron.allow` |
+| `cron_jobs` | Manages per-user crontab entries from a variable list — generic, not tied to a deployment |
 | `docker` | Installs the latest Docker CE (Debian 12/13, Rocky 9/10) |
 | `etc_hosts` | Manages `/etc/hosts` entries |
+| `file_deploy` | Deploys arbitrary files, templates, and directories with explicit owner/group/mode — generic, not tied to a deployment |
 | `kernel_modules` | Loads and persists kernel modules; optionally blacklists modules via `/etc/modprobe.d/` |
 | `lvm2` | Extends existing LVM logical volumes and volume groups (supports threshold-based automation) |
 | `lvm2_provision` | Provisions LVM storage at setup time — creates VGs, LVs, filesystems, and mounts |

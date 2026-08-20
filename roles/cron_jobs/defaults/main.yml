@@ -1,0 +1,31 @@
+---
+
+# List of per-user cron jobs to manage. Each item maps onto
+# ansible.builtin.cron — see that module's docs for the full option set.
+#
+#   name    - required. Descriptive job name, used as the idempotency key.
+#   user    - user the job runs as. Default: root.
+#   job     - command to run. Required unless state: absent.
+#   minute, hour, day, month, weekday - cron time fields. Default: '*' (every).
+#   special_time - named schedule (reboot, daily, hourly, weekly, monthly,
+#             yearly) instead of explicit minute/hour/day/month/weekday.
+#   state   - 'present' (default) or 'absent'.
+#   disabled - true to write the job commented out. Default: false.
+#
+# Note: if the target host also runs the 'cron' role, that role's
+# /etc/cron.allow is empty by default — a user needs to be added to it
+# before their crontab entries here will actually run.
+cron_jobs: []
+# cron_jobs:
+#   - name: nightly backup
+#     user: appuser
+#     job: /opt/app/bin/backup.sh
+#     minute: "30"
+#     hour: "2"
+#   - name: cleanup tmp
+#     user: root
+#     special_time: daily
+#     job: find /tmp -mtime +7 -delete
+#   - name: old report job
+#     user: reporting
+#     state: absent

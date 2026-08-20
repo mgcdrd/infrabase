@@ -1,0 +1,43 @@
+---
+
+# List of files/directories to deploy or manage on the host. Each item:
+#
+#   dest      - required. Destination path.
+#   state     - 'file' (default) or 'directory'. Directories ignore
+#               src/content/is_template.
+#   src       - source file, resolved via the calling playbook's files/ or
+#               templates/ directory (standard Ansible role/play search
+#               path — this role ships no content of its own).
+#   content   - inline literal content instead of src. Not templated; put
+#               anything that needs Jinja2 rendering in a src template
+#               instead. Mutually exclusive with src.
+#   is_template - true to render 'src' with ansible.builtin.template
+#               (Jinja2), false to copy it verbatim with
+#               ansible.builtin.copy. Ignored when 'content' is set.
+#               Default: false.
+#   owner, group, mode - required on every item. This role has no distro
+#               default — ownership and permissions are always explicit.
+#   backup    - back up the existing file before overwriting. Default: false.
+file_deploy_items: []
+# file_deploy_items:
+#   - dest: /etc/motd
+#     src: motd.j2
+#     is_template: true
+#     owner: root
+#     group: root
+#     mode: "0644"
+#   - dest: /opt/scripts/backup.sh
+#     src: backup.sh
+#     owner: root
+#     group: root
+#     mode: "0750"
+#   - dest: /etc/app/app.conf
+#     content: "setting = true\n"
+#     owner: appuser
+#     group: appgroup
+#     mode: "0640"
+#   - dest: /opt/app/data
+#     state: directory
+#     owner: appuser
+#     group: appgroup
+#     mode: "0750"

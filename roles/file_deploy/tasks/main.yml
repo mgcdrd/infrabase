@@ -1,0 +1,76 @@
+---
+
+- name: file_deploy - Validate item definitions
+  ansible.builtin.assert:
+    that:
+      - item.dest is defined
+      - item.owner is defined
+      - item.group is defined
+      - item.mode is defined
+      - not (item.src is defined and item.content is defined)
+    fail_msg: >-
+      file_deploy_items entry '{{ item.dest | default("(missing dest)") }}'
+      must define dest/owner/group/mode, and not set both src and content.
+    quiet: true
+  loop: "{{ file_deploy_items }}"
+  loop_control:
+    label: "{{ item.dest | default('?') }}"
+
+- name: file_deploy - Create directories
+  ansible.builtin.file:
+    path: "{{ item.dest }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop: "{{ file_deploy_items }}"
+  loop_control:
+    label: "{{ item.dest }}"
+  when: item.state | default('file') == 'directory'
+
+- name: file_deploy - Deploy templated files
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+    backup: "{{ item.backup | default(false) }}"
+  loop: "{{ file_deploy_items }}"
+  loop_control:
+    label: "{{ item.dest }}"
+  when:
+    - item.state | default('file') != 'directory'
+    - item.src is defined
+    - item.is_template | default(false)
+
+- name: file_deploy - Deploy static files
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+    backup: "{{ item.backup | default(false) }}"
+  loop: "{{ file_deploy_items }}"
+  loop_control:
+    label: "{{ item.dest }}"
+  when:
+    - item.state | default('file') != 'directory'
+    - item.src is defined
+    - not (item.is_template | default(false))
+
+- name: file_deploy - Write inline content
+  ansible.builtin.copy:
+    content: "{{ item.content }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+    backup: "{{ item.backup | default(false) }}"
+  loop: "{{ file_deploy_items }}"
+  loop_control:
+    label: "{{ item.dest }}"
+  when:
+    - item.state | default('file') != 'directory'
+    - item.content is defined
