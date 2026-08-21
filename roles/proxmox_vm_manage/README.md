@@ -20,10 +20,10 @@ Requirements
 ------------
 
 - The Ansible controller must be able to reach the PVE API host on port 8006.
-- `community.general` (for the disk sub-role) and `community.proxmox >= 2.0.0`
-  (for the NIC/snapshot sub-roles) collections must be installed.
+- `community.proxmox >= 2.0.0` collection must be installed (same module
+  family used by all three underlying sub-roles).
 - **`proxmoxer >= 2.3` and `requests` must be installed on the Ansible
-  controller** — Python dependencies of both module families:
+  controller** — Python dependencies of every `community.proxmox` module:
   - RPM: `pip3 install 'proxmoxer>=2.3' requests`
   - Debian 12+ (system Ansible): `pip3 install 'proxmoxer>=2.3' requests --break-system-packages`
   - Debian 12+ (Ansible in a venv): same command inside the venv
@@ -35,8 +35,10 @@ Requirements
 Authentication
 ---------------
 
-Two methods are supported for the NIC/snapshot sub-roles — set one pair,
-leave the other unset:
+Two methods are supported for all three sub-roles — set one pair, leave the
+other unset. Both fall back to the shared `proxmox_api_token_id`/`_secret`/
+`_user`/`_password` vars, so setting those once covers every proxmox_* role
+in this collection, not just this one:
 
 ```yaml
 proxmox_vm_manage_api_token_id:     "{{ vault_proxmox_api_token_id }}"
@@ -46,20 +48,18 @@ proxmox_vm_manage_api_user:     "root@pam"
 proxmox_vm_manage_api_password: "{{ vault_proxmox_api_password }}"
 ```
 
-The disk sub-role only supports password auth (`community.general`'s
-`proxmox_disk`/`proxmox_vm_info` predate token support) — `proxmox_vm_manage_api_user`
-and `_api_password` are always passed to it regardless of which method you
-use for NICs/snapshots. If you're on token auth only, still set
-`proxmox_vm_manage_api_password` (or leave disks unused).
-
 
 Role Variables
 ---------------
 
-### Connection (required)
+### Connection
+
+Defaults from the shared `proxmox_api_*` vars (set those once for the whole
+play/inventory) — override only if this run needs a different node or
+credential than the rest of the play.
 
 ```yaml
-proxmox_vm_manage_api_host: "pve2.example.com"   # any PVE node or the cluster VIP
+proxmox_vm_manage_api_host: "pve2.example.com"   # optional — overrides the shared proxmox_api_host
 ```
 
 ### VM targeting

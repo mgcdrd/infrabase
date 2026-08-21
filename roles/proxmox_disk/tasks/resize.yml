@@ -5,9 +5,12 @@
 
 - name: resize - expand disk in ProxMox to new size
   community.proxmox.proxmox_disk:
-    api_host:     "{{ proxmox_disk_api_host }}"
-    api_user:     "{{ proxmox_disk_api_user }}"
-    api_password: "{{ proxmox_disk_api_password }}"
+    api_host:         "{{ proxmox_disk_api_host }}"
+    api_user:         "{{ proxmox_disk_api_user }}"
+    api_password:     "{{ proxmox_disk_api_password }}"
+    api_token_id:     "{{ proxmox_disk_api_token_id }}"
+    api_token_secret: "{{ proxmox_disk_api_token_secret }}"
+    validate_certs:   "{{ proxmox_disk_validate_certs }}"
     vmid:         "{{ proxmox_disk_vmid }}"
     disk:         "{{ proxmox_disk_slot }}"
     size:         "{{ proxmox_disk_size }}"

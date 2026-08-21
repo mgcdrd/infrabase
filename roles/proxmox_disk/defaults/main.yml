@@ -1,7 +1,19 @@
 ---
 # ---- ProxMox API connection ----
-# proxmox_disk_api_host and proxmox_disk_api_password must be set by the caller.
-proxmox_disk_api_user: "root@pam"
+# Resolves from the shared proxmox_api_* vars (set those once for the whole
+# play/inventory) — override the proxmox_disk_api_* vars below only if this
+# role must use a different node or credential.
+#
+# Two auth methods are supported — set one pair, leave the other unset:
+#   - API token (recommended): proxmox_api_token_id + proxmox_api_token_secret
+#   - Password:                 proxmox_api_user (default root@pam) + proxmox_api_password
+# Unset vars resolve to `omit` so only the method you configure is sent to the module.
+proxmox_disk_api_host:          "{{ proxmox_api_host | default('') }}"
+proxmox_disk_api_user:          "{{ proxmox_api_user | default('root@pam') }}"
+proxmox_disk_api_password:      "{{ proxmox_api_password | default(vault_proxmox_api_password | default(omit)) }}"
+proxmox_disk_api_token_id:      "{{ proxmox_api_token_id | default(vault_proxmox_api_token_id | default(omit)) }}"
+proxmox_disk_api_token_secret:  "{{ proxmox_api_token_secret | default(vault_proxmox_api_token_secret | default(omit)) }}"
+proxmox_disk_validate_certs:    "{{ proxmox_validate_certs | default(false) }}"
 
 # ---- VM targeting ----
 # The role looks up the VM by name to discover its VMID and node automatically.

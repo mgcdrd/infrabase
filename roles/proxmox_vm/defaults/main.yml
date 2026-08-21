@@ -1,18 +1,19 @@
 ---
 # ---- ProxMox API connection ----
-# proxmox_vm_api_host must be set by the caller (any PVE node or the cluster VIP).
+# Resolves from the shared proxmox_api_* vars (set those once for the whole
+# play/inventory) — override the proxmox_<role>_api_* vars below only if this
+# role must use a different node or credential.
 #
 # Two auth methods are supported — set one pair, leave the other unset:
-#   - API token (recommended): proxmox_vm_api_token_id + proxmox_vm_api_token_secret
-#   - Password:                 proxmox_vm_api_user (default root@pam) + proxmox_vm_api_password
-# Unset vault_* variables resolve to `omit` so only the method you configure
-# is sent to the module.
-proxmox_vm_api_host:          ""
-proxmox_vm_api_user:          "root@pam"
-proxmox_vm_api_password:      "{{ vault_proxmox_api_password | default(omit) }}"
-proxmox_vm_api_token_id:      "{{ vault_proxmox_api_token_id | default(omit) }}"
-proxmox_vm_api_token_secret:  "{{ vault_proxmox_api_token_secret | default(omit) }}"
-proxmox_vm_validate_certs:    false
+#   - API token (recommended): proxmox_api_token_id + proxmox_api_token_secret
+#   - Password:                 proxmox_api_user (default root@pam) + proxmox_api_password
+# Unset vars resolve to `omit` so only the method you configure is sent to the module.
+proxmox_vm_api_host:          "{{ proxmox_api_host | default('') }}"
+proxmox_vm_api_user:          "{{ proxmox_api_user | default('root@pam') }}"
+proxmox_vm_api_password:      "{{ proxmox_api_password | default(vault_proxmox_api_password | default(omit)) }}"
+proxmox_vm_api_token_id:      "{{ proxmox_api_token_id | default(vault_proxmox_api_token_id | default(omit)) }}"
+proxmox_vm_api_token_secret:  "{{ proxmox_api_token_secret | default(vault_proxmox_api_token_secret | default(omit)) }}"
+proxmox_vm_validate_certs:    "{{ proxmox_validate_certs | default(false) }}"
 
 # ---- EXECUTION GATES ----
 # Each section is independently re-runnable via its gate + tag, so you can

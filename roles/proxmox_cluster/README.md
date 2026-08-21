@@ -68,7 +68,10 @@ per-node API tokens rather than one shared password.
 Role Variables
 ---------------
 
-### Connection (required)
+### Connection
+
+Defaults from the shared `proxmox_api_*` vars (set those once for the whole
+play/inventory) — override only if this role needs a different node or credential.
 
 ```yaml
 proxmox_cluster_api_host: "pve1.example.com"   # master for create/info; overridden per-item for join

@@ -6,9 +6,12 @@
   loop_control:
     loop_var: _proxmox_vm_manage_disk
   vars:
-    proxmox_disk_api_host:      "{{ proxmox_vm_manage_api_host }}"
-    proxmox_disk_api_user:      "{{ proxmox_vm_manage_api_user }}"
-    proxmox_disk_api_password:  "{{ proxmox_vm_manage_api_password }}"
+    proxmox_disk_api_host:          "{{ proxmox_vm_manage_api_host }}"
+    proxmox_disk_api_user:          "{{ proxmox_vm_manage_api_user }}"
+    proxmox_disk_api_password:      "{{ proxmox_vm_manage_api_password }}"
+    proxmox_disk_api_token_id:      "{{ proxmox_vm_manage_api_token_id }}"
+    proxmox_disk_api_token_secret:  "{{ proxmox_vm_manage_api_token_secret }}"
+    proxmox_disk_validate_certs:    "{{ proxmox_vm_manage_validate_certs }}"
     proxmox_disk_vm_name:       "{{ proxmox_vm_manage_vm_name }}"
     proxmox_disk_slot:          "{{ _proxmox_vm_manage_disk.slot }}"
     proxmox_disk_storage:       "{{ _proxmox_vm_manage_disk.storage }}"

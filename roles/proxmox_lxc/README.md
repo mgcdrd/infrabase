@@ -27,7 +27,9 @@ Requirements
 Authentication
 ---------------
 
-Two methods are supported — set one pair of variables, leave the other unset:
+Two methods are supported — set one pair of variables, leave the other unset.
+Both fall back to the shared `proxmox_api_token_id`/`_secret`/`_user`/
+`_password` vars, so setting those once covers every proxmox_* role:
 
 ```yaml
 # API token (recommended)
@@ -48,7 +50,10 @@ relevant path.
 Role Variables
 ---------------
 
-### Connection (required)
+### Connection
+
+Defaults from the shared `proxmox_api_*` vars (set those once for the whole
+play/inventory) — override only if this role needs a different node or credential.
 
 ```yaml
 proxmox_lxc_api_host: "pve2.example.com"   # any PVE node or the cluster VIP

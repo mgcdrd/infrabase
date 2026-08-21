@@ -30,15 +30,43 @@ Requirements
   `proxmox_disk_resize_vg`, and `proxmox_disk_resize_lvs`.
 
 
+Authentication
+---------------
+
+Two methods are supported — set one pair of variables, leave the other unset.
+Both fall back to the shared `proxmox_api_token_id`/`_secret`/`_user`/
+`_password` vars, so setting those once covers every proxmox_* role:
+
+```yaml
+# API token (recommended — scoped, revocable without touching root's password)
+proxmox_disk_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+proxmox_disk_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+
+# Password
+proxmox_disk_api_user:     "root@pam"
+proxmox_disk_api_password: "{{ vault_proxmox_api_password }}"
+```
+
+A token needs at least `VM.Config.Disk` on the relevant path.
+
+
 Role Variables
 --------------
+
+### Connection
+
+Defaults from the shared `proxmox_api_*` vars (set those once for the whole
+play/inventory) — override only if this role needs a different node or
+credential.
+
+```yaml
+proxmox_disk_api_host: "pve2.example.com"   # optional — overrides the shared proxmox_api_host
+```
 
 ### Required
 
 ```yaml
-proxmox_disk_api_host:     "pve2.example.com"   # any PVE node
-proxmox_disk_api_password: "{{ vault_lookup }}"
-proxmox_disk_storage:      "truenas"             # PVE storage backend name
+proxmox_disk_storage: "truenas"   # PVE storage backend name
 ```
 
 ### VM targeting

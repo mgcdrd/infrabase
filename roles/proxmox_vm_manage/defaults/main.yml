@@ -1,21 +1,20 @@
 ---
 # ---- ProxMox API connection (shared across all three underlying roles) ----
-# proxmox_vm_manage_api_host must be set by the caller.
+# Resolves from the shared proxmox_api_* vars (set those once for the whole
+# play/inventory) — override the proxmox_vm_manage_api_* vars below only if
+# this run needs a different node or credential than the rest of the play.
+# vm_manage passes its own vars down to proxmox_disk/proxmox_nic/proxmox_snapshot
+# explicitly (see tasks/main.yml) so this one interface always wins for all three.
 #
-# Two auth methods are supported for the NIC/snapshot sub-roles — set one
-# pair, leave the other unset (unset vault_* variables resolve to `omit`):
-#   - API token (recommended): proxmox_vm_manage_api_token_id + _secret
-#   - Password:                 proxmox_vm_manage_api_user (default root@pam) + _password
-# The disk sub-role only supports password auth (community.general's
-# proxmox_disk/proxmox_vm_info predate token support) — proxmox_vm_manage_api_user
-# and _api_password are always passed to it regardless of which method you use
-# for NICs/snapshots.
-proxmox_vm_manage_api_host:          ""
-proxmox_vm_manage_api_user:          "root@pam"
-proxmox_vm_manage_api_password:      "{{ vault_proxmox_api_password | default(omit) }}"
-proxmox_vm_manage_api_token_id:      "{{ vault_proxmox_api_token_id | default(omit) }}"
-proxmox_vm_manage_api_token_secret:  "{{ vault_proxmox_api_token_secret | default(omit) }}"
-proxmox_vm_manage_validate_certs:    false
+# Two auth methods are supported — set one pair, leave the other unset:
+#   - API token (recommended): proxmox_api_token_id + proxmox_api_token_secret
+#   - Password:                 proxmox_api_user (default root@pam) + proxmox_api_password
+proxmox_vm_manage_api_host:          "{{ proxmox_api_host | default('') }}"
+proxmox_vm_manage_api_user:          "{{ proxmox_api_user | default('root@pam') }}"
+proxmox_vm_manage_api_password:      "{{ proxmox_api_password | default(vault_proxmox_api_password | default(omit)) }}"
+proxmox_vm_manage_api_token_id:      "{{ proxmox_api_token_id | default(vault_proxmox_api_token_id | default(omit)) }}"
+proxmox_vm_manage_api_token_secret:  "{{ proxmox_api_token_secret | default(vault_proxmox_api_token_secret | default(omit)) }}"
+proxmox_vm_manage_validate_certs:    "{{ proxmox_validate_certs | default(false) }}"
 
 # ---- VM targeting ----
 # Defaults to inventory_hostname — override if the VM name in PVE differs.

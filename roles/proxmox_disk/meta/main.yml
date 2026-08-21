@@ -11,4 +11,4 @@ galaxy_info:
     - mgcdrd
 
 collections:
-  - community.general
+  - community.proxmox

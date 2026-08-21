@@ -44,10 +44,13 @@ needed for the sections you use.
 Role Variables
 ---------------
 
-### Connection (required)
+### Connection
+
+Defaults from the shared `proxmox_api_*` vars (set those once for the whole
+play/inventory) — override only if this role needs a different node or credential.
 
 ```yaml
-proxmox_access_api_host: "pve2.example.com"
+proxmox_access_api_host: "pve2.example.com"   # optional — overrides the shared proxmox_api_host
 ```
 
 ### Execution gates

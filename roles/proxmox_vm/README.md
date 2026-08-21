@@ -14,10 +14,8 @@ Requirements
 ------------
 
 - The Ansible controller must be able to reach the PVE API host on port 8006.
-- `community.proxmox` collection installed (`>= 2.0.0`) — this role uses the
-  new dedicated Proxmox collection, not the `community.general` proxmox
-  modules that `proxmox_disk` still uses (those are deprecated upstream in
-  favor of `community.proxmox`; `proxmox_disk` hasn't been migrated).
+- `community.proxmox` collection installed (`>= 2.0.0`) — same module family
+  as every other `proxmox_*` role in this collection.
 - **`proxmoxer >= 2.3` and `requests` must be installed on the Ansible
   controller** — Python dependencies of every `community.proxmox` module:
   - RPM: `pip3 install 'proxmoxer>=2.3' requests`
@@ -28,7 +26,9 @@ Requirements
 Authentication
 ---------------
 
-Two methods are supported — set one pair of variables, leave the other unset:
+Two methods are supported — set one pair of variables, leave the other unset.
+Both fall back to the shared `proxmox_api_token_id`/`_secret`/`_user`/
+`_password` vars, so setting those once covers every proxmox_* role:
 
 ```yaml
 # API token (recommended — scoped, revocable without touching root's password)
@@ -50,7 +50,10 @@ relevant path.
 Role Variables
 ---------------
 
-### Connection (required)
+### Connection
+
+Defaults from the shared `proxmox_api_*` vars (set those once for the whole
+play/inventory) — override only if this role needs a different node or credential.
 
 ```yaml
 proxmox_vm_api_host: "pve2.example.com"   # any PVE node or the cluster VIP
