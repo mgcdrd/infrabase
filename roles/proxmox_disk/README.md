@@ -18,10 +18,10 @@ Requirements
 - `gather_facts: true` and `become: true` are required on the target host
   (needed for block device detection).
 - The Ansible controller must be able to reach the PVE API host on port 8006.
-- `community.general` collection must be installed (provides `proxmox_vm_info`
+- `community.proxmox` collection must be installed (provides `proxmox_vm_info`
   and `proxmox_disk` modules).
 - **`proxmoxer >= 2.3` must be installed on the Ansible controller** — it is a
-  Python dependency of the `community.general` ProxMox modules. Install it with:
+  Python dependency of the `community.proxmox` ProxMox modules. Install it with:
   - RPM: `pip3 install 'proxmoxer>=2.3'`
   - Debian 12+ (system Ansible): `pip3 install 'proxmoxer>=2.3' --break-system-packages`
   - Debian 12+ (Ansible in a venv): `pip3 install 'proxmoxer>=2.3'` inside the venv

@@ -1,6 +1,6 @@
 ---
 - name: add - check disk slot is not already occupied
-  community.general.proxmox_disk:
+  community.proxmox.proxmox_disk:
     api_host: "{{ proxmox_disk_api_host }}"
     api_user: "{{ proxmox_disk_api_user }}"
     api_password: "{{ proxmox_disk_api_password }}"

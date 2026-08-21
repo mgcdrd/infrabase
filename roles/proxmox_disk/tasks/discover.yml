@@ -4,7 +4,7 @@
 # Eliminates the need to hardcode either value in the deployment.
 
 - name: discover - look up VM by name in ProxMox
-  community.general.proxmox_vm_info:
+  community.proxmox.proxmox_vm_info:
     api_host: "{{ proxmox_disk_api_host }}"
     api_user: "{{ proxmox_disk_api_user }}"
     api_password: "{{ proxmox_disk_api_password }}"

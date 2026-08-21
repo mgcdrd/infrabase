@@ -4,7 +4,7 @@
 # Set proxmox_disk_resize_vg and proxmox_disk_resize_lvs in the caller.
 
 - name: resize - expand disk in ProxMox to new size
-  community.general.proxmox_disk:
+  community.proxmox.proxmox_disk:
     api_host:     "{{ proxmox_disk_api_host }}"
     api_user:     "{{ proxmox_disk_api_user }}"
     api_password: "{{ proxmox_disk_api_password }}"
