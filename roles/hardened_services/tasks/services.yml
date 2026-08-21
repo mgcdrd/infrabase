@@ -22,6 +22,11 @@
     - "'bluetooth.service' in ansible_facts.services"
 
 - name: hardened_services services - Disable and mask autofs
+  # service_facts can report autofs.service present (installed-but-disabled
+  # on a fresh Rocky minimal install, never started/loaded) while systemd's
+  # live LoadState still says not-found on a freshly provisioned host — the
+  # daemon_reload above doesn't force an unloaded unit to load. Same class
+  # of race as rpcbind.socket below; failed_when covers it the same way.
   ansible.builtin.systemd_service:
     name:    autofs.service
     enabled: false
@@ -29,6 +34,7 @@
   when:
     - hardened_services_disable_autofs
     - "'autofs.service' in ansible_facts.services"
+  failed_when: false
 
 - name: hardened_services services - Disable and mask rpcbind
   ansible.builtin.systemd_service:
