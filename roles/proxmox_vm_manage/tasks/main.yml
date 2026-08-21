@@ -11,9 +11,6 @@
     proxmox_disk_storage:       "{{ _proxmox_vm_manage_disk.storage }}"
     proxmox_disk_size:          "{{ _proxmox_vm_manage_disk.size }}"
     proxmox_disk_state:         "{{ _proxmox_vm_manage_disk.state | default('present') }}"
-    proxmox_disk_resize_device: "{{ _proxmox_vm_manage_disk.resize_device | default(omit) }}"
-    proxmox_disk_resize_vg:     "{{ _proxmox_vm_manage_disk.resize_vg | default(omit) }}"
-    proxmox_disk_resize_lvs:    "{{ _proxmox_vm_manage_disk.resize_lvs | default(omit) }}"
   tags: [proxmox_vm_manage, storage]
 
 - name: proxmox_vm_manage - configure NICs

@@ -83,14 +83,12 @@ proxmox_vm_manage_disks:
     storage: truenas      # PVE storage backend
     size: "400"           # GiB integer for state=present, "+XG" form for state=resized
     state: present          # present | resized
-    resize_device: /dev/vdb  # resized only
-    resize_vg: vg_data        # resized only
-    resize_lvs:                # resized only
-      - lv: lv_data
-        size: 500G
-        mount: /data
-        fstype: xfs
 ```
+
+`state: resized` is PVE-side only — it doesn't touch the guest. Run
+`mgcdrd.infrabase.lvm2` in a separate play afterward to grow the
+PV/LV/filesystem; see `mgcdrd.infrabase.proxmox_disk`'s README for the
+full example (rescan + `partprobe` before `lvm2` will see the new size).
 
 One full `proxmox_disk` invocation (including its own by-name VM discovery)
 runs per entry. See `mgcdrd.infrabase.proxmox_disk`'s README for the complete

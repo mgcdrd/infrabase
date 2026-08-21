@@ -5,6 +5,7 @@
 
 - name: proxmox_disk - snapshot current block devices
   import_tasks: snapshot.yml
+  when: proxmox_disk_state == 'present'
   tags: [proxmox_disk, storage]
 
 - name: proxmox_disk - add disk

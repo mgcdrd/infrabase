@@ -17,20 +17,15 @@ proxmox_vm_manage_vmid: ""
 # Disks — one entry per disk to add or resize. Each entry runs a full
 # proxmox_disk invocation (including its own by-name VM discovery), so N
 # entries means N discovery calls — a limitation of the wrapped role, not
-# this one.
+# this one. PVE-side only: state=resized doesn't touch the guest at all —
+# run mgcdrd.infrabase.lvm2 in a separate play afterward to grow the
+# PV/LV/filesystem. See proxmox_disk's README for the full example.
 # ==============================================================
 # proxmox_vm_manage_disks:
 #   - slot: virtio1               # PVE disk slot — must not already be occupied for state=present
 #     storage: truenas             # PVE storage backend
 #     size: "400"                  # GiB integer for state=present, "+XG" form for state=resized
 #     state: present                # present | resized
-#     resize_device: /dev/vdb       # resized only — block device to pvresize
-#     resize_vg: vg_data            # resized only — VG containing the LVs to extend
-#     resize_lvs:                   # resized only — LVs to extend and grow filesystem on
-#       - lv: lv_data
-#         size: 500G
-#         mount: /data
-#         fstype: xfs
 proxmox_vm_manage_disks: []
 
 # ==============================================================

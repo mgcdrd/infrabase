@@ -1,10 +1,15 @@
 proxmox_disk
 ============
 
-Adds or resizes a disk on a ProxMox VM via the PVE API, then detects the
-resulting block device inside the VM. Sets a `proxmox_disk_device` host fact
-(e.g. `/dev/vdb`) that downstream roles such as `lvm2_provision` can consume
-without any hardcoded device paths.
+Adds or resizes a disk on a ProxMox VM via the PVE API. This role talks to
+PVE, not the guest — with one narrow exception: adding a disk (`state:
+present`) still needs a PCI rescan + before/after `lsblk` diff inside the
+VM to identify which `/dev/vdX` PVE just attached (there's no reliable way
+to predict it from the PVE disk slot alone), and sets that as a
+`proxmox_disk_device` host fact for downstream roles like `lvm2_provision`
+to consume. Resizing (`state: resized`) does not touch the guest at all —
+chain `mgcdrd.infrabase.lvm2` afterward to grow the PV/LV/filesystem; see
+the example below.
 
 The VM is located by name — VMID and node are discovered automatically from the
 PVE API, so neither needs to be known in advance.
@@ -16,7 +21,8 @@ Requirements
 ------------
 
 - `gather_facts: true` and `become: true` are required on the target host
-  (needed for block device detection).
+  for `state: present` (needed for block device detection). Neither is
+  needed for `state: resized` — that path is PVE-API-only.
 - The Ansible controller must be able to reach the PVE API host on port 8006.
 - `community.proxmox` collection must be installed (provides `proxmox_vm_info`
   and `proxmox_disk` modules).
@@ -25,9 +31,6 @@ Requirements
   - RPM: `pip3 install 'proxmoxer>=2.3'`
   - Debian 12+ (system Ansible): `pip3 install 'proxmoxer>=2.3' --break-system-packages`
   - Debian 12+ (Ansible in a venv): `pip3 install 'proxmoxer>=2.3'` inside the venv
-- For `proxmox_disk_state: resized`, the disk must already be a PV in an LVM
-  VG managed on the host. Set `proxmox_disk_resize_device`,
-  `proxmox_disk_resize_vg`, and `proxmox_disk_resize_lvs`.
 
 
 Authentication
@@ -85,21 +88,6 @@ proxmox_disk_vm_name: "pve-guest.example.com"
 proxmox_disk_slot: virtio1    # PVE disk slot — must not already be occupied for 'present'
 proxmox_disk_size: "400"      # GiB integer, no suffix — for state=resized use "+XG" form
 proxmox_disk_state: present   # present | resized
-proxmox_api_user: "root@pam"
-```
-
-### Resize-only variables
-
-Only needed when `proxmox_disk_state: resized`:
-
-```yaml
-proxmox_disk_resize_device: /dev/vdb     # block device to pvresize
-proxmox_disk_resize_vg: vg_foreman       # VG containing the LVs to extend
-proxmox_disk_resize_lvs:                 # LVs to extend and grow filesystem on
-  - lv: lv_pulp
-    size: 500G
-    mount: /var/lib/pulp
-    fstype: xfs
 ```
 
 ### Output fact
@@ -125,25 +113,26 @@ Tags
 How it works
 ------------
 
-**Add (`present`):**
+**Add (`present`)** — the one path that touches the guest, to identify the
+new device:
 
 1. `discover.yml` — calls `proxmox_vm_info` with the VM name, extracts VMID
-   and node. Fails if zero or multiple VMs match.
+   and node. Fails if zero or multiple VMs match. (PVE API only.)
 2. `snapshot.yml` — records the current list of disk-type block devices inside
-   the VM via `lsblk`.
+   the VM via `lsblk`. (Guest.)
 3. `add.yml` — calls `proxmox_disk` to add the disk on the PVE side, then
    triggers a PCI bus rescan inside the VM (`/sys/bus/pci/rescan`) and waits
-   up to 15 seconds for a new device to appear.
+   up to 15 seconds for a new device to appear. (PVE API, then guest.)
 4. `detect.yml` — diffs before/after device lists to identify the new device
-   and sets `proxmox_disk_device`.
+   and sets `proxmox_disk_device`. (Guest.)
 
-**Resize (`resized`):**
+**Resize (`resized`)** — PVE API only, nothing runs inside the VM:
 
 1. `discover.yml` — same as above.
-2. `snapshot.yml` — same as above.
-3. `resize.yml` — calls `proxmox_disk` with `state: resized`, triggers rescan,
-   runs `pvresize` on the device, `lvextend` on each LV, and `xfs_growfs` for
-   XFS volumes (online, no unmount required).
+2. `resize.yml` — calls `proxmox_disk` with `state: resized`. That's it —
+   the enlarged virtual disk exists in PVE; the guest doesn't know yet.
+   Chain `mgcdrd.infrabase.lvm2` in a separate play to have it notice and
+   grow into the new space (see the example below).
 
 
 Example Playbook — add disk and set up LVM
@@ -187,11 +176,16 @@ Example Playbook — add disk and set up LVM
 Example Playbook — resize existing disk
 ---------------------------------------
 
+Two plays: this role only grows the virtual disk in PVE. The guest doesn't
+notice on its own — a rescan + `partprobe` makes the kernel see the new
+size before `mgcdrd.infrabase.lvm2` (`lvm_pv_grow` + `lvm_volumes`) can
+grow the PV/LV/filesystem into it. `lvm2` assumes the block device already
+reports its full size; it doesn't rescan for you.
+
 ```yaml
-- name: Expand Pulp volume
+- name: Expand the PVE-side disk
   hosts: foreman
-  gather_facts: true
-  become: true
+  gather_facts: false
   roles:
     - role: mgcdrd.infrabase.proxmox_disk
       vars:
@@ -201,28 +195,53 @@ Example Playbook — resize existing disk
         proxmox_disk_storage: truenas
         proxmox_disk_size: "+200G"    # suffix required for state=resized; + means relative
         proxmox_disk_state: resized
-        proxmox_disk_resize_device: /dev/vdb
-        proxmox_disk_resize_vg: vg_foreman
-        proxmox_disk_resize_lvs:
+
+- name: Make the guest see the new size, then grow into it
+  hosts: foreman
+  gather_facts: true
+  become: true
+  pre_tasks:
+    - name: Rescan the disk so the kernel picks up the new size
+      ansible.builtin.command:
+        cmd: "echo 1 > /sys/class/block/vdb/device/rescan"
+      changed_when: false
+
+    - name: Re-read the partition table
+      ansible.builtin.command:
+        cmd: "partprobe /dev/vdb"
+      changed_when: false
+  roles:
+    - role: mgcdrd.infrabase.lvm2
+      vars:
+        lvm_pv_grow:
+          - disk: /dev/vdb
+            partition: 1
+            pv: /dev/vdb1
+        lvm_volumes:
           - lv: lv_pulp
+            vg: vg_foreman
             size: 480G
             mount: /var/lib/pulp
-            fstype: xfs
 ```
 
 
 Notes
 -----
 
-- **PCI rescan**: The role writes `1` to `/sys/bus/pci/rescan` to hot-notify
-  the kernel of the new device. This works reliably for virtio and SCSI disks
-  under QEMU/KVM. If the device does not appear within 15 seconds, check the
-  PVE console to confirm the disk was attached.
+- **PCI rescan (`state: present` only)**: `add.yml` writes `1` to
+  `/sys/bus/pci/rescan` to hot-notify the kernel of the new device. This
+  works reliably for virtio and SCSI disks under QEMU/KVM. If the device
+  does not appear within 15 seconds, check the PVE console to confirm the
+  disk was attached.
 - **Disk slot**: PVE disk slots are bus-prefixed (e.g. `virtio0`, `scsi1`,
   `sata2`). The detected `/dev/` path depends on the bus type:
   `virtio` → `/dev/vdX`, `scsi`/`sata` → `/dev/sdX`.
 - **VMID uniqueness**: If multiple VMs share the same name across PVE nodes,
   the role fails. Set `proxmox_disk_vm_name` to a more specific string or
   resolve the naming conflict in PVE.
-- **XFS resize**: XFS filesystems can be grown online while mounted.
-  Shrinking is not supported by XFS or this role.
+- **`state: resized` never touches the guest**: this role only calls the
+  PVE API to grow the virtual disk. Nothing rescans the guest, nothing
+  resizes a PV/LV/filesystem — that's `mgcdrd.infrabase.lvm2`'s job, run as
+  a separate step. See the resize example above for the rescan +
+  `partprobe` the guest needs before `lvm2`'s `lvm_pv_grow` will see the
+  new size.

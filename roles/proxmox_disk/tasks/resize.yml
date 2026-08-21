@@ -1,7 +1,9 @@
 ---
-# Resize an existing disk on the PVE side, then expand LVM online.
-# Assumes the disk is already a PV in a VG managed by lvm2_provision.
-# Set proxmox_disk_resize_vg and proxmox_disk_resize_lvs in the caller.
+# Resizes the disk on the PVE side only — this role talks to the PVE API,
+# not the guest. Chain mgcdrd.infrabase.lvm2 afterward (lvm_pv_grow +
+# lvm_volumes) to grow the PV/LV/filesystem inside the VM — see this role's
+# README for the full example, including the guest-side rescan step lvm2
+# itself doesn't do.
 
 - name: resize - expand disk in ProxMox to new size
   community.proxmox.proxmox_disk:
@@ -16,43 +18,3 @@
     size:         "{{ proxmox_disk_size }}"
     state:        resized
   delegate_to: localhost
-
-- name: resize - trigger PCI bus rescan to see enlarged disk
-  ansible.builtin.shell:
-    cmd: echo 1 > /sys/bus/pci/rescan
-  become: true
-  changed_when: false
-  failed_when: false
-
-- name: resize - pause for kernel to reflect new disk size
-  ansible.builtin.pause:
-    seconds: 3
-
-- name: resize - re-read partition table on disk
-  ansible.builtin.command:
-    cmd: "partprobe {{ proxmox_disk_resize_device }}"
-  become: true
-  changed_when: false
-  when: proxmox_disk_resize_device is defined
-
-- name: resize - expand PV to fill disk
-  ansible.builtin.command:
-    cmd: "pvresize {{ proxmox_disk_resize_device }}"
-  become: true
-  changed_when: true
-  when: proxmox_disk_resize_device is defined
-
-- name: resize - extend logical volumes
-  ansible.builtin.command:
-    cmd: "lvextend -L {{ item.size }} /dev/{{ proxmox_disk_resize_vg }}/{{ item.lv }}"
-  become: true
-  changed_when: true
-  loop: "{{ proxmox_disk_resize_lvs | default([]) }}"
-
-- name: resize - grow XFS filesystems online
-  ansible.builtin.command:
-    cmd: "xfs_growfs {{ item.mount }}"
-  become: true
-  changed_when: true
-  loop: "{{ proxmox_disk_resize_lvs | default([]) }}"
-  when: item.fstype | default('xfs') == 'xfs'
