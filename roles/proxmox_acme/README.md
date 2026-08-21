@@ -18,9 +18,20 @@ Requires root@pam password authentication
 `root@pam` password authentication** — this is a PVE API restriction stated
 directly in the modules' own documentation, not a limitation this role
 introduces. API tokens are not accepted for these operations, even tokens
-issued to `root@pam`. Each of those three task files fails its precondition
-check if `proxmox_api_user` isn't `root@pam` or `proxmox_api_password`
-isn't set. `info` has no such restriction.
+issued to `root@pam`.
+
+This is **not** the collection's shared `proxmox_api_password`/
+`proxmox_api_token_id` — it's a dedicated `proxmox_acme_api_password`, and
+`api_user` is hardcoded to `root@pam` in the task files rather than reading
+`proxmox_api_user`. Sharing the connection vars here would break every
+other `proxmox_*` role in the same play: the underlying module always
+prefers password over token when a password is present, so setting
+`proxmox_api_password` just to satisfy this role would silently switch
+every other role sharing those vars from token auth to password auth too,
+with no error. `account`/`plugin`/`certificate` fail their precondition
+check with a clear message if `proxmox_acme_api_password` isn't set.
+`info` has no such restriction — it uses the shared `proxmox_api_*` vars
+like every other role (token auth works fine for it).
 
 
 Requirements
@@ -40,13 +51,21 @@ Authentication
 ---------------
 
 ```yaml
-proxmox_api_user:     "root@pam"
-proxmox_api_password: "{{ vault_proxmox_api_password }}"
+proxmox_acme_api_password: "{{ vault_proxmox_api_password }}"
 ```
 
-There is no token-auth alternative for `account`/`plugin`/`certificate` —
-see above. Unset `vault_*` resolves to `omit`, which will simply fail the
-precondition check with a clear message rather than an opaque API error.
+`api_user` is always `root@pam` — not a variable, since nothing else is
+accepted for these operations. There is no token-auth alternative for
+`account`/`plugin`/`certificate` — see above. Leaving
+`proxmox_acme_api_password` unset fails the precondition check with a
+clear message rather than an opaque API error.
+
+`info` (read-only, no restriction) uses the shared connection vars instead:
+
+```yaml
+proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+```
 
 
 Role Variables
@@ -161,9 +180,8 @@ Example Playbook — Cloudflare DNS-01 cert for a node
   roles:
     - role: mgcdrd.infrabase.proxmox_acme
       vars:
-        proxmox_api_host:     "pve1.example.com"
-        proxmox_api_user:     "root@pam"
-        proxmox_api_password: "{{ vault_proxmox_api_password }}"
+        proxmox_api_host:          "pve1.example.com"
+        proxmox_acme_api_password: "{{ vault_proxmox_api_password }}"
         proxmox_acme_do_account: true
         proxmox_acme_do_plugin: true
         proxmox_acme_do_certificate: true

@@ -8,9 +8,9 @@
   community.proxmox.proxmox_domain_sync:
     api_host:         "{{ proxmox_api_host }}"
     api_user:         "{{ proxmox_api_user }}"
-    api_password:     "{{ proxmox_api_password }}"
-    api_token_id:     "{{ proxmox_api_token_id }}"
-    api_token_secret: "{{ proxmox_api_token_secret }}"
+    api_password:     "{{ proxmox_api_password | default(omit) }}"
+    api_token_id:     "{{ proxmox_api_token_id | default(omit) }}"
+    api_token_secret: "{{ proxmox_api_token_secret | default(omit) }}"
     validate_certs:   "{{ proxmox_validate_certs }}"
     realm:           "{{ proxmox_access_domain_sync_realm }}"
     scope:           "{{ proxmox_access_domain_sync_scope | default(omit, true) }}"

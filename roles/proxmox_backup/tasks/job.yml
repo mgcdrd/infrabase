@@ -19,7 +19,7 @@
       Password/ticket auth isn't supported by this section since no
       community.proxmox module exists for job CRUD and ansible.builtin.uri
       needs a bearer-style header, not PVE's login-ticket + CSRF flow.
-  when: not proxmox_api_token_id or not proxmox_api_token_secret
+  when: not (proxmox_api_token_id | default('')) or not (proxmox_api_token_secret | default(''))
 
 - name: job - fetch existing backup jobs
   ansible.builtin.uri:

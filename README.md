@@ -82,9 +82,26 @@ with its own `proxmox_api_host` etc., not a per-role variable — see
 `inventory-common/README.md`.
 
 None of these vars have a collection-level default (the same way
-`vault_proxmox_api_password` never has) — an unset one fails loudly with
-an "undefined variable" error rather than silently talking to the wrong
-cluster.
+`vault_proxmox_api_password` never has). `proxmox_api_host`/`proxmox_api_user`/
+`proxmox_validate_certs` fail loudly with an "undefined variable" error if
+unset — there's no sensible default for an endpoint/cluster identity, and
+guessing wrong would mean silently talking to the wrong cluster.
+`proxmox_api_password`/`proxmox_api_token_id`/`proxmox_api_token_secret`
+are deliberately different: pick **one** auth method and leave the other
+pair unset — every task wraps them in `| default(omit)`, so the unused
+pair is simply never sent to the module rather than causing a crash or a
+`required_one_of` error demanding you also populate a method you don't
+want.
+
+**One documented exception:** `proxmox_acme` (ACME account/plugin/certificate
+management) is a hard PVE API restriction to `root@pam` password auth —
+tokens are rejected outright. It does not use the shared
+`proxmox_api_password`/`proxmox_api_token_id` for those tasks; it has its
+own `proxmox_acme_api_password`. If it shared the connection vars, setting
+a password to satisfy `proxmox_acme` would silently switch every other
+`proxmox_*` role in the same play from token auth to password auth too
+(the underlying module always prefers password over token when both are
+present, with no way to force token). See that role's README.
 
 `proxmox_disk`/`proxmox_nic`/`proxmox_vm_manage` also target a specific VM
 by name — that one's legitimately per-invocation (a play can manage

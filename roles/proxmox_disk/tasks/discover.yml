@@ -7,9 +7,9 @@
   community.proxmox.proxmox_vm_info:
     api_host:         "{{ proxmox_api_host }}"
     api_user:         "{{ proxmox_api_user }}"
-    api_password:     "{{ proxmox_api_password }}"
-    api_token_id:     "{{ proxmox_api_token_id }}"
-    api_token_secret: "{{ proxmox_api_token_secret }}"
+    api_password:     "{{ proxmox_api_password | default(omit) }}"
+    api_token_id:     "{{ proxmox_api_token_id | default(omit) }}"
+    api_token_secret: "{{ proxmox_api_token_secret | default(omit) }}"
     validate_certs:   "{{ proxmox_validate_certs }}"
     name: "{{ proxmox_disk_vm_name }}"
   register: proxmox_disk_vm_info

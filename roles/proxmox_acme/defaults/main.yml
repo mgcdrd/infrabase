@@ -1,12 +1,19 @@
 ---
 # ---- ProxMox API connection ----
-# Uses the shared proxmox_api_* vars — see collections/infrabase/README.md.
+# api_host/validate_certs use the shared proxmox_api_* vars — see
+# collections/infrabase/README.md. Auth is NOT shared for this role's
+# account/plugin/certificate tasks (info.yml is fine with the shared vars,
+# it's read-only).
 #
-# ACME account/plugin/certificate management requires root@pam PASSWORD
-# authentication — the underlying modules explicitly do not accept API
-# token auth for these operations. proxmox_api_user therefore must stay
-# root@pam, and account/plugin/certificate tasks fail their precondition
-# check if it's been changed or if no password is set.
+# ACME account/plugin/certificate management is a hard PVE API restriction:
+# root@pam PASSWORD authentication only, API tokens are rejected outright.
+# That can't be satisfied by the shared proxmox_api_password/proxmox_api_token_id —
+# if this role set proxmox_api_password to satisfy that, every other
+# proxmox_* role sharing those vars would silently switch from token to
+# password auth too (the underlying module prefers password over token
+# whenever a password is present, with no way to force token). So this
+# role gets its own, independent password:
+proxmox_acme_api_password: ""   # must be set to run account/plugin/certificate tasks
 
 # ---- EXECUTION GATES ----
 proxmox_acme_do_info:        false   # tag: info
