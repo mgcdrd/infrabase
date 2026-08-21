@@ -29,11 +29,11 @@ Authentication
 Two methods are supported — set one pair of variables, leave the other unset:
 
 ```yaml
-proxmox_sdn_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-proxmox_sdn_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
 # or
-proxmox_sdn_api_user:     "root@pam"
-proxmox_sdn_api_password: "{{ vault_proxmox_api_password }}"
+proxmox_api_user:     "root@pam"
+proxmox_api_password: "{{ vault_proxmox_api_password }}"
 ```
 
 Unset `vault_*` variables resolve to `omit`. Grant the token `SDN.Allocate`
@@ -45,11 +45,13 @@ Role Variables
 
 ### Connection
 
-Defaults from the shared `proxmox_api_*` vars (set those once for the whole
-play/inventory) — override only if this role needs a different node or credential.
+Every `proxmox_*` role in this collection uses the same `proxmox_api_*`
+vars — see `collections/infrabase/README.md`. Set them once for the whole
+play/inventory; a VM/CT lives on one node in one cluster, so there's
+nothing role-specific to override here.
 
 ```yaml
-proxmox_sdn_api_host: "pve2.example.com"   # optional — overrides the shared proxmox_api_host
+proxmox_api_host: "pve2.example.com"
 ```
 
 ### Execution gates
@@ -166,9 +168,9 @@ Example Playbook — zone, vnet, and subnet in one pass
   roles:
     - role: mgcdrd.infrabase.proxmox_sdn
       vars:
-        proxmox_sdn_api_host:         "pve2.example.com"
-        proxmox_sdn_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-        proxmox_sdn_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+        proxmox_api_host:         "pve2.example.com"
+        proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+        proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
         proxmox_sdn_do_zone: true
         proxmox_sdn_do_vnet: true
         proxmox_sdn_do_subnet: true

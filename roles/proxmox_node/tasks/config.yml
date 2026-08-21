@@ -6,12 +6,12 @@
 
 - name: config - update node certificates/DNS/subscription
   community.proxmox.proxmox_node:
-    api_host:         "{{ proxmox_node_api_host }}"
-    api_user:         "{{ proxmox_node_api_user }}"
-    api_password:     "{{ proxmox_node_api_password }}"
-    api_token_id:     "{{ proxmox_node_api_token_id }}"
-    api_token_secret: "{{ proxmox_node_api_token_secret }}"
-    validate_certs:   "{{ proxmox_node_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
     node_name:     "{{ proxmox_node_config_target }}"
     certificates:  "{{ proxmox_node_certificates | default(omit, true) }}"
     dns:           "{{ proxmox_node_dns | default(omit, true) }}"

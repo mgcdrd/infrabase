@@ -6,12 +6,12 @@
 
 - name: apply - check for pending network changes
   community.proxmox.proxmox_node_network_info:
-    api_host:         "{{ proxmox_network_api_host }}"
-    api_user:         "{{ proxmox_network_api_user }}"
-    api_password:     "{{ proxmox_network_api_password }}"
-    api_token_id:     "{{ proxmox_network_api_token_id }}"
-    api_token_secret: "{{ proxmox_network_api_token_secret }}"
-    validate_certs:   "{{ proxmox_network_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
     node: "{{ proxmox_network_apply_node }}"
     check_changes: true
   register: proxmox_network_pending
@@ -19,12 +19,12 @@
 
 - name: apply - apply staged network changes
   community.proxmox.proxmox_node_network:
-    api_host:         "{{ proxmox_network_api_host }}"
-    api_user:         "{{ proxmox_network_api_user }}"
-    api_password:     "{{ proxmox_network_api_password }}"
-    api_token_id:     "{{ proxmox_network_api_token_id }}"
-    api_token_secret: "{{ proxmox_network_api_token_secret }}"
-    validate_certs:   "{{ proxmox_network_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
     node: "{{ proxmox_network_apply_node }}"
     state: apply
   when: proxmox_network_pending.has_pending_changes

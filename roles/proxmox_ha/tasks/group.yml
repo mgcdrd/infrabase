@@ -9,12 +9,12 @@
 # prefer rule.yml for new PVE 9+ deployments. No check_mode support here.
 - name: group - create/update/delete HA groups
   community.proxmox.proxmox_cluster_ha_groups:
-    api_host:         "{{ proxmox_ha_api_host }}"
-    api_user:         "{{ proxmox_ha_api_user }}"
-    api_password:     "{{ proxmox_ha_api_password }}"
-    api_token_id:     "{{ proxmox_ha_api_token_id }}"
-    api_token_secret: "{{ proxmox_ha_api_token_secret }}"
-    validate_certs:   "{{ proxmox_ha_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
     state:       "{{ item.state | default('present') }}"
     name:        "{{ item.name }}"
     comment:     "{{ item.comment | default(omit) }}"

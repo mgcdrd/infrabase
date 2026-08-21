@@ -15,19 +15,19 @@
   ansible.builtin.fail:
     msg: >
       proxmox_backup_do_job requires API token auth
-      (proxmox_backup_api_token_id + proxmox_backup_api_token_secret).
+      (proxmox_api_token_id + proxmox_api_token_secret).
       Password/ticket auth isn't supported by this section since no
       community.proxmox module exists for job CRUD and ansible.builtin.uri
       needs a bearer-style header, not PVE's login-ticket + CSRF flow.
-  when: not proxmox_backup_api_token_id or not proxmox_backup_api_token_secret
+  when: not proxmox_api_token_id or not proxmox_api_token_secret
 
 - name: job - fetch existing backup jobs
   ansible.builtin.uri:
-    url: "https://{{ proxmox_backup_api_host }}:8006/api2/json/cluster/backup"
+    url: "https://{{ proxmox_api_host }}:8006/api2/json/cluster/backup"
     method: GET
     headers:
-      Authorization: "PVEAPIToken={{ proxmox_backup_api_token_id }}={{ proxmox_backup_api_token_secret }}"
-    validate_certs: "{{ proxmox_backup_validate_certs }}"
+      Authorization: "PVEAPIToken={{ proxmox_api_token_id }}={{ proxmox_api_token_secret }}"
+    validate_certs: "{{ proxmox_validate_certs }}"
     return_content: true
   register: proxmox_backup_existing_jobs
   no_log: true
@@ -35,11 +35,11 @@
 
 - name: job - create backup jobs that don't yet exist
   ansible.builtin.uri:
-    url: "https://{{ proxmox_backup_api_host }}:8006/api2/json/cluster/backup"
+    url: "https://{{ proxmox_api_host }}:8006/api2/json/cluster/backup"
     method: POST
     headers:
-      Authorization: "PVEAPIToken={{ proxmox_backup_api_token_id }}={{ proxmox_backup_api_token_secret }}"
-    validate_certs: "{{ proxmox_backup_validate_certs }}"
+      Authorization: "PVEAPIToken={{ proxmox_api_token_id }}={{ proxmox_api_token_secret }}"
+    validate_certs: "{{ proxmox_validate_certs }}"
     body_format: json
     body:
       id:                   "{{ item.id }}"
@@ -71,11 +71,11 @@
 
 - name: job - update backup jobs that already exist
   ansible.builtin.uri:
-    url: "https://{{ proxmox_backup_api_host }}:8006/api2/json/cluster/backup/{{ item.id }}"
+    url: "https://{{ proxmox_api_host }}:8006/api2/json/cluster/backup/{{ item.id }}"
     method: PUT
     headers:
-      Authorization: "PVEAPIToken={{ proxmox_backup_api_token_id }}={{ proxmox_backup_api_token_secret }}"
-    validate_certs: "{{ proxmox_backup_validate_certs }}"
+      Authorization: "PVEAPIToken={{ proxmox_api_token_id }}={{ proxmox_api_token_secret }}"
+    validate_certs: "{{ proxmox_validate_certs }}"
     body_format: json
     body:
       comment:               "{{ item.comment | default(omit) }}"
@@ -106,11 +106,11 @@
 
 - name: job - delete backup jobs
   ansible.builtin.uri:
-    url: "https://{{ proxmox_backup_api_host }}:8006/api2/json/cluster/backup/{{ item.id }}"
+    url: "https://{{ proxmox_api_host }}:8006/api2/json/cluster/backup/{{ item.id }}"
     method: DELETE
     headers:
-      Authorization: "PVEAPIToken={{ proxmox_backup_api_token_id }}={{ proxmox_backup_api_token_secret }}"
-    validate_certs: "{{ proxmox_backup_validate_certs }}"
+      Authorization: "PVEAPIToken={{ proxmox_api_token_id }}={{ proxmox_api_token_secret }}"
+    validate_certs: "{{ proxmox_validate_certs }}"
     status_code: [200]
   loop: "{{ proxmox_backup_jobs }}"
   loop_control:

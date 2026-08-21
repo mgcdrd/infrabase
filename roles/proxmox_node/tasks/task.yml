@@ -8,12 +8,12 @@
 
 - name: task - list tasks
   community.proxmox.proxmox_tasks_info:
-    api_host:         "{{ proxmox_node_api_host }}"
-    api_user:         "{{ proxmox_node_api_user }}"
-    api_password:     "{{ proxmox_node_api_password }}"
-    api_token_id:     "{{ proxmox_node_api_token_id }}"
-    api_token_secret: "{{ proxmox_node_api_token_secret }}"
-    validate_certs:   "{{ proxmox_node_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
     node:   "{{ proxmox_node_task_target }}"
     task:   "{{ proxmox_node_task_upid | default(omit, true) }}"
     source: "{{ proxmox_node_task_source }}"
@@ -25,12 +25,12 @@
 # collection-recommended until/retries/delay polling idiom.
 - name: task - poll a specific task until it has a status
   community.proxmox.proxmox_tasks_info:
-    api_host:         "{{ proxmox_node_api_host }}"
-    api_user:         "{{ proxmox_node_api_user }}"
-    api_password:     "{{ proxmox_node_api_password }}"
-    api_token_id:     "{{ proxmox_node_api_token_id }}"
-    api_token_secret: "{{ proxmox_node_api_token_secret }}"
-    validate_certs:   "{{ proxmox_node_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
     node:   "{{ proxmox_node_task_target }}"
     task:   "{{ proxmox_node_task_upid }}"
     source: "{{ proxmox_node_task_source }}"

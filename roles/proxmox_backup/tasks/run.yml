@@ -15,12 +15,12 @@
 # "Backup now" button. This task always reports changed on success.
 - name: run - trigger an on-demand backup
   community.proxmox.proxmox_backup:
-    api_host:         "{{ proxmox_backup_api_host }}"
-    api_user:         "{{ proxmox_backup_api_user }}"
-    api_password:     "{{ proxmox_backup_api_password }}"
-    api_token_id:     "{{ proxmox_backup_api_token_id }}"
-    api_token_secret: "{{ proxmox_backup_api_token_secret }}"
-    validate_certs:   "{{ proxmox_backup_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
     mode:         "{{ proxmox_backup_run_mode }}"
     storage:      "{{ proxmox_backup_run_storage }}"
     vmids:        "{{ proxmox_backup_run_vmids if proxmox_backup_run_mode == 'include' else omit }}"

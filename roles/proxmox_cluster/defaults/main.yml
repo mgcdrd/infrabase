@@ -1,15 +1,13 @@
 ---
 # ---- ProxMox API connection (default/master node) ----
-# Resolves from the shared proxmox_api_* vars (set those once for the whole play/inventory); override the proxmox_<role>_api_* vars below only if this role must use a different node or credential.
-# For `create` and `info`, proxmox_cluster_api_host must point at the node
-# the action runs against — the intended master for create, any cluster
-# member for info. `join` overrides api_host per node — see below.
-proxmox_cluster_api_host:          "{{ proxmox_api_host | default('') }}"
-proxmox_cluster_api_user:          "{{ proxmox_api_user | default('root@pam') }}"
-proxmox_cluster_api_password:      "{{ proxmox_api_password | default(vault_proxmox_api_password | default(omit)) }}"
-proxmox_cluster_api_token_id:      "{{ proxmox_api_token_id | default(vault_proxmox_api_token_id | default(omit)) }}"
-proxmox_cluster_api_token_secret:  "{{ proxmox_api_token_secret | default(vault_proxmox_api_token_secret | default(omit)) }}"
-proxmox_cluster_validate_certs:    "{{ proxmox_validate_certs | default(false) }}"
+# Uses the shared proxmox_api_* vars — see collections/infrabase/README.md.
+#
+# For `create` and `info`, proxmox_api_host must point at the node the
+# action runs against — the intended master for create, any cluster member
+# for info. `join` overrides api_host/api_user/api_password/api_token_id/
+# api_token_secret per node via proxmox_cluster_join_nodes list items
+# instead (see below) — that's a genuinely different node per item, not a
+# per-role override, which is why it isn't folded into the shared vars.
 
 # ---- EXECUTION GATES ----
 proxmox_cluster_do_info:   false   # tag: info
@@ -53,5 +51,6 @@ proxmox_cluster_join_nodes: []
 #     link0: "10.10.1.2"
 #     link1: "10.10.2.2"
 #     # api_user/api_password/api_token_id/api_token_secret may be set
-#     # per-item to override the top-level connection block, if this node's
-#     # own credentials differ from proxmox_cluster_api_user/etc.
+#     # per-item to override the shared proxmox_api_user/etc., if this
+#     # node's own credentials differ (each node still has its own
+#     # root@pam until the join completes).

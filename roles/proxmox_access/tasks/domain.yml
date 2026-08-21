@@ -10,12 +10,12 @@
 # exist.
 - name: domain - create/update/delete authentication realms
   community.proxmox.proxmox_domain:
-    api_host:         "{{ proxmox_access_api_host }}"
-    api_user:         "{{ proxmox_access_api_user }}"
-    api_password:     "{{ proxmox_access_api_password }}"
-    api_token_id:     "{{ proxmox_access_api_token_id }}"
-    api_token_secret: "{{ proxmox_access_api_token_secret }}"
-    validate_certs:   "{{ proxmox_access_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
     realm:   "{{ item.realm }}"
     state:   "{{ item.state }}"
     type:    "{{ item.type | default(omit) }}"

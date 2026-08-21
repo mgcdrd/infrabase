@@ -6,12 +6,12 @@
 
 - name: info - query HA rules
   community.proxmox.proxmox_cluster_ha_rules_info:
-    api_host:         "{{ proxmox_ha_api_host }}"
-    api_user:         "{{ proxmox_ha_api_user }}"
-    api_password:     "{{ proxmox_ha_api_password }}"
-    api_token_id:     "{{ proxmox_ha_api_token_id }}"
-    api_token_secret: "{{ proxmox_ha_api_token_secret }}"
-    validate_certs:   "{{ proxmox_ha_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
     rule:     "{{ proxmox_ha_info_rule | default(omit, true) }}"
     type:     "{{ proxmox_ha_info_type | default(omit, true) }}"
     resource: "{{ proxmox_ha_info_resource | default(omit, true) }}"

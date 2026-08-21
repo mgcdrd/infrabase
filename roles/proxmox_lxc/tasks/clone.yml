@@ -11,12 +11,12 @@
 
 - name: clone - clone container
   community.proxmox.proxmox:
-    api_host:         "{{ proxmox_lxc_api_host }}"
-    api_user:         "{{ proxmox_lxc_api_user }}"
-    api_password:     "{{ proxmox_lxc_api_password }}"
-    api_token_id:     "{{ proxmox_lxc_api_token_id }}"
-    api_token_secret: "{{ proxmox_lxc_api_token_secret }}"
-    validate_certs:   "{{ proxmox_lxc_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
     vmid:       "{{ proxmox_lxc_clone_vmid | default(omit, true) }}"
     node:       "{{ proxmox_lxc_clone_node | default(proxmox_lxc_discovered_node, true) }}"
     hostname:   "{{ proxmox_lxc_clone_hostname }}"
@@ -29,12 +29,12 @@
 
 - name: clone - start container
   community.proxmox.proxmox:
-    api_host:         "{{ proxmox_lxc_api_host }}"
-    api_user:         "{{ proxmox_lxc_api_user }}"
-    api_password:     "{{ proxmox_lxc_api_password }}"
-    api_token_id:     "{{ proxmox_lxc_api_token_id }}"
-    api_token_secret: "{{ proxmox_lxc_api_token_secret }}"
-    validate_certs:   "{{ proxmox_lxc_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
     hostname: "{{ proxmox_lxc_clone_hostname }}"
     state: started
   when: proxmox_lxc_clone_start_after | bool

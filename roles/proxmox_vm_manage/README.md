@@ -36,16 +36,15 @@ Authentication
 ---------------
 
 Two methods are supported for all three sub-roles — set one pair, leave the
-other unset. Both fall back to the shared `proxmox_api_token_id`/`_secret`/
-`_user`/`_password` vars, so setting those once covers every proxmox_* role
-in this collection, not just this one:
+other unset. These are the same `proxmox_api_token_id`/`_secret`/`_user`/`_password`
+vars every `proxmox_*` role uses — set them once, not per role:
 
 ```yaml
-proxmox_vm_manage_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-proxmox_vm_manage_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
 # or
-proxmox_vm_manage_api_user:     "root@pam"
-proxmox_vm_manage_api_password: "{{ vault_proxmox_api_password }}"
+proxmox_api_user:     "root@pam"
+proxmox_api_password: "{{ vault_proxmox_api_password }}"
 ```
 
 
@@ -54,19 +53,22 @@ Role Variables
 
 ### Connection
 
-Defaults from the shared `proxmox_api_*` vars (set those once for the whole
-play/inventory) — override only if this run needs a different node or
-credential than the rest of the play.
+Every `proxmox_*` role in this collection uses the same `proxmox_api_*`
+vars — see `collections/infrabase/README.md`. Set them once for the whole
+play/inventory; a VM/CT lives on one node in one cluster, so there's
+nothing role-specific to override here.
 
 ```yaml
-proxmox_vm_manage_api_host: "pve2.example.com"   # optional — overrides the shared proxmox_api_host
+proxmox_api_host: "pve2.example.com"
 ```
 
 ### VM targeting
 
 ```yaml
-# Defaults to inventory_hostname — override if the VM name in PVE differs.
-proxmox_vm_manage_vm_name: "{{ inventory_hostname }}"
+# Defaults from the shared proxmox_target_vm_name var (falls back to
+# inventory_hostname) — override proxmox_vm_manage_vm_name directly if
+# this run's VM name in PVE differs from the rest of the play.
+proxmox_vm_manage_vm_name: "pve-guest.example.com"
 
 # Set directly to skip the by-name lookup for NICs/snapshots. The disk
 # sub-role always looks up by name — it has no VMID passthrough.
@@ -162,10 +164,10 @@ Example Playbook — add a disk, a NIC, and a pre-change snapshot
   roles:
     - role: mgcdrd.infrabase.proxmox_vm_manage
       vars:
-        proxmox_vm_manage_api_host:         "pve2.example.com"
-        proxmox_vm_manage_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-        proxmox_vm_manage_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
-        proxmox_vm_manage_api_password:     "{{ vault_proxmox_api_password }}"
+        proxmox_api_host:         "pve2.example.com"
+        proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+        proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+        proxmox_api_password:     "{{ vault_proxmox_api_password }}"
         proxmox_vm_manage_disks:
           - slot: virtio1
             storage: truenas
@@ -191,9 +193,9 @@ Example Playbook — snapshot-only rollback
   roles:
     - role: mgcdrd.infrabase.proxmox_vm_manage
       vars:
-        proxmox_vm_manage_api_host:         "pve2.example.com"
-        proxmox_vm_manage_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-        proxmox_vm_manage_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+        proxmox_api_host:         "pve2.example.com"
+        proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+        proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
         proxmox_vm_manage_vm_name: "newhost01"
         proxmox_vm_manage_snapshots:
           - snapname: "pre-change-2026-08-19"

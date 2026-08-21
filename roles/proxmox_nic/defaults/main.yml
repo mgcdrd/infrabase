@@ -1,24 +1,14 @@
 ---
 # ---- ProxMox API connection ----
-# Resolves from the shared proxmox_api_* vars (set those once for the whole
-# play/inventory) — override the proxmox_<role>_api_* vars below only if this
-# role must use a different node or credential.
-#
-# Two auth methods are supported — set one pair, leave the other unset:
-#   - API token (recommended): proxmox_api_token_id + proxmox_api_token_secret
-#   - Password:                 proxmox_api_user (default root@pam) + proxmox_api_password
-# Unset vars resolve to `omit` so only the method you configure is sent to the module.
-proxmox_nic_api_host:          "{{ proxmox_api_host | default('') }}"
-proxmox_nic_api_user:          "{{ proxmox_api_user | default('root@pam') }}"
-proxmox_nic_api_password:      "{{ proxmox_api_password | default(vault_proxmox_api_password | default(omit)) }}"
-proxmox_nic_api_token_id:      "{{ proxmox_api_token_id | default(vault_proxmox_api_token_id | default(omit)) }}"
-proxmox_nic_api_token_secret:  "{{ proxmox_api_token_secret | default(vault_proxmox_api_token_secret | default(omit)) }}"
-proxmox_nic_validate_certs:    "{{ proxmox_validate_certs | default(false) }}"
+# Uses the shared proxmox_api_* vars — see collections/infrabase/README.md.
 
 # ---- VM targeting ----
 # The role looks up the VM by name to discover its VMID automatically.
-# Override proxmox_nic_vm_name if the VM's name in PVE differs from inventory_hostname.
-proxmox_nic_vm_name: "{{ inventory_hostname }}"
+# Defaults from the shared proxmox_target_vm_name var (falls back to
+# inventory_hostname) — set that once if a play targets the same VM across
+# several proxmox_* roles, or override proxmox_nic_vm_name here if just this
+# role's target differs.
+proxmox_nic_vm_name: "{{ proxmox_target_vm_name | default(inventory_hostname) }}"
 
 # Set this directly to skip discovery entirely (e.g. when this role runs
 # right after proxmox_vm's clone task and the VMID is already known).

@@ -27,18 +27,18 @@ Authentication
 ---------------
 
 Two methods are supported — set one pair of variables, leave the other unset
-(same pattern as `proxmox_vm`). Both fall back to the shared
-`proxmox_api_token_id`/`_secret`/`_user`/`_password` vars, so setting those
-once covers every proxmox_* role:
+(same pattern as `proxmox_vm`). These are the same `proxmox_api_token_id`/
+`_secret`/`_user`/`_password` vars every `proxmox_*` role uses — set them
+once, not per role:
 
 ```yaml
 # API token (recommended — scoped, revocable without touching root's password)
-proxmox_nic_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-proxmox_nic_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
 
 # Password
-proxmox_nic_api_user:     "root@pam"
-proxmox_nic_api_password: "{{ vault_proxmox_api_password }}"
+proxmox_api_user:     "root@pam"
+proxmox_api_password: "{{ vault_proxmox_api_password }}"
 ```
 
 A token needs at least `VM.Config.Network` on the relevant path.
@@ -49,18 +49,22 @@ Role Variables
 
 ### Connection
 
-Defaults from the shared `proxmox_api_*` vars (set those once for the whole
-play/inventory) — override only if this role needs a different node or credential.
+Every `proxmox_*` role in this collection uses the same `proxmox_api_*`
+vars — see `collections/infrabase/README.md`. Set them once for the whole
+play/inventory; a VM/CT lives on one node in one cluster, so there's
+nothing role-specific to override here.
 
 ```yaml
-proxmox_nic_api_host: "pve2.example.com"   # any PVE node or the cluster VIP
+proxmox_api_host: "pve2.example.com"   # any PVE node or the cluster VIP
 ```
 
 ### VM targeting
 
 ```yaml
-# Defaults to inventory_hostname — override if the VM name in PVE differs.
-proxmox_nic_vm_name: "{{ inventory_hostname }}"
+# Defaults from the shared proxmox_target_vm_name var (falls back to
+# inventory_hostname) — set that once if a play targets the same VM
+# across several proxmox_* roles, or override this var directly.
+proxmox_nic_vm_name: "pve-guest.example.com"
 
 # Set directly to skip the by-name lookup entirely — useful right after
 # proxmox_vm's clone task, when the VMID is already known.
@@ -127,9 +131,9 @@ Example Playbook — add a NIC to an existing VM
   roles:
     - role: mgcdrd.infrabase.proxmox_nic
       vars:
-        proxmox_nic_api_host:         "pve2.example.com"
-        proxmox_nic_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-        proxmox_nic_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+        proxmox_api_host:         "pve2.example.com"
+        proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+        proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
         proxmox_nic_vm_name: "newhost01"
         proxmox_nic_interfaces:
           - interface: net1
@@ -155,9 +159,9 @@ Example Playbook — chained right after a proxmox_vm clone
 
     - role: mgcdrd.infrabase.proxmox_nic
       vars:
-        proxmox_nic_api_host:         "pve2.example.com"
-        proxmox_nic_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-        proxmox_nic_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+        proxmox_api_host:         "pve2.example.com"
+        proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+        proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
         # proxmox_vm_clone_result.newid or the module's returned facts can be
         # used here instead of a name lookup if the caller wants to avoid the
         # extra API round trip.
@@ -178,9 +182,9 @@ Example Playbook — remove a NIC
   roles:
     - role: mgcdrd.infrabase.proxmox_nic
       vars:
-        proxmox_nic_api_host:         "pve2.example.com"
-        proxmox_nic_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-        proxmox_nic_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+        proxmox_api_host:         "pve2.example.com"
+        proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+        proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
         proxmox_nic_vm_name: "newhost01"
         proxmox_nic_interfaces:
           - interface: net1

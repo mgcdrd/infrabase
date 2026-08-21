@@ -51,11 +51,11 @@ Authentication
 Two methods are supported — set one pair of variables, leave the other unset:
 
 ```yaml
-proxmox_cluster_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-proxmox_cluster_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
 # or
-proxmox_cluster_api_user:     "root@pam"
-proxmox_cluster_api_password: "{{ vault_proxmox_api_password }}"
+proxmox_api_user:     "root@pam"
+proxmox_api_password: "{{ vault_proxmox_api_password }}"
 ```
 
 Unset `vault_*` variables resolve to `omit`. **Always set
@@ -70,11 +70,13 @@ Role Variables
 
 ### Connection
 
-Defaults from the shared `proxmox_api_*` vars (set those once for the whole
-play/inventory) — override only if this role needs a different node or credential.
+Every `proxmox_*` role in this collection uses the same `proxmox_api_*`
+vars — see `collections/infrabase/README.md`. Set them once for the whole
+play/inventory; a VM/CT lives on one node in one cluster, so there's
+nothing role-specific to override here.
 
 ```yaml
-proxmox_cluster_api_host: "pve1.example.com"   # master for create/info; overridden per-item for join
+proxmox_api_host: "pve1.example.com"   # master for create/info; overridden per-item for join
 ```
 
 ### Execution gates
@@ -100,7 +102,7 @@ fingerprint input for `join` below — run `info` against the master first.
 ### create
 
 ```yaml
-proxmox_cluster_api_host: "pve1.example.com"   # the intended master
+proxmox_api_host: "pve1.example.com"   # the intended master
 proxmox_cluster_name:  "labcluster"
 proxmox_cluster_link0: "10.10.1.1"
 proxmox_cluster_link1: "10.10.2.1"
@@ -121,7 +123,7 @@ proxmox_cluster_join_nodes:
 
 Each item's `api_host` is required; `api_user`/`api_password`/
 `api_token_id`/`api_token_secret` may be set per-item if that node's own
-credentials differ from the top-level `proxmox_cluster_api_user`/etc.
+credentials differ from the top-level `proxmox_api_user`/etc.
 
 
 Tags
@@ -145,9 +147,9 @@ Example Playbook — create then join two nodes
   roles:
     - role: mgcdrd.infrabase.proxmox_cluster
       vars:
-        proxmox_cluster_api_host:     "pve1.example.com"
-        proxmox_cluster_api_user:     "root@pam"
-        proxmox_cluster_api_password: "{{ vault_proxmox_api_password }}"
+        proxmox_api_host:     "pve1.example.com"
+        proxmox_api_user:     "root@pam"
+        proxmox_api_password: "{{ vault_proxmox_api_password }}"
         proxmox_cluster_do_create: true
         proxmox_cluster_name: "labcluster"
         proxmox_cluster_link0: "10.10.1.1"
@@ -158,9 +160,9 @@ Example Playbook — create then join two nodes
   roles:
     - role: mgcdrd.infrabase.proxmox_cluster
       vars:
-        proxmox_cluster_api_host:     "pve1.example.com"
-        proxmox_cluster_api_user:     "root@pam"
-        proxmox_cluster_api_password: "{{ vault_proxmox_api_password }}"
+        proxmox_api_host:     "pve1.example.com"
+        proxmox_api_user:     "root@pam"
+        proxmox_api_password: "{{ vault_proxmox_api_password }}"
         proxmox_cluster_do_info: true
 
 - name: Join additional nodes
@@ -169,8 +171,8 @@ Example Playbook — create then join two nodes
   roles:
     - role: mgcdrd.infrabase.proxmox_cluster
       vars:
-        proxmox_cluster_api_user:     "root@pam"
-        proxmox_cluster_api_password: "{{ vault_proxmox_api_password }}"
+        proxmox_api_user:     "root@pam"
+        proxmox_api_password: "{{ vault_proxmox_api_password }}"
         proxmox_cluster_do_join: true
         proxmox_cluster_master_ip:           "pve1.example.com"
         proxmox_cluster_master_fingerprint:  "{{ hostvars['localhost']['proxmox_cluster_join_facts']['cluster_join'][0]['nodelist'][0]['pve_fp'] }}"

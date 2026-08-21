@@ -1,12 +1,6 @@
 ---
 # ---- ProxMox API connection ----
-# Resolves from the shared proxmox_api_* vars (set those once for the whole play/inventory); override the proxmox_<role>_api_* vars below only if this role must use a different node or credential.
-proxmox_sdn_api_host:          "{{ proxmox_api_host | default('') }}"
-proxmox_sdn_api_user:          "{{ proxmox_api_user | default('root@pam') }}"
-proxmox_sdn_api_password:      "{{ proxmox_api_password | default(vault_proxmox_api_password | default(omit)) }}"
-proxmox_sdn_api_token_id:      "{{ proxmox_api_token_id | default(vault_proxmox_api_token_id | default(omit)) }}"
-proxmox_sdn_api_token_secret:  "{{ proxmox_api_token_secret | default(vault_proxmox_api_token_secret | default(omit)) }}"
-proxmox_sdn_validate_certs:    "{{ proxmox_validate_certs | default(false) }}"
+# Uses the shared proxmox_api_* vars — see collections/infrabase/README.md.
 
 # ---- EXECUTION GATES ----
 # Every zone/vnet/subnet task applies its change immediately (PVE's SDN

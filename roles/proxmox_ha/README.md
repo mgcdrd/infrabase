@@ -28,11 +28,11 @@ Authentication
 Two methods are supported — set one pair of variables, leave the other unset:
 
 ```yaml
-proxmox_ha_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-proxmox_ha_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
 # or
-proxmox_ha_api_user:     "root@pam"
-proxmox_ha_api_password: "{{ vault_proxmox_api_password }}"
+proxmox_api_user:     "root@pam"
+proxmox_api_password: "{{ vault_proxmox_api_password }}"
 ```
 
 Unset `vault_*` variables resolve to `omit`. Grant the token `Sys.Console`
@@ -60,11 +60,13 @@ Role Variables
 
 ### Connection
 
-Defaults from the shared `proxmox_api_*` vars (set those once for the whole
-play/inventory) — override only if this role needs a different node or credential.
+Every `proxmox_*` role in this collection uses the same `proxmox_api_*`
+vars — see `collections/infrabase/README.md`. Set them once for the whole
+play/inventory; a VM/CT lives on one node in one cluster, so there's
+nothing role-specific to override here.
 
 ```yaml
-proxmox_ha_api_host: "pve2.example.com"   # optional — overrides the shared proxmox_api_host
+proxmox_api_host: "pve2.example.com"
 ```
 
 ### Execution gates
@@ -169,9 +171,9 @@ Example Playbook — PVE 9+ node-affinity + resource assignment
   roles:
     - role: mgcdrd.infrabase.proxmox_ha
       vars:
-        proxmox_ha_api_host:         "pve2.example.com"
-        proxmox_ha_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-        proxmox_ha_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+        proxmox_api_host:         "pve2.example.com"
+        proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+        proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
         proxmox_ha_do_rule: true
         proxmox_ha_do_resource: true
         proxmox_ha_rules:
@@ -198,9 +200,9 @@ Example Playbook — legacy PVE 8.x group
   roles:
     - role: mgcdrd.infrabase.proxmox_ha
       vars:
-        proxmox_ha_api_host:         "pve2.example.com"
-        proxmox_ha_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-        proxmox_ha_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+        proxmox_api_host:         "pve2.example.com"
+        proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+        proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
         proxmox_ha_do_group: true
         proxmox_ha_do_resource: true
         proxmox_ha_groups:

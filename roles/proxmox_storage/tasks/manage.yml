@@ -9,12 +9,12 @@
 # Delete and recreate if you need to change an existing storage's config.
 - name: manage - create/delete storage definitions
   community.proxmox.proxmox_storage:
-    api_host:         "{{ proxmox_storage_api_host }}"
-    api_user:         "{{ proxmox_storage_api_user }}"
-    api_password:     "{{ proxmox_storage_api_password }}"
-    api_token_id:     "{{ proxmox_storage_api_token_id }}"
-    api_token_secret: "{{ proxmox_storage_api_token_secret }}"
-    validate_certs:   "{{ proxmox_storage_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
     name:  "{{ item.name }}"
     type:  "{{ item.type }}"
     state: "{{ item.state | default('present') }}"

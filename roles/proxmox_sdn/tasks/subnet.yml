@@ -6,12 +6,12 @@
 
 - name: subnet - create/update/delete SDN subnets
   community.proxmox.proxmox_subnet:
-    api_host:         "{{ proxmox_sdn_api_host }}"
-    api_user:         "{{ proxmox_sdn_api_user }}"
-    api_password:     "{{ proxmox_sdn_api_password }}"
-    api_token_id:     "{{ proxmox_sdn_api_token_id }}"
-    api_token_secret: "{{ proxmox_sdn_api_token_secret }}"
-    validate_certs:   "{{ proxmox_sdn_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
     subnet:                    "{{ item.subnet }}"
     vnet:                      "{{ item.vnet }}"
     zone:                      "{{ item.zone }}"

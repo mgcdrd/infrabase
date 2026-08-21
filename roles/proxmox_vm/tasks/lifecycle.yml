@@ -13,12 +13,12 @@
 
 - name: lifecycle - set VM state
   community.proxmox.proxmox_kvm:
-    api_host:         "{{ proxmox_vm_api_host }}"
-    api_user:         "{{ proxmox_vm_api_user }}"
-    api_password:     "{{ proxmox_vm_api_password }}"
-    api_token_id:     "{{ proxmox_vm_api_token_id }}"
-    api_token_secret: "{{ proxmox_vm_api_token_secret }}"
-    validate_certs:   "{{ proxmox_vm_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
     vmid:  "{{ proxmox_vm_discovered_vmid }}"
     node:  "{{ proxmox_vm_discovered_node }}"
     state: "{{ proxmox_vm_lifecycle_state }}"

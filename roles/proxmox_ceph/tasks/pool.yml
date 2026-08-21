@@ -9,12 +9,12 @@
 # idempotency caveat around field-type mismatches against PVE's status API.
 - name: pool - create/update/delete Ceph pools
   community.proxmox.proxmox_ceph_pool:
-    api_host:         "{{ proxmox_ceph_api_host }}"
-    api_user:         "{{ proxmox_ceph_api_user }}"
-    api_password:     "{{ proxmox_ceph_api_password }}"
-    api_token_id:     "{{ proxmox_ceph_api_token_id }}"
-    api_token_secret: "{{ proxmox_ceph_api_token_secret }}"
-    validate_certs:   "{{ proxmox_ceph_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
     node:  "{{ item.node }}"
     name:  "{{ item.name }}"
     state: "{{ item.state | default('present') }}"

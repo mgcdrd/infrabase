@@ -8,12 +8,12 @@
 
 - name: clone - clone VM from template
   community.proxmox.proxmox_kvm:
-    api_host:         "{{ proxmox_vm_api_host }}"
-    api_user:         "{{ proxmox_vm_api_user }}"
-    api_password:     "{{ proxmox_vm_api_password }}"
-    api_token_id:     "{{ proxmox_vm_api_token_id }}"
-    api_token_secret: "{{ proxmox_vm_api_token_secret }}"
-    validate_certs:   "{{ proxmox_vm_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
     clone:   "{{ proxmox_vm_clone_source }}"
     name:    "{{ proxmox_vm_name }}"
     node:    "{{ proxmox_vm_node }}"
@@ -29,12 +29,12 @@
 # cloud-init are applied in a separate update call against the new VMID.
 - name: clone - apply VM configuration
   community.proxmox.proxmox_kvm:
-    api_host:         "{{ proxmox_vm_api_host }}"
-    api_user:         "{{ proxmox_vm_api_user }}"
-    api_password:     "{{ proxmox_vm_api_password }}"
-    api_token_id:     "{{ proxmox_vm_api_token_id }}"
-    api_token_secret: "{{ proxmox_vm_api_token_secret }}"
-    validate_certs:   "{{ proxmox_vm_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
     node:   "{{ proxmox_vm_node }}"
     name:   "{{ proxmox_vm_name }}"
     update: true
@@ -60,12 +60,12 @@
 
 - name: clone - start VM
   community.proxmox.proxmox_kvm:
-    api_host:         "{{ proxmox_vm_api_host }}"
-    api_user:         "{{ proxmox_vm_api_user }}"
-    api_password:     "{{ proxmox_vm_api_password }}"
-    api_token_id:     "{{ proxmox_vm_api_token_id }}"
-    api_token_secret: "{{ proxmox_vm_api_token_secret }}"
-    validate_certs:   "{{ proxmox_vm_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
     node:  "{{ proxmox_vm_node }}"
     name:  "{{ proxmox_vm_name }}"
     state: started

@@ -34,17 +34,17 @@ Authentication
 ---------------
 
 Two methods are supported — set one pair of variables, leave the other unset.
-Both fall back to the shared `proxmox_api_token_id`/`_secret`/`_user`/
-`_password` vars, so setting those once covers every proxmox_* role:
+These are the same `proxmox_api_token_id`/`_secret`/`_user`/`_password`
+vars every `proxmox_*` role uses — set them once, not per role:
 
 ```yaml
 # API token (recommended — scoped, revocable without touching root's password)
-proxmox_disk_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-proxmox_disk_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
 
 # Password
-proxmox_disk_api_user:     "root@pam"
-proxmox_disk_api_password: "{{ vault_proxmox_api_password }}"
+proxmox_api_user:     "root@pam"
+proxmox_api_password: "{{ vault_proxmox_api_password }}"
 ```
 
 A token needs at least `VM.Config.Disk` on the relevant path.
@@ -55,12 +55,13 @@ Role Variables
 
 ### Connection
 
-Defaults from the shared `proxmox_api_*` vars (set those once for the whole
-play/inventory) — override only if this role needs a different node or
-credential.
+Every `proxmox_*` role in this collection uses the same `proxmox_api_*`
+vars — see `collections/infrabase/README.md`. Set them once for the whole
+play/inventory; a VM/CT lives on one node in one cluster, so there's
+nothing role-specific to override here.
 
 ```yaml
-proxmox_disk_api_host: "pve2.example.com"   # optional — overrides the shared proxmox_api_host
+proxmox_api_host: "pve2.example.com"
 ```
 
 ### Required
@@ -72,8 +73,10 @@ proxmox_disk_storage: "truenas"   # PVE storage backend name
 ### VM targeting
 
 ```yaml
-# Defaults to inventory_hostname — override if the VM name in PVE differs.
-proxmox_disk_vm_name: "{{ inventory_hostname }}"
+# Defaults from the shared proxmox_target_vm_name var (falls back to
+# inventory_hostname) — set that once if a play targets the same VM
+# across several proxmox_* roles, or override this var directly.
+proxmox_disk_vm_name: "pve-guest.example.com"
 ```
 
 ### Disk configuration
@@ -82,7 +85,7 @@ proxmox_disk_vm_name: "{{ inventory_hostname }}"
 proxmox_disk_slot: virtio1    # PVE disk slot — must not already be occupied for 'present'
 proxmox_disk_size: "400"      # GiB integer, no suffix — for state=resized use "+XG" form
 proxmox_disk_state: present   # present | resized
-proxmox_disk_api_user: "root@pam"
+proxmox_api_user: "root@pam"
 ```
 
 ### Resize-only variables
@@ -154,8 +157,8 @@ Example Playbook — add disk and set up LVM
   roles:
     - role: mgcdrd.infrabase.proxmox_disk
       vars:
-        proxmox_disk_api_host: "pve2.example.com"
-        proxmox_disk_api_password: "{{ vault_pve_password }}"
+        proxmox_api_host: "pve2.example.com"
+        proxmox_api_password: "{{ vault_pve_password }}"
         proxmox_disk_vm_name: "{{ inventory_hostname }}"
         proxmox_disk_slot: virtio1
         proxmox_disk_storage: truenas
@@ -192,8 +195,8 @@ Example Playbook — resize existing disk
   roles:
     - role: mgcdrd.infrabase.proxmox_disk
       vars:
-        proxmox_disk_api_host: "pve2.example.com"
-        proxmox_disk_api_password: "{{ vault_pve_password }}"
+        proxmox_api_host: "pve2.example.com"
+        proxmox_api_password: "{{ vault_pve_password }}"
         proxmox_disk_slot: virtio1
         proxmox_disk_storage: truenas
         proxmox_disk_size: "+200G"    # suffix required for state=resized; + means relative

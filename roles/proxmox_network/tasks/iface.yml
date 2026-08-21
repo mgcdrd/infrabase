@@ -10,12 +10,12 @@
 # immutable once created; delete and recreate to change it.
 - name: iface - create/modify/delete node network interfaces
   community.proxmox.proxmox_node_network:
-    api_host:         "{{ proxmox_network_api_host }}"
-    api_user:         "{{ proxmox_network_api_user }}"
-    api_password:     "{{ proxmox_network_api_password }}"
-    api_token_id:     "{{ proxmox_network_api_token_id }}"
-    api_token_secret: "{{ proxmox_network_api_token_secret }}"
-    validate_certs:   "{{ proxmox_network_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
     node:                   "{{ item.node | default(proxmox_network_node) }}"
     iface:                  "{{ item.iface }}"
     iface_type:             "{{ item.iface_type | default(omit) }}"

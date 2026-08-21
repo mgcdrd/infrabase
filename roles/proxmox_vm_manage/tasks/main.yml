@@ -6,12 +6,6 @@
   loop_control:
     loop_var: _proxmox_vm_manage_disk
   vars:
-    proxmox_disk_api_host:          "{{ proxmox_vm_manage_api_host }}"
-    proxmox_disk_api_user:          "{{ proxmox_vm_manage_api_user }}"
-    proxmox_disk_api_password:      "{{ proxmox_vm_manage_api_password }}"
-    proxmox_disk_api_token_id:      "{{ proxmox_vm_manage_api_token_id }}"
-    proxmox_disk_api_token_secret:  "{{ proxmox_vm_manage_api_token_secret }}"
-    proxmox_disk_validate_certs:    "{{ proxmox_vm_manage_validate_certs }}"
     proxmox_disk_vm_name:       "{{ proxmox_vm_manage_vm_name }}"
     proxmox_disk_slot:          "{{ _proxmox_vm_manage_disk.slot }}"
     proxmox_disk_storage:       "{{ _proxmox_vm_manage_disk.storage }}"
@@ -26,12 +20,6 @@
   ansible.builtin.include_role:
     name: mgcdrd.infrabase.proxmox_nic
   vars:
-    proxmox_nic_api_host:         "{{ proxmox_vm_manage_api_host }}"
-    proxmox_nic_api_user:         "{{ proxmox_vm_manage_api_user }}"
-    proxmox_nic_api_password:     "{{ proxmox_vm_manage_api_password }}"
-    proxmox_nic_api_token_id:     "{{ proxmox_vm_manage_api_token_id }}"
-    proxmox_nic_api_token_secret: "{{ proxmox_vm_manage_api_token_secret }}"
-    proxmox_nic_validate_certs:   "{{ proxmox_vm_manage_validate_certs }}"
     proxmox_nic_vm_name:          "{{ proxmox_vm_manage_vm_name }}"
     proxmox_nic_vmid:             "{{ proxmox_vm_manage_vmid }}"
     proxmox_nic_interfaces:       "{{ proxmox_vm_manage_nics }}"
@@ -42,12 +30,6 @@
   ansible.builtin.include_role:
     name: mgcdrd.infrabase.proxmox_snapshot
   vars:
-    proxmox_snapshot_api_host:         "{{ proxmox_vm_manage_api_host }}"
-    proxmox_snapshot_api_user:         "{{ proxmox_vm_manage_api_user }}"
-    proxmox_snapshot_api_password:     "{{ proxmox_vm_manage_api_password }}"
-    proxmox_snapshot_api_token_id:     "{{ proxmox_vm_manage_api_token_id }}"
-    proxmox_snapshot_api_token_secret: "{{ proxmox_vm_manage_api_token_secret }}"
-    proxmox_snapshot_validate_certs:   "{{ proxmox_vm_manage_validate_certs }}"
     proxmox_snapshot_do_manage:        true
     proxmox_snapshot_snapshots:        "{{ proxmox_vm_manage_snapshots }}"
   when: proxmox_vm_manage_snapshots | length > 0

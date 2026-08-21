@@ -9,16 +9,16 @@
     msg: >
       ACME plugin management requires root@pam password authentication
       (a PVE API restriction, not a limitation of this role) — set
-      proxmox_acme_api_user: root@pam and proxmox_acme_api_password.
+      proxmox_api_user: root@pam and proxmox_api_password.
       API tokens are not accepted for this operation.
-  when: proxmox_acme_api_user != 'root@pam' or not proxmox_acme_api_password
+  when: proxmox_api_user != 'root@pam' or not proxmox_api_password
 
 - name: plugin - create/update/delete ACME DNS challenge plugins
   community.proxmox.proxmox_acme_plugin_dns:
-    api_host:       "{{ proxmox_acme_api_host }}"
-    api_user:       "{{ proxmox_acme_api_user }}"
-    api_password:   "{{ proxmox_acme_api_password }}"
-    validate_certs: "{{ proxmox_acme_validate_certs }}"
+    api_host:       "{{ proxmox_api_host }}"
+    api_user:       "{{ proxmox_api_user }}"
+    api_password:   "{{ proxmox_api_password }}"
+    validate_certs: "{{ proxmox_validate_certs }}"
     state:  "{{ item.state | default('present') }}"
     name:   "{{ item.name }}"
     plugin: "{{ item.plugin | default(omit) }}"

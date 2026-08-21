@@ -5,34 +5,34 @@
 
 - name: info - query cluster status
   community.proxmox.proxmox_cluster_status_info:
-    api_host:         "{{ proxmox_lxc_api_host }}"
-    api_user:         "{{ proxmox_lxc_api_user }}"
-    api_password:     "{{ proxmox_lxc_api_password }}"
-    api_token_id:     "{{ proxmox_lxc_api_token_id }}"
-    api_token_secret: "{{ proxmox_lxc_api_token_secret }}"
-    validate_certs:   "{{ proxmox_lxc_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
   register: proxmox_lxc_cluster_status
   delegate_to: localhost
 
 - name: info - query node info
   community.proxmox.proxmox_node_info:
-    api_host:         "{{ proxmox_lxc_api_host }}"
-    api_user:         "{{ proxmox_lxc_api_user }}"
-    api_password:     "{{ proxmox_lxc_api_password }}"
-    api_token_id:     "{{ proxmox_lxc_api_token_id }}"
-    api_token_secret: "{{ proxmox_lxc_api_token_secret }}"
-    validate_certs:   "{{ proxmox_lxc_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
   register: proxmox_lxc_node_facts
   delegate_to: localhost
 
 - name: info - query storage info
   community.proxmox.proxmox_storage_info:
-    api_host:         "{{ proxmox_lxc_api_host }}"
-    api_user:         "{{ proxmox_lxc_api_user }}"
-    api_password:     "{{ proxmox_lxc_api_password }}"
-    api_token_id:     "{{ proxmox_lxc_api_token_id }}"
-    api_token_secret: "{{ proxmox_lxc_api_token_secret }}"
-    validate_certs:   "{{ proxmox_lxc_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
   register: proxmox_lxc_storage_facts
   delegate_to: localhost
 

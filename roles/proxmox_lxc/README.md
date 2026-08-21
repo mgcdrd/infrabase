@@ -28,17 +28,17 @@ Authentication
 ---------------
 
 Two methods are supported — set one pair of variables, leave the other unset.
-Both fall back to the shared `proxmox_api_token_id`/`_secret`/`_user`/
-`_password` vars, so setting those once covers every proxmox_* role:
+These are the same `proxmox_api_token_id`/`_secret`/`_user`/`_password`
+vars every `proxmox_*` role uses — set them once, not per role:
 
 ```yaml
 # API token (recommended)
-proxmox_lxc_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-proxmox_lxc_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
 
 # Password
-proxmox_lxc_api_user:     "root@pam"
-proxmox_lxc_api_password: "{{ vault_proxmox_api_password }}"
+proxmox_api_user:     "root@pam"
+proxmox_api_password: "{{ vault_proxmox_api_password }}"
 ```
 
 Unset `vault_*` variables resolve to `omit`, so only the pair you configure
@@ -52,11 +52,13 @@ Role Variables
 
 ### Connection
 
-Defaults from the shared `proxmox_api_*` vars (set those once for the whole
-play/inventory) — override only if this role needs a different node or credential.
+Every `proxmox_*` role in this collection uses the same `proxmox_api_*`
+vars — see `collections/infrabase/README.md`. Set them once for the whole
+play/inventory; a VM/CT lives on one node in one cluster, so there's
+nothing role-specific to override here.
 
 ```yaml
-proxmox_lxc_api_host: "pve2.example.com"   # any PVE node or the cluster VIP
+proxmox_api_host: "pve2.example.com"   # any PVE node or the cluster VIP
 ```
 
 ### Execution gates
@@ -162,9 +164,9 @@ Example Playbook — create a container from a template
   roles:
     - role: mgcdrd.infrabase.proxmox_lxc
       vars:
-        proxmox_lxc_api_host:         "pve2.example.com"
-        proxmox_lxc_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-        proxmox_lxc_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+        proxmox_api_host:         "pve2.example.com"
+        proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+        proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
         proxmox_lxc_do_create: true
         proxmox_lxc_node:       "pve2"
         proxmox_lxc_hostname:   "newct01"
@@ -187,9 +189,9 @@ Example Playbook — clone a container
   roles:
     - role: mgcdrd.infrabase.proxmox_lxc
       vars:
-        proxmox_lxc_api_host:         "pve2.example.com"
-        proxmox_lxc_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-        proxmox_lxc_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+        proxmox_api_host:         "pve2.example.com"
+        proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+        proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
         proxmox_lxc_do_clone: true
         proxmox_lxc_clone_source_name: "rocky9-lxc-template"
         proxmox_lxc_clone_hostname:    "newct02"
@@ -206,9 +208,9 @@ Example Playbook — tear down a container
   roles:
     - role: mgcdrd.infrabase.proxmox_lxc
       vars:
-        proxmox_lxc_api_host:         "pve2.example.com"
-        proxmox_lxc_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-        proxmox_lxc_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+        proxmox_api_host:         "pve2.example.com"
+        proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+        proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
         proxmox_lxc_do_lifecycle: true
         proxmox_lxc_target_name: "oldct01"
         proxmox_lxc_lifecycle_state: "absent"

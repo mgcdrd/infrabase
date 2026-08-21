@@ -19,7 +19,7 @@ Requires root@pam password authentication
 directly in the modules' own documentation, not a limitation this role
 introduces. API tokens are not accepted for these operations, even tokens
 issued to `root@pam`. Each of those three task files fails its precondition
-check if `proxmox_acme_api_user` isn't `root@pam` or `proxmox_acme_api_password`
+check if `proxmox_api_user` isn't `root@pam` or `proxmox_api_password`
 isn't set. `info` has no such restriction.
 
 
@@ -40,8 +40,8 @@ Authentication
 ---------------
 
 ```yaml
-proxmox_acme_api_user:     "root@pam"
-proxmox_acme_api_password: "{{ vault_proxmox_api_password }}"
+proxmox_api_user:     "root@pam"
+proxmox_api_password: "{{ vault_proxmox_api_password }}"
 ```
 
 There is no token-auth alternative for `account`/`plugin`/`certificate` —
@@ -54,11 +54,13 @@ Role Variables
 
 ### Connection
 
-Defaults from the shared `proxmox_api_*` vars (set those once for the whole
-play/inventory) — override only if this role needs a different node or credential.
+Every `proxmox_*` role in this collection uses the same `proxmox_api_*`
+vars — see `collections/infrabase/README.md`. Set them once for the whole
+play/inventory; a VM/CT lives on one node in one cluster, so there's
+nothing role-specific to override here.
 
 ```yaml
-proxmox_acme_api_host: "pve2.example.com"   # optional — overrides the shared proxmox_api_host
+proxmox_api_host: "pve2.example.com"
 ```
 
 ### Execution gates
@@ -159,9 +161,9 @@ Example Playbook — Cloudflare DNS-01 cert for a node
   roles:
     - role: mgcdrd.infrabase.proxmox_acme
       vars:
-        proxmox_acme_api_host:     "pve1.example.com"
-        proxmox_acme_api_user:     "root@pam"
-        proxmox_acme_api_password: "{{ vault_proxmox_api_password }}"
+        proxmox_api_host:     "pve1.example.com"
+        proxmox_api_user:     "root@pam"
+        proxmox_api_password: "{{ vault_proxmox_api_password }}"
         proxmox_acme_do_account: true
         proxmox_acme_do_plugin: true
         proxmox_acme_do_certificate: true

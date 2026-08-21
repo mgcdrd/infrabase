@@ -10,12 +10,12 @@
 # absent, which is a graceful no-op when it's already gone.
 - name: manage - create/delete/rollback snapshots
   community.proxmox.proxmox_snap:
-    api_host:         "{{ proxmox_snapshot_api_host }}"
-    api_user:         "{{ proxmox_snapshot_api_user }}"
-    api_password:     "{{ proxmox_snapshot_api_password }}"
-    api_token_id:     "{{ proxmox_snapshot_api_token_id }}"
-    api_token_secret: "{{ proxmox_snapshot_api_token_secret }}"
-    validate_certs:   "{{ proxmox_snapshot_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
     hostname:    "{{ item.hostname | default(omit) }}"
     vmid:        "{{ item.vmid | default(omit) }}"
     snapname:    "{{ item.snapname }}"

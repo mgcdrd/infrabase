@@ -57,6 +57,43 @@ It is designed for use with:
 
 ---
 
+## ProxMox API connection
+
+Every `proxmox_*` role talks to the PVE API through the exact same six
+variables — there's no role-prefixed variant of these anymore:
+
+```yaml
+proxmox_api_host: "pve2.example.com"   # any PVE node — it manages the whole cluster
+proxmox_api_user: "root@pam"
+proxmox_api_password: "{{ vault_proxmox_api_password }}"
+# or, recommended:
+proxmox_api_token_id: "{{ vault_proxmox_api_token_id }}"
+proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+proxmox_validate_certs: false
+```
+
+A VM/CT lives on one node in one cluster — it never has a different API
+endpoint or credential depending on which `proxmox_*` role happens to be
+acting on it, so there's nothing to override per role. Set these once
+(deployment `group_vars`/`vault.yml`, or `inventory-common` group_vars for
+a shared PVE cluster group) and every role in a play picks them up.
+Multiple PVE clusters are an inventory concern — a different host group
+with its own `proxmox_api_host` etc., not a per-role variable — see
+`inventory-common/README.md`.
+
+None of these vars have a collection-level default (the same way
+`vault_proxmox_api_password` never has) — an unset one fails loudly with
+an "undefined variable" error rather than silently talking to the wrong
+cluster.
+
+`proxmox_disk`/`proxmox_nic`/`proxmox_vm_manage` also target a specific VM
+by name — that one's legitimately per-invocation (a play can manage
+several different VMs), so it stays a role-prefixed var defaulting from
+the shared `proxmox_target_vm_name` — see each role's own README for
+"VM targeting".
+
+---
+
 ## Installation
 
 ### From Git (recommended for internal use)

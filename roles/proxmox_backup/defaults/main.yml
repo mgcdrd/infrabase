@@ -1,12 +1,6 @@
 ---
 # ---- ProxMox API connection ----
-# Resolves from the shared proxmox_api_* vars (set those once for the whole play/inventory); override the proxmox_<role>_api_* vars below only if this role must use a different node or credential.
-proxmox_backup_api_host:          "{{ proxmox_api_host | default('') }}"
-proxmox_backup_api_user:          "{{ proxmox_api_user | default('root@pam') }}"
-proxmox_backup_api_password:      "{{ proxmox_api_password | default(vault_proxmox_api_password | default(omit)) }}"
-proxmox_backup_api_token_id:      "{{ proxmox_api_token_id | default(vault_proxmox_api_token_id | default(omit)) }}"
-proxmox_backup_api_token_secret:  "{{ proxmox_api_token_secret | default(vault_proxmox_api_token_secret | default(omit)) }}"
-proxmox_backup_validate_certs:    "{{ proxmox_validate_certs | default(false) }}"
+# Uses the shared proxmox_api_* vars — see collections/infrabase/README.md.
 
 # ---- EXECUTION GATES ----
 proxmox_backup_do_info:       false   # tag: info
@@ -26,7 +20,7 @@ proxmox_backup_info_jobs:    false  # true = raw job list; false = per-VM parsed
 # ==============================================================
 # No community.proxmox module exists for this (confirmed against collection
 # 2.1.0 source) — handled via ansible.builtin.uri against /cluster/backup.
-# REQUIRES API TOKEN AUTH (proxmox_backup_api_token_id/secret) — this section
+# REQUIRES API TOKEN AUTH (proxmox_api_token_id/secret) — this section
 # doesn't implement the ticket+CSRF login flow password auth would need.
 #
 # `id` is required and used as the idempotency key — PVE auto-generates one

@@ -6,12 +6,12 @@
 
 - name: member - manage pool membership
   community.proxmox.proxmox_pool_member:
-    api_host:         "{{ proxmox_pool_api_host }}"
-    api_user:         "{{ proxmox_pool_api_user }}"
-    api_password:     "{{ proxmox_pool_api_password }}"
-    api_token_id:     "{{ proxmox_pool_api_token_id }}"
-    api_token_secret: "{{ proxmox_pool_api_token_secret }}"
-    validate_certs:   "{{ proxmox_pool_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
     poolid:     "{{ proxmox_pool_poolid }}"
     members:    "{{ proxmox_pool_members }}"
     state:      "{{ proxmox_pool_member_state }}"

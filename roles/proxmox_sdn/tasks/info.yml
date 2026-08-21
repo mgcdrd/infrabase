@@ -4,22 +4,22 @@
 
 - name: info - list SDN zones
   community.proxmox.proxmox_zone_info:
-    api_host:         "{{ proxmox_sdn_api_host }}"
-    api_user:         "{{ proxmox_sdn_api_user }}"
-    api_password:     "{{ proxmox_sdn_api_password }}"
-    api_token_id:     "{{ proxmox_sdn_api_token_id }}"
-    api_token_secret: "{{ proxmox_sdn_api_token_secret }}"
-    validate_certs:   "{{ proxmox_sdn_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
   register: proxmox_sdn_zone_facts
   delegate_to: localhost
 
 - name: info - list SDN vnets
   community.proxmox.proxmox_vnet_info:
-    api_host:         "{{ proxmox_sdn_api_host }}"
-    api_user:         "{{ proxmox_sdn_api_user }}"
-    api_password:     "{{ proxmox_sdn_api_password }}"
-    api_token_id:     "{{ proxmox_sdn_api_token_id }}"
-    api_token_secret: "{{ proxmox_sdn_api_token_secret }}"
-    validate_certs:   "{{ proxmox_sdn_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
   register: proxmox_sdn_vnet_facts
   delegate_to: localhost

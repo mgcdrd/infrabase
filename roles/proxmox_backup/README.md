@@ -44,12 +44,12 @@ Authentication
 ---------------
 
 ```yaml
-proxmox_backup_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-proxmox_backup_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
 ```
 
 `membership`, `run`, and `info` also accept password auth
-(`proxmox_backup_api_user`/`proxmox_backup_api_password`) like every other
+(`proxmox_api_user`/`proxmox_api_password`) like every other
 role in this collection, but `job` will fail its precondition check without
 a token. Grant the token `VM.Backup` + `Datastore.AllocateSpace` at minimum,
 plus `Sys.Modify` on `/` for `job` (job CRUD requires cluster-wide modify).
@@ -60,11 +60,13 @@ Role Variables
 
 ### Connection
 
-Defaults from the shared `proxmox_api_*` vars (set those once for the whole
-play/inventory) — override only if this role needs a different node or credential.
+Every `proxmox_*` role in this collection uses the same `proxmox_api_*`
+vars — see `collections/infrabase/README.md`. Set them once for the whole
+play/inventory; a VM/CT lives on one node in one cluster, so there's
+nothing role-specific to override here.
 
 ```yaml
-proxmox_backup_api_host: "pve2.example.com"   # optional — overrides the shared proxmox_api_host
+proxmox_api_host: "pve2.example.com"
 ```
 
 ### Execution gates
@@ -164,9 +166,9 @@ Example Playbook — create a weekly job and populate it
   roles:
     - role: mgcdrd.infrabase.proxmox_backup
       vars:
-        proxmox_backup_api_host:         "pve2.example.com"
-        proxmox_backup_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-        proxmox_backup_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+        proxmox_api_host:         "pve2.example.com"
+        proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+        proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
         proxmox_backup_do_job: true
         proxmox_backup_jobs:
           - id: backup-webtier
@@ -188,9 +190,9 @@ Example Playbook — add a newly-provisioned VM to an existing job
   roles:
     - role: mgcdrd.infrabase.proxmox_backup
       vars:
-        proxmox_backup_api_host:         "pve2.example.com"
-        proxmox_backup_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-        proxmox_backup_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+        proxmox_api_host:         "pve2.example.com"
+        proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+        proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
         proxmox_backup_do_membership: true
         proxmox_backup_membership:
           - vm_name: newhost02

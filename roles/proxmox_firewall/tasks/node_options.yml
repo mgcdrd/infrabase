@@ -6,12 +6,12 @@
 
 - name: node_options - set node-level firewall options
   community.proxmox.proxmox_node_firewall_options:
-    api_host:         "{{ proxmox_firewall_api_host }}"
-    api_user:         "{{ proxmox_firewall_api_user }}"
-    api_password:     "{{ proxmox_firewall_api_password }}"
-    api_token_id:     "{{ proxmox_firewall_api_token_id }}"
-    api_token_secret: "{{ proxmox_firewall_api_token_secret }}"
-    validate_certs:   "{{ proxmox_firewall_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
     node_name:  "{{ item.node_name }}"
     state:      "{{ item.state | default(omit) }}"
     log_level_in:      "{{ item.log_level_in | default(omit) }}"

@@ -13,12 +13,12 @@
 # remove the job entirely.
 - name: membership - toggle VM membership in an existing backup job
   community.proxmox.proxmox_backup_schedule:
-    api_host:         "{{ proxmox_backup_api_host }}"
-    api_user:         "{{ proxmox_backup_api_user }}"
-    api_password:     "{{ proxmox_backup_api_password }}"
-    api_token_id:     "{{ proxmox_backup_api_token_id }}"
-    api_token_secret: "{{ proxmox_backup_api_token_secret }}"
-    validate_certs:   "{{ proxmox_backup_validate_certs }}"
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password }}"
+    api_token_id:     "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
     vm_name:   "{{ item.vm_name | default(omit) }}"
     vm_id:     "{{ item.vm_id | default(omit) }}"
     backup_id: "{{ item.backup_id | default(omit) }}"

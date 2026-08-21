@@ -47,11 +47,11 @@ Authentication
 Two methods are supported — set one pair of variables, leave the other unset:
 
 ```yaml
-proxmox_node_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-proxmox_node_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
 # or
-proxmox_node_api_user:     "root@pam"
-proxmox_node_api_password: "{{ vault_proxmox_api_password }}"
+proxmox_api_user:     "root@pam"
+proxmox_api_password: "{{ vault_proxmox_api_password }}"
 ```
 
 Unset `vault_*` variables resolve to `omit`. Grant the token `Sys.Modify` +
@@ -63,11 +63,13 @@ Role Variables
 
 ### Connection
 
-Defaults from the shared `proxmox_api_*` vars (set those once for the whole
-play/inventory) — override only if this role needs a different node or credential.
+Every `proxmox_*` role in this collection uses the same `proxmox_api_*`
+vars — see `collections/infrabase/README.md`. Set them once for the whole
+play/inventory; a VM/CT lives on one node in one cluster, so there's
+nothing role-specific to override here.
 
 ```yaml
-proxmox_node_api_host: "pve2.example.com"   # optional — overrides the shared proxmox_api_host
+proxmox_api_host: "pve2.example.com"
 ```
 
 ### Execution gates
@@ -152,9 +154,9 @@ Example Playbook — poll a task started by another role
   roles:
     - role: mgcdrd.infrabase.proxmox_node
       vars:
-        proxmox_node_api_host:         "pve2.example.com"
-        proxmox_node_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-        proxmox_node_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+        proxmox_api_host:         "pve2.example.com"
+        proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+        proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
         proxmox_node_do_task: true
         proxmox_node_task_target: "pve2"
         proxmox_node_task_upid: "{{ some_prior_result.backups[0].upid }}"
@@ -173,9 +175,9 @@ Example Playbook — wake a node
   roles:
     - role: mgcdrd.infrabase.proxmox_node
       vars:
-        proxmox_node_api_host:         "pve1.example.com"   # any online node's API
-        proxmox_node_api_token_id:     "{{ vault_proxmox_api_token_id }}"
-        proxmox_node_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+        proxmox_api_host:         "pve1.example.com"   # any online node's API
+        proxmox_api_token_id:     "{{ vault_proxmox_api_token_id }}"
+        proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
         proxmox_node_do_power: true
         proxmox_node_target: "pve2"
         proxmox_node_power_state: "online"

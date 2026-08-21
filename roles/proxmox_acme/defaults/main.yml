@@ -1,15 +1,12 @@
 ---
 # ---- ProxMox API connection ----
-# Resolves from the shared proxmox_api_* vars (set those once for the whole play/inventory); override the proxmox_<role>_api_* vars below only if this role must use a different node or credential.
+# Uses the shared proxmox_api_* vars — see collections/infrabase/README.md.
+#
 # ACME account/plugin/certificate management requires root@pam PASSWORD
 # authentication — the underlying modules explicitly do not accept API
-# token auth for these operations. proxmox_acme_api_user therefore defaults
-# to root@pam, and account/plugin/certificate tasks fail their precondition
+# token auth for these operations. proxmox_api_user therefore must stay
+# root@pam, and account/plugin/certificate tasks fail their precondition
 # check if it's been changed or if no password is set.
-proxmox_acme_api_host:          "{{ proxmox_api_host | default('') }}"
-proxmox_acme_api_user:          "{{ proxmox_api_user | default('root@pam') }}"
-proxmox_acme_api_password:      "{{ proxmox_api_password | default(vault_proxmox_api_password | default(omit)) }}"
-proxmox_acme_validate_certs:    "{{ proxmox_validate_certs | default(false) }}"
 
 # ---- EXECUTION GATES ----
 proxmox_acme_do_info:        false   # tag: info
