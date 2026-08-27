@@ -40,15 +40,16 @@ a zone falls into this zone. **RedHat only.** Default: `public`.
 List of zone definitions. Each zone controls which interfaces it applies to
 and what traffic it permits.
 
-| Key | Required | Description |
-|-----|----------|-------------|
-| `name` | yes | firewalld zone name (RedHat) or logical label (Debian) |
-| `interfaces` | no | Interface names to assign to this zone. Empty = no explicit assignment (default zone). |
-| `allowed_tcp_ports` | no | TCP ports to allow inbound on this zone's interfaces. |
-| `allowed_udp_ports` | no | UDP ports to allow inbound on this zone's interfaces. |
-| `allowed_services` | no | firewalld named services to allow (e.g. `http`, `https`). **RedHat only.** |
-| `masquerade` | no | Enable source NAT for traffic forwarded out this zone's interfaces. Requires `interfaces` to be set. |
-| `forward_ports` | no | Port forwards (DNAT) into this zone. Requires `interfaces` to be set. |
+| Key                 | Required | Description                                                                                          |
+| ------------------- | -------- | ---------------------------------------------------------------------------------------------------- |
+| `name`              | yes      | firewalld zone name (RedHat) or logical label (Debian)                                               |
+| `interfaces`        | no       | Interface names to assign to this zone. Empty = no explicit assignment (default zone).               |
+| `allowed_tcp_ports` | no       | TCP ports to allow inbound on this zone's interfaces.                                                |
+| `allowed_udp_ports` | no       | UDP ports to allow inbound on this zone's interfaces.                                                |
+| `allowed_services`  | no       | firewalld named services to allow (e.g. `http`, `https`). **RedHat only.**                           |
+| `masquerade`        | no       | Enable source NAT for traffic forwarded out this zone's interfaces. Requires `interfaces` to be set. |
+| `forward_ports`     | no       | Port forwards (DNAT) into this zone. Requires `interfaces` to be set.                                |
+|                     |          |                                                                                                      |
 
 `forward_ports` entries:
 
@@ -210,6 +211,16 @@ Notes
   accepts. On RHEL, they map directly to `ansible.posix.firewalld`'s
   `masquerade` and `port_forward` parameters — additive, same as the rest of
   the RedHat path.
+- **NAT'ing an isolated network (e.g. a PXE/kickstart build network)**: no
+  separate "policy" object (firewalld's `--new-policy` +
+  `--add-ingress-zone`/`--add-egress-zone`) is needed or used here. Give the
+  isolated network its own zone (its interface, no inbound ports beyond what
+  provisioning needs — TFTP/DHCP/HTTP are opened by the service role, not
+  this one), and set `masquerade: true` on whichever zone is the actual
+  upstream/WAN interface. That's the whole thing — see "NAT gateway" above,
+  just with `lan` renamed to your build zone. Policy objects would only earn
+  their keep if you needed different forwarding rules per zone-pair; a
+  single shared uplink doesn't.
 - **nftables on RHEL**: firewalld uses nftables as its backend on RHEL 8+.
   Do not deploy a standalone nftables ruleset alongside firewalld on RHEL —
   the two will conflict.
