@@ -23,7 +23,7 @@ _postfix_os_vars:
   RedHat:
     packages:
       - postfix
-      - mailx
+      - s-nail
     sasl_packages:
       - cyrus-sasl-plain
     daemon_directory: /usr/libexec/postfix
