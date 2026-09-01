@@ -1,0 +1,3 @@
+---
+# No handlers — the service is enabled/started directly, no config file to
+# reload.

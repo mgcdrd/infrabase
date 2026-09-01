@@ -1,0 +1,4 @@
+---
+# No configurable variables — installs qemu-guest-agent and enables the
+# service. Target this role at QEMU/Proxmox VM guests only, never at
+# hypervisor nodes or bare-metal hosts.
