@@ -9,9 +9,22 @@ firewall_default_zone: public
 #
 # interfaces:         list of interface names to assign to this zone.
 #                     Empty list = no explicit assignment (traffic hits the default zone).
+# sources:            list of source CIDRs/addresses bound to this zone (RedHat
+#                     only, firewalld --add-source). Traffic from these sources
+#                     gets this zone's whole ruleset, the same as arriving on one
+#                     of the zone's interfaces. OR'd with interfaces.
 # allowed_tcp_ports:  TCP ports to allow inbound on this zone's interfaces.
 # allowed_udp_ports:  UDP ports to allow inbound on this zone's interfaces.
 # allowed_services:   firewalld named services (e.g. http, https). RedHat only.
+# source_rules:       source-scoped accepts (RedHat only, emitted as rich rules).
+#                     Unlike sources above, these AND the source with a specific
+#                     port/service — use them to expose a port to some networks
+#                     only without giving those networks the whole zone. Each entry:
+#                       sources:   list of source CIDRs/addresses (v4 or v6)
+#                       tcp_ports: TCP ports to allow from those sources
+#                       udp_ports: UDP ports to allow from those sources
+#                       services:  firewalld named services to allow from them
+#                     Ignored on Debian (logs a warning).
 # masquerade:         Enable source NAT (masquerade) for traffic forwarded out
 #                     this zone's interfaces. Requires interfaces to be set.
 # forward_ports:      Port forwards (DNAT) into this zone. Requires interfaces

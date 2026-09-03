@@ -19,6 +19,18 @@
   loop: "{{ firewall_zones | subelements('interfaces', skip_missing=True) }}"
   when: ansible_facts['os_family'] == 'RedHat'
 
+- name: firewall configure - Bind sources to zones (RedHat)
+  # firewalld --add-source: traffic from these CIDRs gets the zone's full
+  # ruleset, same as arriving on one of its interfaces (OR'd with interfaces).
+  ansible.posix.firewalld:
+    zone:      "{{ item.0.name }}"
+    source:    "{{ item.1 }}"
+    state:     enabled
+    permanent: true
+    immediate: true
+  loop: "{{ firewall_zones | subelements('sources', skip_missing=True) }}"
+  when: ansible_facts['os_family'] == 'RedHat'
+
 - name: firewall configure - Allow TCP ports per zone (RedHat)
   ansible.posix.firewalld:
     zone:      "{{ item.0.name }}"
@@ -73,6 +85,46 @@
   loop: "{{ firewall_zones | subelements('forward_ports', skip_missing=True) }}"
   when: ansible_facts['os_family'] == 'RedHat'
 
+- name: firewall configure - Build source-scoped rich rules (RedHat)
+  # zone.source_rules ANDs a source with a specific port/service. This is a
+  # zone -> source_rules -> sources x {tcp,udp,services} fan-out that
+  # subelements can't express, so render it to YAML and parse it back into a
+  # flat {zone, rule} list. Family is picked per address (':' => ipv6) because
+  # a rich rule's family must match its source.
+  ansible.builtin.set_fact:
+    _firewall_source_rich_rules: "{{ _firewall_source_rich_rules_yaml | from_yaml | default([], true) }}"
+  vars:
+    _firewall_source_rich_rules_yaml: |
+      {% for z in firewall_zones %}
+      {% for r in z.source_rules | default([]) %}
+      {% for s in r.sources | default([]) %}
+      {% for p in r.tcp_ports | default([]) %}
+      - zone: "{{ z.name }}"
+        rule: 'rule family="{{ "ipv6" if ":" in s else "ipv4" }}" source address="{{ s }}" port port="{{ p }}" protocol="tcp" accept'
+      {% endfor %}
+      {% for p in r.udp_ports | default([]) %}
+      - zone: "{{ z.name }}"
+        rule: 'rule family="{{ "ipv6" if ":" in s else "ipv4" }}" source address="{{ s }}" port port="{{ p }}" protocol="udp" accept'
+      {% endfor %}
+      {% for svc in r.services | default([]) %}
+      - zone: "{{ z.name }}"
+        rule: 'rule family="{{ "ipv6" if ":" in s else "ipv4" }}" source address="{{ s }}" service name="{{ svc }}" accept'
+      {% endfor %}
+      {% endfor %}
+      {% endfor %}
+      {% endfor %}
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: firewall configure - Apply source-scoped rich rules (RedHat)
+  ansible.posix.firewalld:
+    zone:      "{{ item.zone }}"
+    rich_rule: "{{ item.rule }}"
+    state:     enabled
+    permanent: true
+    immediate: true
+  loop: "{{ _firewall_source_rich_rules | default([]) }}"
+  when: ansible_facts['os_family'] == 'RedHat'
+
 - name: firewall configure - Assign loopback interface to trusted zone (RedHat)
   ansible.posix.firewalld:
     zone:      trusted
@@ -115,6 +167,21 @@
   when: ansible_facts['os_family'] == 'RedHat'
 
 # --- Debian: nftables ---
+
+- name: firewall configure - Warn that source firewalling is RedHat-only (Debian)
+  ansible.builtin.debug:
+    msg: >-
+      firewall: 'sources' / 'source_rules' set on zone(s)
+      {{ _firewall_src_zones | join(', ') }} are not implemented on the nftables
+      (Debian) path yet and are ignored. Port/interface rules still apply.
+  vars:
+    _firewall_src_zones: >-
+      {{ ((firewall_zones | selectattr('sources', 'defined') | selectattr('sources') | map(attribute='name') | list)
+          + (firewall_zones | selectattr('source_rules', 'defined') | selectattr('source_rules') | map(attribute='name') | list))
+         | unique }}
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - _firewall_src_zones | length > 0
 
 - name: firewall configure - Deploy nftables ruleset (Debian)
   ansible.builtin.template:

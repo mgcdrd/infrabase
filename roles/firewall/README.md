@@ -44,12 +44,23 @@ and what traffic it permits.
 | ------------------- | -------- | ---------------------------------------------------------------------------------------------------- |
 | `name`              | yes      | firewalld zone name (RedHat) or logical label (Debian)                                               |
 | `interfaces`        | no       | Interface names to assign to this zone. Empty = no explicit assignment (default zone).               |
+| `sources`           | no       | Source CIDRs/addresses bound to this zone (firewalld `--add-source`). Traffic from them gets the zone's whole ruleset, same as arriving on one of its interfaces (OR'd with `interfaces`). **RedHat only.** |
 | `allowed_tcp_ports` | no       | TCP ports to allow inbound on this zone's interfaces.                                                |
 | `allowed_udp_ports` | no       | UDP ports to allow inbound on this zone's interfaces.                                                |
 | `allowed_services`  | no       | firewalld named services to allow (e.g. `http`, `https`). **RedHat only.**                           |
+| `source_rules`      | no       | Source-scoped accepts — AND a source with a specific port/service instead of granting the whole zone. Emitted as rich rules. **RedHat only** (Debian logs a warning and ignores them). |
 | `masquerade`        | no       | Enable source NAT for traffic forwarded out this zone's interfaces. Requires `interfaces` to be set. |
 | `forward_ports`     | no       | Port forwards (DNAT) into this zone. Requires `interfaces` to be set.                                |
 |                     |          |                                                                                                      |
+
+`source_rules` entries:
+
+| Key | Required | Description |
+|-----|----------|-------------|
+| `sources` | yes | Source CIDRs/addresses (v4 or v6) the rule matches on. |
+| `tcp_ports` | no | TCP ports to accept from those sources. |
+| `udp_ports` | no | UDP ports to accept from those sources. |
+| `services` | no | firewalld named services to accept from those sources. |
 
 `forward_ports` entries:
 
@@ -179,6 +190,25 @@ firewall_zones:
         to_addr: 10.0.0.5
 ```
 
+**Source-based (RedHat only) — trust a management network, expose metrics to it only:**
+
+```yaml
+firewall_zones:
+  - name: public
+    interfaces: []
+    allowed_tcp_ports: [22, 443]     # open to everyone
+    source_rules:
+      - sources: [10.20.0.0/16, 2001:db8:20::/48]
+        tcp_ports: [9100, 9090]      # node_exporter / prometheus: mgmt net only
+  - name: internal               # whole ruleset, but only for these sources
+    sources: [10.99.0.0/24]      # jump hosts / admin subnet
+    allowed_tcp_ports: [22, 5432, 6379]
+```
+
+`sources` binds the CIDR to the zone (the zone's full ruleset applies to it).
+`source_rules` is narrower — it opens just the listed ports/services to the
+listed sources without granting them the rest of the zone.
+
 
 Notes
 -----
@@ -190,6 +220,12 @@ Notes
 - **Debian / atomic behaviour**: The nftables ruleset is fully replaced from
   the template on every run. Removing a zone or port takes effect on the next
   play.
+- **Source-based rules are RedHat-only for now**: `sources` and `source_rules`
+  are applied via `firewalld` (`--add-source` and rich rules respectively). The
+  nftables template does not yet emit source matches — on Debian the role logs
+  a warning naming the affected zones and applies the port/interface rules
+  only. `source_rules` rich rules are additive like the rest of the RedHat
+  path; revoke a stale one with `firewall-cmd --remove-rich-rule=... --permanent`.
 - **SSH lockout**: The default zone includes port 22. If your `sshd_port`
   differs from 22, update `firewall_zones` before applying or you will lose
   SSH access when nftables reloads.
