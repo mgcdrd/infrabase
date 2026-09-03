@@ -1,4 +1,20 @@
 ---
-# No configurable variables — installs qemu-guest-agent and enables the
-# service. Target this role at QEMU/Proxmox VM guests only, never at
-# hypervisor nodes or bare-metal hosts.
+# Installs qemu-guest-agent and enables the service. Target this role at
+# QEMU/Proxmox VM guests only, never at hypervisor nodes or bare-metal hosts.
+
+# Skip the role when running inside a container (LXC, systemd-nspawn,
+# Docker, etc.). qemu-guest-agent needs a virtio-serial transport that only
+# a full QEMU/KVM VM provides, so its service fails to start in a container.
+# Set false to force the install anyway (e.g. a privileged LXC that proxies
+# the channel).
+qemu_guest_agent_skip_in_container: true
+
+# Virtualization types (ansible_facts['virtualization_type']) treated as a
+# container for the skip above.
+qemu_guest_agent_container_virt_types:
+  - lxc
+  - systemd-nspawn
+  - docker
+  - podman
+  - container
+  - openvz

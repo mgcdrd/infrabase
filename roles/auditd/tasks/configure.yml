@@ -59,6 +59,10 @@
     cmd: grubby --info=DEFAULT
   register: _grubby_info
   changed_when: false
+  # A host with no bootloader entries or no grubby (some cloud/container
+  # images) shouldn't abort the role — the boot-args update below is gated
+  # on this having succeeded.
+  failed_when: false
   when: ansible_facts['os_family'] == 'RedHat'
 
 - name: auditd configure - Enable audit at boot (RedHat only)
@@ -66,5 +70,6 @@
     cmd: /sbin/grubby --update-kernel=ALL --args="audit=1 audit_backlog_limit=8192"
   when:
     - ansible_facts['os_family'] == 'RedHat'
+    - _grubby_info.rc == 0
     - "'audit=1' not in _grubby_info.stdout"
   changed_when: true

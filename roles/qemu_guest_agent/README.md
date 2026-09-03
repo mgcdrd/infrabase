@@ -18,6 +18,11 @@ This role is for QEMU/Proxmox **VM guests only**. Do not apply it to
 hypervisor nodes (`proxmox_ve` group) or bare-metal hosts — the agent has
 nothing to talk to outside a QEMU guest.
 
+Inside a container (LXC, `systemd-nspawn`, Docker) the role self-skips:
+`qemu-guest-agent` needs a virtio-serial channel that only a full QEMU/KVM
+guest exposes, so its service can't start in a container. Detection is on
+`ansible_facts['virtualization_type']` / `virtualization_role`.
+
 Requirements
 ------------
 
@@ -29,7 +34,12 @@ correct package manager.
 Role Variables
 ---------------
 
-None. The role applies the same install-and-enable behavior on every
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `qemu_guest_agent_skip_in_container` | `true` | Skip the role when running inside a container. Set `false` to force the install (e.g. a privileged LXC that proxies the channel). |
+| `qemu_guest_agent_container_virt_types` | `[lxc, systemd-nspawn, docker, podman, container, openvz]` | `virtualization_type` values treated as a container. |
+
+Otherwise the role applies the same install-and-enable behavior on every
 supported OS family.
 
 Dependencies

@@ -116,8 +116,10 @@ Notes
 - `augenrules --load` is available on both Debian and RedHat via the
   `auditd` / `audit` package.
 - The `grubby` boot-time audit flag task only runs on RedHat family and is
-  skipped if `audit=1` is already present in the default kernel args. Debian
-  manages this via GRUB configuration separately.
+  skipped if `audit=1` is already present in the default kernel args, or if
+  `grubby` / a bootloader entry isn't present (some cloud/container images) —
+  the check tolerates failure and the update is gated on it having succeeded.
+  Debian manages this via GRUB configuration separately.
 - Rule paths that don't exist on the target (e.g. SELinux paths on Debian)
   are silently ignored by auditd.
 - The role uses `ansible_userspace_bits` to correctly emit b32/b64 rules.

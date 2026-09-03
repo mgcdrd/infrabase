@@ -3,4 +3,12 @@
 - name: sysctl reload
   ansible.builtin.command:
     cmd: sysctl --system
+  register: _sysctl_reload
   changed_when: true
+  # `sysctl --system` exits non-zero if any single key can't be set. Tolerate
+  # keys that are read-only in this namespace (unprivileged container, or a
+  # locked-down host) but still fail on a real syntax/parse error.
+  failed_when: >-
+    _sysctl_reload.rc != 0
+    and 'Read-only file system' not in _sysctl_reload.stderr
+    and 'cannot stat' not in _sysctl_reload.stderr

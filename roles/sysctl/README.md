@@ -94,7 +94,10 @@ Notes
 
 - Multiple roles can safely call this on the same host as long as each uses a
   distinct `sysctl_conf_file`.
-- Parameters are written exactly as given — no validation is performed. Invalid
-  parameter names will cause `sysctl --system` to emit warnings but will not
-  fail the play.
+- Parameters are written exactly as given — no validation is performed.
+- The `sysctl --system` reload tolerates keys that are read-only in the current
+  namespace (unprivileged container, or a locked-down host) — those emit a
+  warning but don't fail the play. A genuine parse error still fails. Don't
+  call this role at all inside a container where the whole set is read-only;
+  gate it on `ansible_facts['virtualization_role']` in the caller.
 - The role is a no-op when `sysctl_params` is empty.
