@@ -143,6 +143,43 @@ Issued certs are deployed to `{{ acme_sh_cert_base_dir }}/{{ primary_domain }}/`
 | `fullchain.pem` | Cert + intermediates (not deployed with `complete_chain`) |
 | `ca.pem`        | Intermediate CA chain, or the complete rooted chain with `complete_chain` |
 
+For a multi-domain cert, `{{ primary_domain }}` is always the *first* entry
+in `domains:` — every other domain/SAN on that cert gets a directory symlink
+under `acme_sh_cert_base_dir` pointing back at the primary domain's
+directory. This is for consumers that build a cert path from their own
+FQDN rather than `acme_sh_certs[].domains[0]` — e.g.
+`{{ acme_sh_cert_base_dir }}/{{ inventory_hostname }}/...` on a host whose
+inventory name is a SAN, not the cert's primary domain. With
+`domains: [proxy.example.com, admin.example.com]`, both
+`{{ acme_sh_cert_base_dir }}/proxy.example.com/fullchain.pem` and
+`{{ acme_sh_cert_base_dir }}/admin.example.com/fullchain.pem` resolve to the
+same files. Removed along with the primary directory when `state: absent`.
+
+### Flat per-FQDN symlinks (`acme_sh_flat_ssl_dir`)
+
+Some consumers select a cert per-connection off a variable instead of a
+fixed path — e.g. nginx's `ssl_certificate`/`ssl_certificate_key` set to a
+path built from `$ssl_server_name` so one shared config resolves a
+different cert per SNI hostname:
+
+```nginx
+ssl_certificate     /etc/nginx/ssl/$ssl_server_name.crt;
+ssl_certificate_key /etc/nginx/ssl/$ssl_server_name.key;
+```
+
+That needs a flat, FQDN-named file — not the
+`<acme_sh_cert_base_dir>/<domain>/<generic-name>` layout above. Set
+`acme_sh_flat_ssl_dir` (default `""`, disabled) to also symlink
+`<dir>/<domain>.crt` and `<dir>/<domain>.key` for **every** domain on
+**every** cert — primary included, not just SANs — to that cert's
+fullchain.pem (or ca.pem with `complete_chain`) and key.pem. Directory is
+created (`0750`, root:root) if it doesn't exist. Removed along with the
+rest of that cert's files when `state: absent`.
+
+Using variables in `ssl_certificate`/`ssl_certificate_key` means nginx
+reads the files per-connection rather than preloading them at config
+parse, and disables OCSP stapling on that listener.
+
 ### Complete chain
 
 With `complete_chain: true`, `ca.pem` receives the full chain instead of

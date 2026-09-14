@@ -6,6 +6,15 @@
 # Under this dir the role creates one subdirectory per primary domain.
 acme_sh_cert_base_dir: /etc/ssl/acme
 
+# Opt-in: when set, also symlinks <this dir>/<domain>.crt and .key for
+# EVERY domain on EVERY cert (primary and SANs alike) to that cert's
+# fullchain.pem/ca.pem and key.pem. For consumers that select a cert per
+# connection off a variable (e.g. nginx's ssl_certificate/ssl_certificate_key
+# set to a path built from $ssl_server_name) rather than a fixed path — they
+# need a flat, FQDN-named file, not the <acme_sh_cert_base_dir>/<domain>/
+# layout above. Leave "" to skip (default).
+acme_sh_flat_ssl_dir: ""
+
 # ---- ACCOUNT ----
 
 acme_sh_email: ""    # ACME account registration email — required

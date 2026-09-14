@@ -13,6 +13,7 @@
     _acme_primary:  "{{ _acme_domains | first }}"
     _acme_state:    "{{ _cert.state | default('present') }}"
     _acme_cert_dir: "{{ acme_sh_cert_base_dir }}/{{ _acme_domains | first }}"
+    _acme_chain_file: "{{ 'ca.pem' if (_cert.complete_chain | default(false) | bool) else 'fullchain.pem' }}"
 
 # Reset every iteration so credentials don't bleed from a dns_cf/dns_pdns
 # cert into a subsequent cert that uses a different challenge.
@@ -78,6 +79,28 @@
     path: "{{ _acme_cert_dir }}"
     state: absent
   when: _acme_state == 'absent'
+
+- name: "acme_sh cert - Remove non-primary domain symlinks for {{ _acme_primary }}"
+  become: true
+  ansible.builtin.file:
+    path:  "{{ acme_sh_cert_base_dir }}/{{ item }}"
+    state: absent
+  loop: "{{ _acme_domains[1:] }}"
+  when:
+    - _acme_state == 'absent'
+    - _acme_domains | length > 1
+
+- name: "acme_sh cert - Remove flat per-FQDN cert/key symlinks for {{ _acme_primary }}"
+  become: true
+  ansible.builtin.file:
+    path:  "{{ acme_sh_flat_ssl_dir }}/{{ item[0] }}.{{ item[1] }}"
+    state: absent
+  loop: "{{ _acme_domains | product(['crt', 'key']) | list }}"
+  loop_control:
+    label: "{{ item[0] }}.{{ item[1] }}"
+  when:
+    - _acme_state == 'absent'
+    - acme_sh_flat_ssl_dir | length > 0
 
 # ---- PRESENT: issue or renew ----
 
@@ -205,3 +228,52 @@
     - _acme_issue.rc == 0 or _acme_registered.rc != 0
     - _cert.complete_chain | default(false) | bool
   changed_when: true
+
+# Cert files only live under _acme_cert_dir (named for the primary/first
+# domain) — a consumer that builds its cert path from its own server name
+# (e.g. nginx's per-vhost ssl_cert_path) finds nothing there for any other
+# domain on this cert. Symlink every additional domain back to the primary
+# domain's directory so a lookup by any name on the cert resolves the same
+# files.
+- name: "acme_sh cert - Symlink non-primary domains to {{ _acme_primary }}"
+  become: true
+  ansible.builtin.file:
+    src:   "{{ _acme_primary }}"
+    dest:  "{{ acme_sh_cert_base_dir }}/{{ item }}"
+    state: link
+    force: true
+  loop: "{{ _acme_domains[1:] }}"
+  when:
+    - _acme_state == 'present'
+    - _acme_domains | length > 1
+
+# Opt-in (acme_sh_flat_ssl_dir): a consumer that selects a cert per
+# connection off a variable (nginx's ssl_certificate/ssl_certificate_key
+# set to a path built from $ssl_server_name) needs a flat, FQDN-named file
+# instead of the <acme_sh_cert_base_dir>/<domain>/<generic-name> layout
+# above — one per domain on the cert, primary included.
+- name: "acme_sh cert - Ensure flat SSL dir exists"
+  become: true
+  ansible.builtin.file:
+    path:  "{{ acme_sh_flat_ssl_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode:  "0750"
+  when:
+    - _acme_state == 'present'
+    - acme_sh_flat_ssl_dir | length > 0
+
+- name: "acme_sh cert - Symlink flat per-FQDN cert/key for {{ _acme_primary }}"
+  become: true
+  ansible.builtin.file:
+    src:   "{{ _acme_cert_dir }}/{{ 'key.pem' if item[1] == 'key' else _acme_chain_file }}"
+    dest:  "{{ acme_sh_flat_ssl_dir }}/{{ item[0] }}.{{ item[1] }}"
+    state: link
+    force: true
+  loop: "{{ _acme_domains | product(['crt', 'key']) | list }}"
+  loop_control:
+    label: "{{ item[0] }}.{{ item[1] }}"
+  when:
+    - _acme_state == 'present'
+    - acme_sh_flat_ssl_dir | length > 0
