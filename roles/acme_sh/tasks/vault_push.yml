@@ -1,0 +1,49 @@
+---
+
+# Included from manage_cert.yml's per-cert loop — _acme_primary,
+# _acme_cert_dir, _acme_chain_file, _acme_domains, and _cert (loop var)
+# are all in scope from there.
+
+- name: "acme_sh cert - Slurp cert files for Vault push ({{ _acme_primary }})"
+  become: true
+  ansible.builtin.slurp:
+    src: "{{ _acme_cert_dir }}/{{ item.file }}"
+  loop:
+    - { key: cert, file: cert.pem }
+    - { key: key, file: key.pem }
+    - { key: chain, file: "{{ _acme_chain_file }}" }
+  loop_control:
+    label: "{{ item.file }}"
+  register: _acme_vault_push_slurp
+  no_log: true
+
+- name: "acme_sh cert - Determine Vault chain field name for {{ _acme_primary }}"
+  become: false
+  ansible.builtin.set_fact:
+    _acme_vault_chain_field: "{{ 'ca' if _acme_chain_file == 'ca.pem' else 'fullchain' }}"
+
+# auth_method/role_id/secret_id are passed explicitly because this is a
+# community.hashi_vault *module*, not a lookup plugin — only lookup plugins
+# get the declarative ANSIBLE_HASHI_VAULT_* env-var fallback. Mirrors
+# foreman_install's ipa.yml and google_publicca_eab's generate.yml.
+- name: "acme_sh cert - Write {{ _acme_primary }} to Vault"
+  community.hashi_vault.vault_kv2_write:
+    url: "{{ acme_sh_vault_addr }}"
+    engine_mount_point: "{{ acme_sh_vault_kv_mount }}"
+    path: "{{ acme_sh_vault_kv_path_prefix }}/{{ _acme_primary }}"
+    data: >-
+      {{
+        {
+          'cert': _acme_vault_push_slurp.results[0].content | b64decode,
+          'key': _acme_vault_push_slurp.results[1].content | b64decode,
+          'domains': _acme_domains,
+          'complete_chain': _cert.complete_chain | default(false) | bool,
+          'issued_at': lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%SZ'),
+        } | combine({_acme_vault_chain_field: _acme_vault_push_slurp.results[2].content | b64decode})
+      }}
+    auth_method: "{{ lookup('env', 'ANSIBLE_HASHI_VAULT_AUTH_METHOD') or 'token' }}"
+    role_id: "{{ lookup('env', 'ANSIBLE_HASHI_VAULT_ROLE_ID') or omit }}"
+    secret_id: "{{ lookup('env', 'ANSIBLE_HASHI_VAULT_SECRET_ID') or omit }}"
+  delegate_to: localhost
+  become: false
+  no_log: true

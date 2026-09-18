@@ -1,0 +1,7 @@
+---
+
+- name: acme_sh vault_deploy reload
+  become: true
+  ansible.builtin.shell:
+    cmd: "{{ acme_sh_vault_deploy_reload_cmd }}"
+  when: acme_sh_vault_deploy_reload_cmd | length > 0

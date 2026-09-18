@@ -1,0 +1,55 @@
+#!/bin/bash
+#=============DO NOT EDIT - ANSIBLE CONTROLLED===============
+# Pushes one acme.sh cert to Vault via the acme-sh-vault-push AppRole.
+# Used as (part of) a cert's reload_cmd so acme.sh's own cron-triggered
+# renewals — invisible to Ansible entirely — still update Vault.
+#
+# Usage: acme-sh-vault-push.sh <primary-domain> [chain-field]
+#   chain-field: fullchain (default) | ca — must match that cert's
+#   complete_chain setting (ca.pem for complete_chain: true).
+#
+# Only pushes the primary domain's SAN entry — a multi-domain cert's full
+# SAN list is only known to Ansible's own vault_push.yml, which already
+# covers the Ansible-triggered path this script exists to complement.
+set -euo pipefail
+
+DOMAIN="${1:?usage: acme-sh-vault-push.sh <primary-domain> [chain-field]}"
+CHAIN_FIELD="${2:-fullchain}"
+CERT_DIR="{{ acme_sh_cert_base_dir }}/${DOMAIN}"
+CHAIN_FILE="fullchain.pem"
+COMPLETE_CHAIN="false"
+if [ "$CHAIN_FIELD" = "ca" ]; then
+  CHAIN_FILE="ca.pem"
+  COMPLETE_CHAIN="true"
+fi
+
+VAULT_ADDR="{{ acme_sh_vault_addr }}"
+ROLE_ID="$(cat {{ acme_sh_vault_role_id_file }})"
+SECRET_ID="$(cat {{ acme_sh_vault_secret_id_file }})"
+
+TOKEN="$(curl -sf --request POST \
+  --data "{\"role_id\":\"${ROLE_ID}\",\"secret_id\":\"${SECRET_ID}\"}" \
+  "${VAULT_ADDR}/v1/auth/approle/login" | jq -r '.auth.client_token')"
+
+if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+  echo "acme-sh-vault-push: AppRole login failed" >&2
+  exit 1
+fi
+
+CERT="$(cat "${CERT_DIR}/cert.pem")"
+KEY="$(cat "${CERT_DIR}/key.pem")"
+CHAIN="$(cat "${CERT_DIR}/${CHAIN_FILE}")"
+
+PAYLOAD="$(jq -n \
+  --arg cert "$CERT" \
+  --arg key "$KEY" \
+  --arg chain "$CHAIN" \
+  --arg chain_field "$CHAIN_FIELD" \
+  --arg domain "$DOMAIN" \
+  --argjson complete_chain "$COMPLETE_CHAIN" \
+  '{data: ({cert: $cert, key: $key, domains: [$domain], complete_chain: $complete_chain, issued_at: (now | todate)} + {($chain_field): $chain})}')"
+
+curl -sf --header "X-Vault-Token: ${TOKEN}" \
+  --request POST \
+  --data "${PAYLOAD}" \
+  "${VAULT_ADDR}/v1/{{ acme_sh_vault_kv_mount }}/data/{{ acme_sh_vault_kv_path_prefix }}/${DOMAIN}" > /dev/null

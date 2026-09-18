@@ -18,6 +18,20 @@
     fail_msg: "acme_sh_eab_kid and acme_sh_eab_hmac_key must both be set when acme_sh_eab_enabled is true."
   when: acme_sh_eab_enabled
 
+- name: acme_sh preflight - Assert Vault vars present when Vault fan-out is enabled
+  become: false
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - acme_sh_vault_addr | length > 0
+      - acme_sh_vault_kv_mount | length > 0
+      - acme_sh_vault_kv_path_prefix | length > 0
+      - acme_sh_issuer_host | length > 0
+    fail_msg: >-
+      acme_sh_vault_addr, acme_sh_vault_kv_mount, acme_sh_vault_kv_path_prefix,
+      and acme_sh_issuer_host must all be set when acme_sh_vault_kv_enabled is true.
+  when: acme_sh_vault_kv_enabled
+
 # Google Public CA requires EAB to register an account. If no local
 # account exists yet (fresh host, or one recovering from lost
 # /root/.acme.sh state) and acme_sh_eab_enabled wasn't set, --issue would

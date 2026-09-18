@@ -91,3 +91,42 @@ acme_sh_keylength: "2048"
 #     root_urls: []           # per-cert override of acme_sh_root_urls
 #     state: present          # present (default) | absent
 acme_sh_certs: []
+
+# ---- ISSUER + VAULT FAN-OUT (opt-in) ----
+# By default every host in acme_sh_certs' target group issues/renews its own
+# certs independently — fine for a single host, but N hosts hitting the same
+# domain set each burns against Let's Encrypt's 5-duplicate-certs/week limit
+# N times as fast. Set acme_sh_vault_kv_enabled to centralize issuance on
+# one host and fan the result out to the rest via Vault.
+
+# When unset, every host issues (today's behavior, unchanged). Set to a
+# single literal hostname (never a group lookup like groups[...] | first —
+# inventory reordering must never silently move who issues) to make only
+# that host run install.yml/account.yml/manage_cert.yml; every other host
+# instead pulls from Vault via tasks_from: vault_deploy.yml.
+acme_sh_issuer_host: "{{ inventory_hostname }}"
+
+# Master switch. False (default): no Vault interaction anywhere in this
+# role — zero behavior change for every existing consumer.
+acme_sh_vault_kv_enabled: false
+
+# HashiCorp Vault address, KV mount, and path prefix certs are written
+# under (one sub-path per primary domain: <prefix>/<primary-domain>). All
+# three required when acme_sh_vault_kv_enabled — composed explicitly at
+# the deployment layer, same convention as google_publicca_eab.
+acme_sh_vault_addr: ""
+acme_sh_vault_kv_mount: ""
+acme_sh_vault_kv_path_prefix: ""
+
+# AppRole role_id/secret_id files consumed by acme-sh-vault-push.sh at
+# runtime (cron-triggered renewals, invisible to Ansible) — pre-positioned
+# on the issuer host by the identity build, same convention as ups_shed's
+# /etc/vault/ups-shutdown-role-id/-secret-id. This role does not create
+# them.
+acme_sh_vault_role_id_file: /etc/vault/acme-sh-role-id
+acme_sh_vault_secret_id_file: /etc/vault/acme-sh-secret-id
+
+# Command run on non-issuer hosts when a Vault-deployed cert/key file
+# actually changes (e.g. "systemctl reload nginx"). Left role-agnostic —
+# the issuer's own reload still comes from each cert's reload_cmd.
+acme_sh_vault_deploy_reload_cmd: ""

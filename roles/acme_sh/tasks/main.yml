@@ -6,9 +6,11 @@
 
 - name: acme_sh - Install acme.sh
   ansible.builtin.import_tasks: install.yml
+  when: inventory_hostname == acme_sh_issuer_host
 
 - name: acme_sh - Register account and set default CA
   ansible.builtin.import_tasks: account.yml
+  when: inventory_hostname == acme_sh_issuer_host
 
 - name: acme_sh - Manage certificates
   ansible.builtin.include_tasks: manage_cert.yml
@@ -16,3 +18,4 @@
   loop_control:
     loop_var: _cert
     label: "{{ ([_cert.domain] if _cert.domain is defined else _cert.domains) | first }}"
+  when: inventory_hostname == acme_sh_issuer_host

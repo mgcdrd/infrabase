@@ -1,0 +1,76 @@
+---
+
+# Invoked via tasks_from: vault_deploy.yml — independent of main.yml's
+# issuer gating, runs on every node this is included for (see
+# nginx/tasks/config.yml, which calls this only on non-issuer hosts).
+# Fetches what the issuer already pushed via vault_push.yml/
+# acme-sh-vault-push.sh and lays it down as the same flat
+# <domain>.crt/.key layout acme_sh_flat_ssl_dir produces locally, so
+# consumers (e.g. nginx's $ssl_server_name lookup) see identical output
+# regardless of which node actually issued.
+
+- name: "acme_sh vault_deploy - Ensure flat SSL dir exists"
+  become: true
+  ansible.builtin.file:
+    path:  "{{ acme_sh_flat_ssl_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode:  "0750"
+
+- name: "acme_sh vault_deploy - Reset fetched-cert list"
+  become: false
+  ansible.builtin.set_fact:
+    _acme_vault_deploy_certs: []
+
+# One Vault read per cert entry, keyed on that cert's primary domain —
+# matches the path vault_push.yml/acme-sh-vault-push.sh write to.
+- name: "acme_sh vault_deploy - Fetch {{ ([_vdcert.domain] if _vdcert.domain is defined else _vdcert.domains) | first }} from Vault"
+  become: false
+  ansible.builtin.set_fact:
+    _acme_vault_deploy_certs: >-
+      {{
+        _acme_vault_deploy_certs + [{
+          'domains': ([_vdcert.domain] if _vdcert.domain is defined else _vdcert.domains),
+          'secret': lookup('community.hashi_vault.vault_kv2_get',
+            acme_sh_vault_kv_path_prefix + '/' + (([_vdcert.domain] if _vdcert.domain is defined else _vdcert.domains) | first),
+            engine_mount_point=acme_sh_vault_kv_mount,
+            url=acme_sh_vault_addr).secret
+        }]
+      }}
+  loop: "{{ acme_sh_certs }}"
+  loop_control:
+    loop_var: _vdcert
+    label: "{{ ([_vdcert.domain] if _vdcert.domain is defined else _vdcert.domains) | first }}"
+  when: _vdcert.state | default('present') == 'present'
+
+# Two tasks (cert, key) rather than one combined loop so the key material
+# stays under no_log without also hiding the (harmless) cert/chain diff.
+- name: "acme_sh vault_deploy - Deploy flat per-FQDN cert file"
+  become: true
+  ansible.builtin.copy:
+    content: "{{ _vdpair.0.secret.fullchain if _vdpair.0.secret.fullchain is defined else _vdpair.0.secret.ca }}"
+    dest:    "{{ acme_sh_flat_ssl_dir }}/{{ _vdpair.1 }}.crt"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ _acme_vault_deploy_certs | subelements('domains') }}"
+  loop_control:
+    loop_var: _vdpair
+    label: "{{ _vdpair.1 }}.crt"
+  notify: acme_sh vault_deploy reload
+
+- name: "acme_sh vault_deploy - Deploy flat per-FQDN key file"
+  become: true
+  ansible.builtin.copy:
+    content: "{{ _vdpair.0.secret.key }}"
+    dest:    "{{ acme_sh_flat_ssl_dir }}/{{ _vdpair.1 }}.key"
+    owner: root
+    group: root
+    mode: "0640"
+  loop: "{{ _acme_vault_deploy_certs | subelements('domains') }}"
+  loop_control:
+    loop_var: _vdpair
+    label: "{{ _vdpair.1 }}.key"
+  no_log: true
+  notify: acme_sh vault_deploy reload

@@ -214,6 +214,82 @@ any run where the cert exists but was never registered (e.g. issued manually)
 — so renewals always propagate files and fire the hook.
 
 
+### Issuer + Vault fan-out (`acme_sh_vault_kv_enabled`)
+
+By default every host this role runs on issues/renews its own copy of every
+cert independently. Fine for one host — but with N hosts hitting the same
+`acme_sh_certs` domain set (e.g. a reverse-proxy cluster), each renewal
+cycle burns against Let's Encrypt's 5-duplicate-certs/week limit N times as
+fast, and repeated test/troubleshooting runs make it worse.
+
+Set `acme_sh_vault_kv_enabled: true` to centralize issuance on one host
+(`acme_sh_issuer_host`) and fan the result out to every other host via
+HashiCorp Vault, so serving stays fully decoupled from the issuer's
+uptime — this works for any challenge type, but is most useful with a DNS
+challenge (`dns_cf`/`dns_pdns`), since issuance then has no dependency on
+which host holds a shared VIP or is reachable on 80/443.
+
+```yaml
+acme_sh_issuer_host: proxy1.example.com   # literal hostname — never a
+                                           # group lookup like
+                                           # groups.webproxy | first,
+                                           # since inventory reordering
+                                           # must never silently move
+                                           # who issues
+acme_sh_vault_kv_enabled: true
+acme_sh_vault_addr: "{{ vault_addr }}"
+acme_sh_vault_kv_mount: "{{ vault_kv_infra_mount }}"
+acme_sh_vault_kv_path_prefix: "{{ vault_kv_env }}/webproxy/certs"
+acme_sh_vault_deploy_reload_cmd: "systemctl reload nginx"
+```
+
+What happens on each host:
+
+- **Issuer** (`inventory_hostname == acme_sh_issuer_host`): runs
+  `install.yml`/`account.yml`/`manage_cert.yml` exactly as today, plus (when
+  a cert was actually issued/renewed) writes `cert`/`key`/`fullchain`-or-`ca`/
+  `domains`/`complete_chain`/`issued_at` to
+  `<acme_sh_vault_kv_path_prefix>/<primary-domain>` in Vault.
+- **Every other host**: skips issuance entirely and instead pulls each
+  cert's fields from that same Vault path (`tasks_from: vault_deploy.yml`,
+  called independently of this role's own `main.yml` — see the consuming
+  deployment, e.g. `mgcdrd.infrasvc.nginx`), writing them out under
+  `acme_sh_flat_ssl_dir` the same way a local `acme_sh_flat_ssl_dir`
+  deployment would. `acme_sh_vault_deploy_reload_cmd` fires only when a
+  file's content actually changed — that idempotency is what makes a
+  periodic re-run self-healing rather than reloading every time.
+
+Two Vault-push paths exist and are both kept deliberately: the
+Ansible-triggered write above fails the *play* loudly if Vault write is
+broken; a wrapper script (`/usr/local/sbin/acme-sh-vault-push.sh`, deployed
+on the issuer only, gated on `acme_sh_vault_kv_enabled`) is also registered
+as part of each cert's `reload_cmd`, so acme.sh's own cron-triggered
+renewals — invisible to Ansible entirely — still update Vault. The
+wrapper does its own AppRole login at runtime (role_id/secret_id read fresh
+from `acme_sh_vault_role_id_file`/`acme_sh_vault_secret_id_file`, token
+never cached to disk — same pattern as `mgcdrd.infrasvc.ups_shed`'s
+vault-get script), for example:
+
+```yaml
+reload_cmd: "/usr/local/sbin/acme-sh-vault-push.sh app1.example.com && systemctl reload nginx"
+```
+
+**Prerequisite, not automated by this role:** the AppRole `role_id`/
+`secret_id` files the wrapper script reads
+(`/etc/vault/acme-sh-role-id`/`-secret-id` by default) must be
+pre-positioned on the issuer host by the identity build — same accepted
+convention as `ups_shed`'s AppRole creds. A periodic re-run of the
+consuming deployment (e.g. via an AWX schedule) is what turns the
+Vault-pull side into actual self-healing convergence; that scheduling is
+outside this role's scope.
+
+The issuer host is excluded from `vault_deploy.yml` — it already gets an
+authoritative local `acme_sh_flat_ssl_dir` deployment for free from
+`manage_cert.yml`'s existing symlink task, so also running `vault_deploy.yml`
+there would overwrite that symlink with a plain file (or vice versa) every
+run for no reason.
+
+
 Example Playbook
 ----------------
 

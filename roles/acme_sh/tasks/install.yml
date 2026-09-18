@@ -64,3 +64,17 @@
     owner: root
     group: root
     mode: "0700"
+
+# Deployed on the issuer only — reload_cmd on non-issuer hosts never runs
+# since manage_cert.yml never executes there. AppRole role_id/secret_id
+# files it reads at runtime are pre-positioned by the identity build, not
+# by this role (see acme_sh_vault_role_id_file/acme_sh_vault_secret_id_file).
+- name: acme_sh install - Deploy acme-sh-vault-push.sh
+  become: true
+  ansible.builtin.template:
+    src: acme-sh-vault-push.sh.j2
+    dest: /usr/local/sbin/acme-sh-vault-push.sh
+    owner: root
+    group: root
+    mode: "0700"
+  when: acme_sh_vault_kv_enabled
