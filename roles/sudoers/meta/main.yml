@@ -2,7 +2,7 @@
 galaxy_info:
   role_name: sudoers
   author: mgcdrd
-  description: Harden /etc/sudoers — timestamp timeout and log file
+  description: Harden /etc/sudoers (timestamp timeout, log file) and manage per-user/group sudo grants declaratively
   license: GPL-3.0-or-later
   min_ansible_version: "2.15"
   platforms:

@@ -14,3 +14,31 @@ sudoers_disable_pwflags:
   - targetpw
   - rootpw
   - runaspw
+
+# ---- PER-USER/GROUP SUDO GRANTS (opt-in) ----
+# Declaratively manages /etc/sudoers.d/<sudoers_rules_group>-<rule.name>
+# drop-in files: creates/updates every state:present entry below, and
+# PRUNES any existing file under this group's prefix that isn't currently
+# declared (removed from the list entirely, or explicitly state: absent) —
+# sudoers_rules is the full source of truth for this group's slice of
+# /etc/sudoers.d/, not an additive patch.
+#
+# sudoers_rules_group namespaces the file prefix so multiple unrelated
+# callers (different deployments/roles invoking this role for their own
+# purposes) each manage their own slice without one invocation's prune
+# sweeping up another's files. Required whenever sudoers_rules is
+# non-empty; also required if you shrink sudoers_rules back to [] to
+# decommission a group's grants (the prune step still needs to know which
+# prefix to clean up).
+sudoers_rules_group: ""
+
+# sudoers_rules:
+#   - name: webproxy-devops-nginx   # -> /etc/sudoers.d/<sudoers_rules_group>-webproxy-devops-nginx
+#     principals:                   # always a list — users and/or %groups
+#       - svc-webproxy-devops       # (sudoers' own %group syntax), mixed freely
+#       - "%webproxy-devops"
+#     commands:                     # matched literally by sudoers, no wildcards —
+#       - /usr/sbin/nginx -t        # only these exact invocations are grantable
+#       - /usr/sbin/nginx -s reload
+#     state: present                # present (default) | absent
+sudoers_rules: []

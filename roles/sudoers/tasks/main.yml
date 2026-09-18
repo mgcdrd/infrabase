@@ -52,3 +52,6 @@
     line:     "Defaults !{{ item }}"
     validate: /usr/sbin/visudo -cf %s
   loop: "{{ sudoers_disable_pwflags }}"
+
+- name: sudoers main - Manage per-user/group sudo grants
+  ansible.builtin.import_tasks: rules.yml

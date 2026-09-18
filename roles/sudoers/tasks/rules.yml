@@ -1,0 +1,80 @@
+---
+
+# Declarative: sudoers_rules is the complete set of drop-in files
+# sudoers_rules_group's prefix should have on this host — anything else
+# matching the prefix gets removed below. See defaults/main.yml for the
+# full schema.
+
+- name: sudoers rules - Assert sudoers_rules_group is set
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - sudoers_rules_group | length > 0
+    fail_msg: "sudoers_rules_group must be set when sudoers_rules is non-empty."
+  when: sudoers_rules | length > 0
+
+# sudo silently ignores any /etc/sudoers.d/ file whose name contains a "."
+# or ends in "~" — catch that here instead of a rule quietly never applying.
+- name: "sudoers rules - Assert {{ sudoers_rules_group }}-{{ _srule.name }} is a valid sudoers.d filename"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - "'.' not in (sudoers_rules_group + '-' + _srule.name)"
+      - not (sudoers_rules_group + '-' + _srule.name).endswith('~')
+    fail_msg: >-
+      /etc/sudoers.d/{{ sudoers_rules_group }}-{{ _srule.name }} is invalid —
+      sudo silently ignores sudoers.d files containing "." or ending in "~".
+  loop: "{{ sudoers_rules }}"
+  loop_control:
+    loop_var: _srule
+    label: "{{ _srule.name }}"
+
+- name: "sudoers rules - Deploy {{ sudoers_rules_group }}-{{ _srule.name }}"
+  ansible.builtin.template:
+    src:      sudoers_rule.j2
+    dest:     "/etc/sudoers.d/{{ sudoers_rules_group }}-{{ _srule.name }}"
+    owner:    root
+    group:    root
+    mode:     "0440"
+    validate: /usr/sbin/visudo -cf %s
+  vars:
+    rule: "{{ _srule }}"
+  loop: "{{ sudoers_rules }}"
+  loop_control:
+    loop_var: _srule
+    label: "{{ _srule.name }}"
+  when: _srule.state | default('present') == 'present'
+
+- name: sudoers rules - Reset expected filename list
+  ansible.builtin.set_fact:
+    _sudoers_rules_expected: []
+  when: sudoers_rules_group | length > 0
+
+- name: "sudoers rules - Track expected filename for {{ _srule.name }}"
+  ansible.builtin.set_fact:
+    _sudoers_rules_expected: "{{ _sudoers_rules_expected + [sudoers_rules_group + '-' + _srule.name] }}"
+  loop: "{{ sudoers_rules }}"
+  loop_control:
+    loop_var: _srule
+    label: "{{ _srule.name }}"
+  when:
+    - sudoers_rules_group | length > 0
+    - _srule.state | default('present') == 'present'
+
+- name: sudoers rules - Find existing managed sudoers.d files for this group
+  ansible.builtin.find:
+    paths: /etc/sudoers.d
+    patterns: "{{ sudoers_rules_group }}-*"
+  register: _sudoers_rules_found
+  when: sudoers_rules_group | length > 0
+
+- name: sudoers rules - Remove undeclared sudoers.d files for this group
+  ansible.builtin.file:
+    path:  "{{ item.path }}"
+    state: absent
+  loop: "{{ _sudoers_rules_found.files | default([]) }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  when:
+    - sudoers_rules_group | length > 0
+    - (item.path | basename) not in _sudoers_rules_expected
