@@ -60,6 +60,7 @@
     loop_var: _vdcert
     label: "{{ ([_vdcert.domain] if _vdcert.domain is defined else _vdcert.domains) | first }}"
   when: _vdcert.state | default('present') == 'present'
+  no_log: true
 
 # Two tasks (cert, key) rather than one combined loop so the key material
 # stays under no_log without also hiding the (harmless) cert/chain diff.
