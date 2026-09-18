@@ -230,6 +230,7 @@ challenge (`dns_cf`/`dns_pdns`), since issuance then has no dependency on
 which host holds a shared VIP or is reachable on 80/443.
 
 ```yaml
+acme_sh_flat_ssl_dir: /etc/nginx/ssl   # required — see below
 acme_sh_issuer_host: proxy1.example.com   # literal hostname — never a
                                            # group lookup like
                                            # groups.webproxy | first,
@@ -237,11 +238,19 @@ acme_sh_issuer_host: proxy1.example.com   # literal hostname — never a
                                            # must never silently move
                                            # who issues
 acme_sh_vault_kv_enabled: true
-acme_sh_vault_addr: "{{ vault_addr }}"
 acme_sh_vault_kv_mount: "{{ vault_kv_infra_mount }}"
 acme_sh_vault_kv_path_prefix: "{{ vault_kv_env }}/webproxy/certs"
 acme_sh_vault_deploy_reload_cmd: "systemctl reload nginx"
+# acme_sh_vault_addr defaults to vault_addr (inventory-common) — override
+# only if this cluster talks to a different Vault.
 ```
+
+**Required:** `acme_sh_flat_ssl_dir` must be set whenever
+`acme_sh_vault_kv_enabled` is true — `vault_deploy.yml` deploys every
+non-issuer host's cert/key there, unconditionally (unlike the normal
+local flow, where it's optional). `vault_deploy.yml` asserts this and the
+Vault vars itself, since it's invoked independently of `main.yml`'s own
+`preflight.yml` import (see "What happens on each host" below).
 
 What happens on each host:
 

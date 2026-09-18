@@ -111,10 +111,13 @@ acme_sh_issuer_host: "{{ inventory_hostname }}"
 acme_sh_vault_kv_enabled: false
 
 # HashiCorp Vault address, KV mount, and path prefix certs are written
-# under (one sub-path per primary domain: <prefix>/<primary-domain>). All
-# three required when acme_sh_vault_kv_enabled — composed explicitly at
-# the deployment layer, same convention as google_publicca_eab.
-acme_sh_vault_addr: ""
+# under (one sub-path per primary domain: <prefix>/<primary-domain>).
+# vault_addr is the near-universal inventory-common constant every other
+# Vault-backed role defaults to (see ups_shed) — safe to inherit here too.
+# Mount/path prefix stay required-explicit (composed at the deployment
+# layer, same convention as google_publicca_eab) since they're genuinely
+# deployment-specific, not a single lab-wide constant.
+acme_sh_vault_addr: "{{ vault_addr }}"
 acme_sh_vault_kv_mount: ""
 acme_sh_vault_kv_path_prefix: ""
 

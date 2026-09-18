@@ -9,6 +9,23 @@
 # consumers (e.g. nginx's $ssl_server_name lookup) see identical output
 # regardless of which node actually issued.
 
+# This file bypasses main.yml's own import of preflight.yml entirely (it's
+# invoked directly via tasks_from, not through main.yml), so nothing else
+# validates these before they're used — assert here instead of failing
+# opaquely (e.g. ansible.builtin.file on an empty acme_sh_flat_ssl_dir path).
+- name: "acme_sh vault_deploy - Assert required variables"
+  become: false
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - acme_sh_vault_addr | length > 0
+      - acme_sh_vault_kv_mount | length > 0
+      - acme_sh_vault_kv_path_prefix | length > 0
+      - acme_sh_flat_ssl_dir | length > 0
+    fail_msg: >-
+      acme_sh_vault_addr, acme_sh_vault_kv_mount, acme_sh_vault_kv_path_prefix,
+      and acme_sh_flat_ssl_dir must all be set to run vault_deploy.yml.
+
 - name: "acme_sh vault_deploy - Ensure flat SSL dir exists"
   become: true
   ansible.builtin.file:
