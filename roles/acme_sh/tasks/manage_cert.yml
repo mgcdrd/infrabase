@@ -229,15 +229,22 @@
     - _cert.complete_chain | default(false) | bool
   changed_when: true
 
-# Ansible-triggered push to Vault — fails the play loudly if broken, unlike
-# the cron-triggered reload_cmd wrapper script's exit status which isn't
-# visible to changed_when/failed_when. Both are kept deliberately (see
-# acme_sh_vault_kv_enabled docs) — cheap redundancy, not an oversight.
+# Ansible-triggered push to Vault — runs on every apply where the cert is
+# present, not just an issue/renew, unlike "Deploy cert files" above.
+# Gating this the same way as that task means Vault never gets a first
+# write at all when the issuer's cert already existed and was already
+# registered before acme_sh_vault_kv_enabled was turned on (acme.sh's
+# rc=2 "already valid" case) — every non-issuer host's vault_deploy.yml
+# fetch then fails "Invalid or missing path" forever, since nothing ever
+# populates it. Pushing every run is what makes this self-healing/
+# idempotent on the Vault side too. Fails the play loudly if broken,
+# unlike the cron-triggered reload_cmd wrapper script's exit status which
+# isn't visible to changed_when/failed_when — both paths are kept
+# deliberately (see acme_sh_vault_kv_enabled docs), cheap redundancy.
 - name: "acme_sh cert - Push {{ _acme_primary }} to Vault"
   ansible.builtin.include_tasks: vault_push.yml
   when:
     - _acme_state == 'present'
-    - _acme_issue.rc == 0 or _acme_registered.rc != 0
     - acme_sh_vault_kv_enabled
 
 # Cert files only live under _acme_cert_dir (named for the primary/first

@@ -255,10 +255,16 @@ Vault vars itself, since it's invoked independently of `main.yml`'s own
 What happens on each host:
 
 - **Issuer** (`inventory_hostname == acme_sh_issuer_host`): runs
-  `install.yml`/`account.yml`/`manage_cert.yml` exactly as today, plus (when
-  a cert was actually issued/renewed) writes `cert`/`key`/`fullchain`-or-`ca`/
-  `domains`/`complete_chain`/`issued_at` to
-  `<acme_sh_vault_kv_path_prefix>/<primary-domain>` in Vault.
+  `install.yml`/`account.yml`/`manage_cert.yml` exactly as today, plus
+  (every run where the cert is `present` — not just an issue/renew) writes
+  `cert`/`key`/`fullchain`-or-`ca`/`domains`/`complete_chain`/`issued_at` to
+  `<acme_sh_vault_kv_path_prefix>/<primary-domain>` in Vault. Pushing on
+  every run, not just when acme.sh actually changed something, is what
+  bootstraps Vault the first time this is enabled against a cert that
+  already existed and was already registered — otherwise acme.sh's own
+  "already valid" result (`rc=2`) would skip the push forever and every
+  non-issuer host's fetch would fail "Invalid or missing path" with
+  nothing to ever fix it.
 - **Every other host**: skips issuance entirely and instead pulls each
   cert's fields from that same Vault path (`tasks_from: vault_deploy.yml`,
   called independently of this role's own `main.yml` — see the consuming
