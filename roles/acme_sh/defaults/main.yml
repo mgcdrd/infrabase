@@ -15,6 +15,19 @@ acme_sh_cert_base_dir: /etc/ssl/acme
 # layout above. Leave "" to skip (default).
 acme_sh_flat_ssl_dir: ""
 
+# Owner/group for the real files under acme_sh_flat_ssl_dir's target
+# directory (both the local symlink targets here, and vault_deploy.yml's
+# Vault-sourced copies on non-issuer hosts). Defaults to root:root,
+# matching every other file this role creates. Override when a consumer
+# reads these per-connection as a non-root worker process — e.g. nginx's
+# $ssl_server_name-based dynamic ssl_certificate/ssl_certificate_key is
+# resolved in the *worker*, not the privileged master, since nginx can't
+# know every possible SNI value ahead of time to preload at config
+# parse — that's also why nginx -t never catches a missing or unreadable
+# file here, only an actual connection with that SNI hostname does.
+acme_sh_flat_ssl_owner: root
+acme_sh_flat_ssl_group: root
+
 # ---- ACCOUNT ----
 
 acme_sh_email: ""    # ACME account registration email — required

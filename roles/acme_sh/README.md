@@ -173,12 +173,23 @@ That needs a flat, FQDN-named file — not the
 `<dir>/<domain>.crt` and `<dir>/<domain>.key` for **every** domain on
 **every** cert — primary included, not just SANs — to that cert's
 fullchain.pem (or ca.pem with `complete_chain`) and key.pem. Directory is
-created (`0750`, root:root) if it doesn't exist. Removed along with the
-rest of that cert's files when `state: absent`.
+created (`0750`, owner `acme_sh_flat_ssl_owner`/group `acme_sh_flat_ssl_group`
+— both default `root`) if it doesn't exist. Removed along with the rest
+of that cert's files when `state: absent`.
 
-Using variables in `ssl_certificate`/`ssl_certificate_key` means nginx
-reads the files per-connection rather than preloading them at config
-parse, and disables OCSP stapling on that listener.
+**Ownership matters here, unlike the rest of this role.** Using variables
+in `ssl_certificate`/`ssl_certificate_key` means nginx resolves and opens
+the file **in the worker process**, per connection, at TLS handshake
+time — not in the privileged master at config parse — since nginx can't
+know every possible SNI value in advance to preload at startup. That's
+also why `nginx -t`/reload never catches a missing or unreadable file
+here: it only validates directive syntax, not that a file exists for
+every value `$ssl_server_name` could take. Set `acme_sh_flat_ssl_owner`/
+`acme_sh_flat_ssl_group` to the consumer's own non-root worker user (e.g.
+nginx's `nginx_process_user`) whenever it uses a `$ssl_server_name`-style
+dynamic path — the default `root:root` leaves the worker unable to read
+its own cert/key, failing every such connection's TLS handshake silently.
+This also disables OCSP stapling on that listener.
 
 ### Complete chain
 

@@ -275,9 +275,31 @@
   ansible.builtin.file:
     path:  "{{ acme_sh_flat_ssl_dir }}"
     state: directory
-    owner: root
-    group: root
+    owner: "{{ acme_sh_flat_ssl_owner }}"
+    group: "{{ acme_sh_flat_ssl_group }}"
     mode:  "0750"
+  when:
+    - _acme_state == 'present'
+    - acme_sh_flat_ssl_dir | length > 0
+
+# Symlinks reflect their target's permissions, not their own — fix
+# ownership on the real files instead. Unconditional on issue/renewed
+# status (not gated the way "Deploy cert files" above is) since a cert
+# that already existed and was already registered before
+# acme_sh_flat_ssl_dir/acme_sh_flat_ssl_owner were set would otherwise
+# never get corrected — same bootstrap trap the Vault push had.
+- name: "acme_sh cert - Set flat-consumer ownership on deployed files for {{ _acme_primary }}"
+  become: true
+  ansible.builtin.file:
+    path:  "{{ _acme_cert_dir }}/{{ item.name }}"
+    owner: "{{ acme_sh_flat_ssl_owner }}"
+    group: "{{ acme_sh_flat_ssl_group }}"
+    mode:  "{{ item.mode }}"
+  loop:
+    - { name: key.pem, mode: "0640" }
+    - { name: "{{ _acme_chain_file }}", mode: "0644" }
+  loop_control:
+    label: "{{ item.name }}"
   when:
     - _acme_state == 'present'
     - acme_sh_flat_ssl_dir | length > 0
