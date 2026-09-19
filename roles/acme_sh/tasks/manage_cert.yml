@@ -104,13 +104,16 @@
 
 # ---- PRESENT: issue or renew ----
 
+# Same traversal requirement as acme_sh_cert_base_dir itself (install.yml)
+# — the flat symlink's target lives under here, so this directory needs
+# to be traversable by acme_sh_flat_ssl_owner too, not just the files.
 - name: "acme_sh cert - Ensure deploy dir exists for {{ _acme_primary }}"
   become: true
   ansible.builtin.file:
     path: "{{ _acme_cert_dir }}"
     state: directory
-    owner: root
-    group: root
+    owner: "{{ acme_sh_flat_ssl_owner if acme_sh_flat_ssl_dir | length > 0 else 'root' }}"
+    group: "{{ acme_sh_flat_ssl_group if acme_sh_flat_ssl_dir | length > 0 else 'root' }}"
     mode: "0750"
   when: _acme_state == 'present'
 

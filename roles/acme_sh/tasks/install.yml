@@ -44,13 +44,18 @@
     state: absent
   when: not _acme_sh_binary.stat.exists
 
+# A flat_ssl_dir consumer's symlinks resolve through this directory to
+# reach the real files — root:root mode 0750 blocks a non-root reader
+# from even traversing it, regardless of the files' own ownership
+# (acme_sh_flat_ssl_owner/_group, fixed up per-domain in manage_cert.yml).
+# Stays root:root (unchanged) when acme_sh_flat_ssl_dir isn't in use.
 - name: acme_sh install - Ensure cert base directory exists
   become: true
   ansible.builtin.file:
     path: "{{ acme_sh_cert_base_dir }}"
     state: directory
-    owner: root
-    group: root
+    owner: "{{ acme_sh_flat_ssl_owner if acme_sh_flat_ssl_dir | length > 0 else 'root' }}"
+    group: "{{ acme_sh_flat_ssl_group if acme_sh_flat_ssl_dir | length > 0 else 'root' }}"
     mode: "0750"
 
 # Roots a Let's Encrypt fullchain with ISRG Root X1 (fingerprint-pinned)

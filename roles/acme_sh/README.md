@@ -191,6 +191,16 @@ dynamic path — the default `root:root` leaves the worker unable to read
 its own cert/key, failing every such connection's TLS handshake silently.
 This also disables OCSP stapling on that listener.
 
+`acme_sh_flat_ssl_owner`/`_group` also apply to `acme_sh_cert_base_dir`
+and each cert's own subdirectory under it — the flat symlinks point
+*through* those directories to reach the real files, so a non-root
+consumer needs to **traverse** them too, not just read the files at the
+end of the chain. Getting the file ownership right but leaving these
+directories `root:root` (mode `0750`) still blocks the worker with a
+permission error indistinguishable from a wrong file owner — `chown`-ing
+only the flat directory (or only the files) won't fix it. Left `root:root`
+(unchanged) whenever `acme_sh_flat_ssl_dir` isn't set.
+
 ### Complete chain
 
 With `complete_chain: true`, `ca.pem` receives the full chain instead of
