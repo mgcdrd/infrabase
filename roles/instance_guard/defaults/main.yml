@@ -1,0 +1,11 @@
+---
+
+# Inventory group the deployment targets (e.g. k8s). Required — the role
+# fails if it is left empty.
+instance_guard_group: ""
+
+# Host variable that names the instance a host belongs to. Set it in a group
+# unique to the instance (e.g. group_vars/k8s_lab/), not on the shared group:
+# a variable on the shared group is overwritten by whichever instance loads
+# last, so the guard could never see two instances.
+instance_guard_var: instance_name

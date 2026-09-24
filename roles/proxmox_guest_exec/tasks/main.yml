@@ -1,0 +1,100 @@
+---
+# No community.proxmox module wraps the QEMU guest agent exec endpoints —
+# confirmed against collection 2.x module list (2026-09-02). Talks to
+# /nodes/{node}/qemu/{vmid}/agent/exec directly, same raw-uri + PVEAPIToken
+# pattern proxmox_backup uses for /cluster/backup.
+
+- name: proxmox_guest_exec main - fail if API token auth is not configured
+  ansible.builtin.fail:
+    msg: >-
+      proxmox_guest_exec requires API token auth
+      (proxmox_api_token_id + proxmox_api_token_secret).
+      ansible.builtin.uri needs a bearer-style header, not PVE's
+      login-ticket + CSRF flow.
+  when: not (proxmox_api_token_id | default('')) or not (proxmox_api_token_secret | default(''))
+
+- name: proxmox_guest_exec main - fail if no command given
+  ansible.builtin.fail:
+    msg: "proxmox_guest_exec_command must be a non-empty list of argv strings."
+  when: proxmox_guest_exec_command | length == 0
+
+- name: proxmox_guest_exec main - look up VM by name in ProxMox
+  community.proxmox.proxmox_vm_info:
+    api_host:         "{{ proxmox_api_host }}"
+    api_user:         "{{ proxmox_api_user }}"
+    api_password:     "{{ proxmox_api_password | default(omit) }}"
+    api_token_id:     "{{ proxmox_api_token_id | default(omit) }}"
+    api_token_secret: "{{ proxmox_api_token_secret | default(omit) }}"
+    validate_certs:   "{{ proxmox_validate_certs }}"
+    name: "{{ proxmox_guest_exec_vm_name }}"
+  register: _proxmox_guest_exec_info
+  delegate_to: localhost
+  when: not (proxmox_guest_exec_vmid | string | length > 0 and proxmox_guest_exec_node | length > 0)
+
+- name: proxmox_guest_exec main - fail if VM not found
+  ansible.builtin.fail:
+    msg: "No VM named '{{ proxmox_guest_exec_vm_name }}' found in ProxMox."
+  when:
+    - _proxmox_guest_exec_info is not skipped
+    - _proxmox_guest_exec_info.proxmox_vms | default([]) | length == 0
+
+- name: proxmox_guest_exec main - fail if multiple VMs match
+  ansible.builtin.fail:
+    msg: >-
+      Multiple VMs named '{{ proxmox_guest_exec_vm_name }}' found
+      ({{ _proxmox_guest_exec_info.proxmox_vms | map(attribute='vmid') | list }}).
+      Set proxmox_guest_exec_vmid/proxmox_guest_exec_node explicitly or
+      resolve the naming conflict in PVE.
+  when:
+    - _proxmox_guest_exec_info is not skipped
+    - _proxmox_guest_exec_info.proxmox_vms | default([]) | length > 1
+
+- name: proxmox_guest_exec main - set VMID and node facts
+  ansible.builtin.set_fact:
+    _proxmox_guest_exec_vmid: "{{ proxmox_guest_exec_vmid | string | length > 0 | ternary(proxmox_guest_exec_vmid, _proxmox_guest_exec_info.proxmox_vms[0].vmid) }}"
+    _proxmox_guest_exec_node: "{{ proxmox_guest_exec_node | length > 0 | ternary(proxmox_guest_exec_node, _proxmox_guest_exec_info.proxmox_vms[0].node) }}"
+
+- name: proxmox_guest_exec main - submit command to guest agent
+  ansible.builtin.uri:
+    url: "https://{{ proxmox_api_host }}:8006/api2/json/nodes/{{ _proxmox_guest_exec_node }}/qemu/{{ _proxmox_guest_exec_vmid }}/agent/exec"
+    method: POST
+    headers:
+      Authorization: "PVEAPIToken={{ proxmox_api_token_id }}={{ proxmox_api_token_secret }}"
+    validate_certs: "{{ proxmox_validate_certs }}"
+    body_format: json
+    body:
+      command: "{{ proxmox_guest_exec_command }}"
+      input-data: "{{ proxmox_guest_exec_input_data | default(omit) }}"
+    status_code: [200]
+  register: _proxmox_guest_exec_submit
+  no_log: "{{ proxmox_guest_exec_no_log }}"
+  delegate_to: localhost
+
+- name: proxmox_guest_exec main - poll for command completion
+  ansible.builtin.uri:
+    url: "https://{{ proxmox_api_host }}:8006/api2/json/nodes/{{ _proxmox_guest_exec_node }}/qemu/{{ _proxmox_guest_exec_vmid }}/agent/exec-status?pid={{ _proxmox_guest_exec_submit.json.data.pid }}"
+    method: GET
+    headers:
+      Authorization: "PVEAPIToken={{ proxmox_api_token_id }}={{ proxmox_api_token_secret }}"
+    validate_certs: "{{ proxmox_validate_certs }}"
+    status_code: [200]
+  register: _proxmox_guest_exec_poll
+  until: _proxmox_guest_exec_poll.json.data.exited | default(0) | int == 1
+  retries: "{{ (proxmox_guest_exec_timeout / proxmox_guest_exec_poll_interval) | round(0, 'ceil') | int }}"
+  delay: "{{ proxmox_guest_exec_poll_interval }}"
+  no_log: "{{ proxmox_guest_exec_no_log }}"
+  delegate_to: localhost
+
+- name: proxmox_guest_exec main - fail on non-zero exit
+  ansible.builtin.fail:
+    msg: >-
+      Command exited {{ _proxmox_guest_exec_poll.json.data.exitcode }} on
+      '{{ proxmox_guest_exec_vm_name }}':
+      {{ _proxmox_guest_exec_poll.json.data['err-data'] | default('') }}
+  when:
+    - proxmox_guest_exec_fail_on_nonzero
+    - (_proxmox_guest_exec_poll.json.data.exitcode | default(0) | int) != 0
+
+- name: proxmox_guest_exec main - set result fact
+  ansible.builtin.set_fact:
+    proxmox_guest_exec_result: "{{ _proxmox_guest_exec_poll.json.data }}"

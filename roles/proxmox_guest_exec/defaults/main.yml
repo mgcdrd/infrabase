@@ -1,0 +1,35 @@
+---
+# ---- ProxMox API connection ----
+# Uses the shared proxmox_api_* vars — see collections/infrabase/README.md.
+# API token auth is required (see tasks/main.yml) — ansible.builtin.uri
+# can't do PVE's login-ticket + CSRF flow.
+
+# ---- VM targeting ----
+# By-name lookup (one community.proxmox.proxmox_vm_info call) unless both
+# proxmox_guest_exec_vmid and proxmox_guest_exec_node are set explicitly —
+# set both to skip the lookup, e.g. right after a proxmox_vm clone.
+proxmox_guest_exec_vm_name: "{{ proxmox_target_vm_name | default(inventory_hostname) }}"
+proxmox_guest_exec_vmid: ""
+proxmox_guest_exec_node: ""
+
+# ---- Command ----
+# List of argv strings — first element is the executable, rest are its
+# args. No shell involved, so no quoting/injection concerns.
+# Example: [/usr/sbin/netplan, apply]
+proxmox_guest_exec_command: []
+
+# Optional data piped to the command's stdin (e.g. a file's content, for
+# a command like `tee /etc/netplan/01-migrate.yaml`).
+proxmox_guest_exec_input_data: ""
+
+# Fail the play if the command exits non-zero.
+proxmox_guest_exec_fail_on_nonzero: true
+
+# How long to wait for the command to finish, and how often to poll.
+proxmox_guest_exec_timeout: 60
+proxmox_guest_exec_poll_interval: 2
+
+# Suppress request/response logging on the submit and poll tasks — command
+# input-data and output routinely carry file contents or other sensitive
+# material. Set false only to debug a failing command.
+proxmox_guest_exec_no_log: true

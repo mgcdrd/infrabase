@@ -1,0 +1,16 @@
+---
+galaxy_info:
+  author: mgcdrd
+  description: Run a command inside a VM via the QEMU guest agent, through the PVE API
+  role_name: proxmox_guest_exec
+
+  license: GPL-3.0-or-later
+
+  min_ansible_version: '2.14'
+
+  galaxy_tags:
+    - mgcdrd
+    - proxmox
+
+collections:
+  - community.proxmox

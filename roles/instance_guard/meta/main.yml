@@ -1,0 +1,27 @@
+galaxy_info:
+  author: mgcdrd
+  description: >-
+    Fails a run unless exactly one named instance of a service is loaded
+    into an inventory group, preventing multiple instances' group_vars from
+    silently merging.
+
+  license: GPL-3.0-or-later
+
+  min_ansible_version: "2.14"
+
+  platforms:
+    - name: EL
+      versions:
+        - '9'
+        - '10'
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+
+  galaxy_tags:
+    - mgcdrd
+    - inventory
+    - safety
+
+dependencies: []

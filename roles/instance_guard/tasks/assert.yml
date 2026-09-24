@@ -1,0 +1,45 @@
+---
+
+- name: instance_guard - Validate instance_guard_group is set
+  ansible.builtin.assert:
+    that:
+      - instance_guard_group | length > 0
+    fail_msg: instance_guard_group is required.
+    quiet: true
+
+- name: instance_guard - Assert the group has hosts
+  ansible.builtin.assert:
+    that:
+      - groups[instance_guard_group] | default([]) | length > 0
+    fail_msg: >-
+      No hosts in group '{{ instance_guard_group }}'. The instance was not
+      loaded: check the env var your ansible.cfg inventory path expands
+      (e.g. DEPLOY_INSTANCE) is set and names an existing instance directory.
+    quiet: true
+
+- name: instance_guard - Collect instance names for the group
+  ansible.builtin.set_fact:
+    _instance_guard_names: >-
+      {{ groups[instance_guard_group]
+         | map('extract', hostvars)
+         | map(attribute=instance_guard_var, default='')
+         | unique | list }}
+
+- name: instance_guard - Assert exactly one named instance is loaded
+  ansible.builtin.assert:
+    that:
+      - _instance_guard_names | length == 1
+      - _instance_guard_names[0] | length > 0
+    fail_msg: >-
+      Group '{{ instance_guard_group }}' must resolve to exactly one
+      '{{ instance_guard_var }}', found: {{ _instance_guard_names }}. Load a
+      single instance directory; loading two merges their group_vars onto
+      every host in the group.
+    quiet: true
+
+- name: instance_guard - Show target instance
+  ansible.builtin.debug:
+    msg: >-
+      Instance '{{ _instance_guard_names[0] }}':
+      {{ groups[instance_guard_group] | length }} host(s) in
+      '{{ instance_guard_group }}'.

@@ -1,0 +1,4 @@
+---
+
+- name: instance_guard - Assert one instance is loaded
+  ansible.builtin.import_tasks: assert.yml
