@@ -16,6 +16,9 @@
   ansible.builtin.import_tasks: faillock.yml
   when: ansible_facts['os_family'] == 'RedHat'
 
+- name: password_policy main - Reconcile passwd accounts missing from shadow
+  ansible.builtin.import_tasks: shadow_reconcile.yml
+
 - name: password_policy main - Apply aging to existing accounts
   ansible.builtin.import_tasks: aging.yml
 

@@ -20,6 +20,13 @@ password_policy_pwquality:
 password_policy_pass_max_days: 60
 password_policy_pass_min_days: 7
 
+# Usernames explicitly allowed to have a missing /etc/shadow entry created
+# (via pwconv) — e.g. accounts provisioned into /etc/passwd by something
+# outside this role that never wrote a shadow line. Empty by default (no-op).
+# Any passwd-only account NOT listed here fails the run instead of being
+# silently patched — see tasks/shadow_reconcile.yml.
+password_policy_shadow_reconcile: []
+
 # /etc/login.defs settings.
 password_policy_login_defs:
   - { key: PASS_MAX_DAYS, value: "{{ password_policy_pass_max_days }}" }

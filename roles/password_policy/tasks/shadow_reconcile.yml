@@ -1,0 +1,35 @@
+---
+
+# Reconciles /etc/passwd accounts that have no matching /etc/shadow entry —
+# chage fails outright on those, so the aging task below can never reach
+# them. Opt-in and explicit: password_policy_shadow_reconcile names exactly
+# which accounts are allowed to be touched, and the assert below fails the
+# run if any *other* passwd-only account turns up unreconciled, so nothing
+# gets silently patched. pwconv (shadow-utils) is the standard reconciliation
+# tool — it copies each account's current password field from /etc/passwd
+# into a new /etc/shadow entry. If that field is already 'x' (the normal
+# "look in shadow" placeholder — usually why these ended up split in the
+# first place), the account ends up with no usable password hash until one
+# is set; that's expected here; these accounts aren't password-login.
+
+- name: password_policy shadow_reconcile - Get passwd accounts missing from /etc/shadow
+  ansible.builtin.shell: |
+    awk -F: 'NR==FNR { shadow[$1]=1; next } !($1 in shadow) { print $1 }' /etc/shadow /etc/passwd
+  register: _pp_shadow_missing
+  changed_when: false
+
+- name: password_policy shadow_reconcile - Fail on unreconciled passwd-only accounts
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - (_pp_shadow_missing.stdout_lines | difference(password_policy_shadow_reconcile)) | length == 0
+    fail_msg: >-
+      Account(s) {{ _pp_shadow_missing.stdout_lines | difference(password_policy_shadow_reconcile) | join(', ') }}
+      exist in /etc/passwd but not /etc/shadow, and are not listed in
+      password_policy_shadow_reconcile. Add them there explicitly if
+      pwconv should create their shadow entry, or fix the account another
+      way — this role will not touch an unlisted account's shadow entry.
+
+- name: password_policy shadow_reconcile - Create missing shadow entries (pwconv)
+  ansible.builtin.command: pwconv
+  when: _pp_shadow_missing.stdout_lines | length > 0

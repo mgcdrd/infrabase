@@ -64,6 +64,7 @@ List of key/value pairs written to `/etc/login.defs`:
 | `password_policy_faillock_deny` | `3` | Failed login attempts before lockout (**RedHat only**) |
 | `password_policy_faillock_unlock_time` | `900` | Lockout duration in seconds (**RedHat only**) |
 | `password_policy_remember` | `5` | Number of previous passwords to reject (**RedHat only**) |
+| `password_policy_shadow_reconcile` | `[]` | Usernames explicitly allowed to have a missing `/etc/shadow` entry created via `pwconv`. Any passwd-only account **not** listed here fails the run instead of being silently patched. |
 
 
 Dependencies
@@ -121,6 +122,14 @@ Notes
   (CIS `accounts_password_last_change_is_in_past`, usually clock skew or a
   hand-provisioned account). IPA/LDAP accounts aren't in `/etc/shadow` so
   they're untouched.
+- `chage` fails outright on an account that's in `/etc/passwd` but has no
+  `/etc/shadow` entry at all. The role does not fix this itself — list the
+  affected username(s) in `password_policy_shadow_reconcile` to opt in;
+  `pwconv` then creates the missing entry, copying whatever's currently in
+  the passwd password field (usually `x`, the "look in shadow" placeholder —
+  which leaves the account with no usable password hash until one is set).
+  Any passwd-only account found that *isn't* listed fails the run instead of
+  being silently patched.
 - On RedHat, `/root/.local/bin` and `/root/bin` are created if missing — the
   stock `/root/.bashrc` prepends them to `PATH` unconditionally, and CIS
   `root_path_all_dirs` requires every `PATH` entry to be a real directory.
