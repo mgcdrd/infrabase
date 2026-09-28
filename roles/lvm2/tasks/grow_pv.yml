@@ -38,6 +38,21 @@
       Check the disk/pv paths in lvm_pv_grow.
   loop: "{{ _lvm_grow_pv_stat.results }}"
 
+- name: lvm2 grow_pv - Read current partition table type per disk
+  community.general.parted:
+    device: "{{ disk_path }}"
+    state: info
+  loop: "{{ lvm_pv_grow | map(attribute='disk') | unique | list }}"
+  loop_control:
+    loop_var: disk_path
+  register: _lvm_grow_pv_info
+
+# community.general.parted defaults 'label' to msdos. Without pinning it to
+# the disk's actual table, a GPT-labelled disk trips mklabel_needed and the
+# module prepends 'mklabel msdos mkpart primary ...' to the resize script -
+# rewriting the partition table instead of just resizing it. Parted only
+# refused to commit here because the partition was mounted/in use; on an
+# idle disk this would have run.
 - name: lvm2 grow_pv - Grow partition to consume available disk space
   community.general.parted:
     device: "{{ item.disk }}"
@@ -45,6 +60,7 @@
     part_end: "100%"
     resize: true
     state: present
+    label: "{{ (_lvm_grow_pv_info.results | selectattr('disk_path', 'equalto', item.disk) | first).disk.table }}"
   loop: "{{ lvm_pv_grow }}"
 
 - name: lvm2 grow_pv - Resize physical volume to match grown partition
