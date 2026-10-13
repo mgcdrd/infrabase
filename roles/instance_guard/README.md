@@ -19,10 +19,13 @@ Builtin modules only. `gather_facts: false` is fine.
 Role Variables
 --------------
 
-| Variable | Default | Description |
-|---|---|---|
-| `instance_guard_group` | `""` | Inventory group the deployment targets. **Required.** |
-| `instance_guard_var` | `instance_name` | Host variable naming the instance. Set it in a group unique to the instance (`group_vars/k8s_<name>/`), not on the shared `k8s` group, or two loaded instances look like one. |
+### Variable reference
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `instance_guard_group` | `""` | Yes | Inventory group the deployment targets (e.g. `k8s`); the role fails if empty |
+| `instance_guard_var` | `instance_name` | No | Host variable naming the instance a host belongs to; set it in a per-instance group, not on the shared group |
+
 
 Example
 -------

@@ -16,7 +16,7 @@
     state:     enabled
     permanent: true
     immediate: true
-  loop: "{{ firewall_zones | subelements('interfaces', skip_missing=True) }}"
+  loop: "{{ _firewall_zones_effective | subelements('interfaces', skip_missing=True) }}"
   when: ansible_facts['os_family'] == 'RedHat'
 
 - name: firewall configure - Bind sources to zones (RedHat)
@@ -28,7 +28,7 @@
     state:     enabled
     permanent: true
     immediate: true
-  loop: "{{ firewall_zones | subelements('sources', skip_missing=True) }}"
+  loop: "{{ _firewall_zones_effective | subelements('sources', skip_missing=True) }}"
   when: ansible_facts['os_family'] == 'RedHat'
 
 - name: firewall configure - Allow TCP ports per zone (RedHat)
@@ -38,7 +38,7 @@
     state:     enabled
     permanent: true
     immediate: true
-  loop: "{{ firewall_zones | subelements('allowed_tcp_ports', skip_missing=True) }}"
+  loop: "{{ _firewall_zones_effective | subelements('allowed_tcp_ports', skip_missing=True) }}"
   when: ansible_facts['os_family'] == 'RedHat'
 
 - name: firewall configure - Allow UDP ports per zone (RedHat)
@@ -48,7 +48,7 @@
     state:     enabled
     permanent: true
     immediate: true
-  loop: "{{ firewall_zones | subelements('allowed_udp_ports', skip_missing=True) }}"
+  loop: "{{ _firewall_zones_effective | subelements('allowed_udp_ports', skip_missing=True) }}"
   when: ansible_facts['os_family'] == 'RedHat'
 
 - name: firewall configure - Allow named services per zone (RedHat)
@@ -58,7 +58,7 @@
     state:     enabled
     permanent: true
     immediate: true
-  loop: "{{ firewall_zones | subelements('allowed_services', skip_missing=True) }}"
+  loop: "{{ _firewall_zones_effective | subelements('allowed_services', skip_missing=True) }}"
   when: ansible_facts['os_family'] == 'RedHat'
 
 - name: firewall configure - Enable masquerade per zone (RedHat)
@@ -68,7 +68,7 @@
     state:      enabled
     permanent:  true
     immediate:  true
-  loop: "{{ firewall_zones | selectattr('masquerade', 'defined') | selectattr('masquerade') | list }}"
+  loop: "{{ _firewall_zones_effective | selectattr('masquerade', 'defined') | selectattr('masquerade') | list }}"
   when: ansible_facts['os_family'] == 'RedHat'
 
 - name: firewall configure - Add port forwards per zone (RedHat)
@@ -82,7 +82,7 @@
     state:      enabled
     permanent:  true
     immediate:  true
-  loop: "{{ firewall_zones | subelements('forward_ports', skip_missing=True) }}"
+  loop: "{{ _firewall_zones_effective | subelements('forward_ports', skip_missing=True) }}"
   when: ansible_facts['os_family'] == 'RedHat'
 
 - name: firewall configure - Build source-scoped rich rules (RedHat)
@@ -95,7 +95,7 @@
     _firewall_source_rich_rules: "{{ _firewall_source_rich_rules_yaml | from_yaml | default([], true) }}"
   vars:
     _firewall_source_rich_rules_yaml: |
-      {% for z in firewall_zones %}
+      {% for z in _firewall_zones_effective %}
       {% for r in z.source_rules | default([]) %}
       {% for s in r.sources | default([]) %}
       {% for p in r.tcp_ports | default([]) %}
@@ -176,8 +176,8 @@
       (Debian) path yet and are ignored. Port/interface rules still apply.
   vars:
     _firewall_src_zones: >-
-      {{ ((firewall_zones | selectattr('sources', 'defined') | selectattr('sources') | map(attribute='name') | list)
-          + (firewall_zones | selectattr('source_rules', 'defined') | selectattr('source_rules') | map(attribute='name') | list))
+      {{ ((_firewall_zones_effective | selectattr('sources', 'defined') | selectattr('sources') | map(attribute='name') | list)
+          + (_firewall_zones_effective | selectattr('source_rules', 'defined') | selectattr('source_rules') | map(attribute='name') | list))
          | unique }}
   when:
     - ansible_facts['os_family'] == 'Debian'

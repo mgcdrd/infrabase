@@ -25,6 +25,14 @@ Role uses `community.general.lvg`, `community.general.lvol`, and
 Role Variables
 --------------
 
+### Variable reference
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `lvm_provision_vgs` | `[]` | One of the two lists | Volume groups to create (fields below) |
+| `lvm_provision_volumes` | `[]` | One of the two lists | Logical volumes, filesystems, and mounts to create (fields below) |
+
+
 ```yaml
 # Volume groups to create.
 lvm_provision_vgs: []

@@ -1,0 +1,63 @@
+---
+
+# Mounts leave the system by being unmounted and commented out of /etc/fstab,
+# so nothing remounts them by accident. Data is never touched. An entry with
+# `state: absent` is always acted on; `storage_prune: true` additionally
+# covers everything in fstab that is not defined.
+
+- name: storage prune - Decide what to remove
+  ansible.builtin.set_fact:
+    _storage_prune_mounts: >-
+      {%- set defined = _storage_plan | map(attribute='path') | list -%}
+      {%- set gone = _storage_absent | map(attribute='path') | list -%}
+      {%- set keep = storage_protected_paths + storage_prune_exclude -%}
+      {%- set out = [] -%}
+      {%- for p, e in _storage_fstab.items() -%}
+      {%- if p in gone
+             or (storage_prune and e.fstype in storage_prune_fstypes
+                 and p not in keep and p not in defined) -%}
+      {%- set _ = out.append({'path': p, 'src': e.src, 'line': e.line}) -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {{ out | sort(attribute='path', reverse=true) }}
+    _storage_prune_swaps: >-
+      {{ _storage_fstab_swaps
+         if ('swap' in (_storage_absent | map(attribute='path') | list)
+             or (storage_prune and 'swap' not in (storage_prune_exclude)))
+            and (_storage_plan | selectattr('fstype', 'equalto', 'swap') | list | length == 0)
+         else [] }}
+
+- name: storage prune - Warn about protected paths that are not defined
+  ansible.builtin.debug:
+    msg: "'{{ item }}' is protected and in fstab but not defined; leaving it alone."
+  loop: "{{ storage_protected_paths | select('in', _storage_fstab) | list | difference(_storage_plan | map(attribute='path') | list) }}"
+  when: storage_prune
+
+# Deepest paths first, so nested mounts leave before their parents.
+- name: storage prune - Unmount and comment out mounts
+  ansible.builtin.include_tasks: prune_mount.yml
+  loop: "{{ _storage_prune_mounts }}"
+  loop_control:
+    loop_var: prune_item
+    label: "{{ prune_item.path }}"
+
+- name: storage prune - Turn off swap
+  ansible.builtin.command:
+    cmd: swapoff -a
+  changed_when: _storage_prune_swaps | length > 0
+  when: _storage_prune_swaps | length > 0
+
+- name: storage prune - Comment out swap entries in fstab
+  ansible.builtin.replace:
+    path: /etc/fstab
+    regexp: '^({{ item.line | regex_escape }})$'
+    replace: '# disabled by storage role: \1'
+  loop: "{{ _storage_prune_swaps }}"
+  loop_control:
+    label: "{{ item.src }}"
+  register: _storage_swap_commented
+
+- name: storage prune - Reload systemd so removed entries stop generating units
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  when: _storage_prune_mounts | length > 0 or _storage_prune_swaps | length > 0

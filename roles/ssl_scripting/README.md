@@ -23,20 +23,24 @@ for the `openssl` package install).
 Role Variables
 --------------
 
+### Variable reference
+
+All variables are nested under the `ssl_scripting` dict.
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `ssl_scripting.base_dir` | `/root/ssl_gen` | No | Directory the script and generated files are placed in |
+| `ssl_scripting.def_bits` | `2048` | No | Key size for generated certs and `dhparam.pem` |
+| `ssl_scripting.def_md` | `sha256` | No | Message digest written into the helper script |
+| `ssl_scripting.country` | `US` | No | Country code written into the helper script |
+| `ssl_scripting.state` | `XX` | No | State/province written into the helper script |
+| `ssl_scripting.locale` | `YY` | No | Locality written into the helper script |
+| `ssl_scripting.org` | `ZZ` | No | Organization written into the helper script |
+| `ssl_scripting.orgunit` | `AA` | No | Organizational unit written into the helper script |
+| `ssl_scripting.email` | `admins@acme.com` | No | Email address written into the helper script |
+
+
 All variables are nested under the `ssl_scripting` dict:
-
-| Variable | Default | Description |
-|---|---|---|
-| `ssl_scripting.base_dir` | `/root/ssl_gen` | Directory where the script and generated files are placed |
-| `ssl_scripting.def_bits` | `2048` | Key size for generated certs and `dhparam.pem` |
-| `ssl_scripting.def_md` | `sha256` | Message digest written into the helper script |
-| `ssl_scripting.country` | `US` | Country code written into the helper script |
-| `ssl_scripting.state` | `XX` | State/province written into the helper script |
-| `ssl_scripting.locale` | `YY` | Locality written into the helper script |
-| `ssl_scripting.org` | `ZZ` | Organization written into the helper script |
-| `ssl_scripting.orgunit` | `AA` | Organizational unit written into the helper script |
-| `ssl_scripting.email` | `admins@acme.com` | Email address written into the helper script |
-
 
 Dependencies
 ------------

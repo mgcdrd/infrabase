@@ -1,0 +1,101 @@
+---
+
+- name: storage mounts - Build the mount list, parents before children
+  ansible.builtin.set_fact:
+    _storage_mount_list: >-
+      {{ _storage_plan | selectattr('fstype', 'ne', 'swap') | rejectattr('src', 'equalto', '')
+         | sort(attribute='path') | list }}
+
+- name: storage mounts - Install NFS client
+  ansible.builtin.package:
+    name: "{{ 'nfs-common' if ansible_facts['os_family'] == 'Debian' else 'nfs-utils' }}"
+    state: present
+  when: _storage_mount_list | selectattr('fstype', 'match', '^nfs') | list | length > 0
+
+# =====================
+# Mounting over a populated directory hides its contents. Refuse unless the
+# entry sets `shadow: true`.
+- name: storage mounts - Check which paths are mount points already
+  ansible.builtin.command:
+    cmd: mountpoint -q {{ item.path }}
+  register: _storage_mountpoint
+  loop: "{{ _storage_mount_list }}"
+  loop_control:
+    label: "{{ item.path }}"
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: storage mounts - List contents of directories about to be mounted over
+  ansible.builtin.find:
+    paths: "{{ item.item.path }}"
+    file_type: any
+    recurse: false
+  register: _storage_shadowed
+  loop: "{{ _storage_mountpoint.results }}"
+  loop_control:
+    label: "{{ item.item.path }}"
+  when: item.rc != 0
+
+- name: storage mounts - Assert nothing would be hidden
+  ansible.builtin.assert:
+    quiet: true
+    that: item.item.item.shadow | default(false) | bool or item.matched | default(0) == 0
+    fail_msg: >-
+      '{{ item.item.item.path }}' is not a mount point and already holds {{ item.matched }}
+      entries; mounting {{ item.item.item.src }} there would hide them. Move the data first,
+      or set 'shadow: true' on the entry to accept that.
+  loop: "{{ _storage_shadowed.results }}"
+  loop_control:
+    label: "{{ item.item.item.path }}"
+  when: item.skipped is not defined
+
+# =====================
+- name: storage mounts - Create mount points
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+  loop: "{{ _storage_mount_list }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+# state: mounted mounts now and writes the fstab line; a changed option set is
+# applied with a remount.
+- name: storage mounts - Mount volumes and persist to fstab
+  ansible.posix.mount:
+    path: "{{ item.path }}"
+    src: "{{ item.src }}"
+    fstype: "{{ _storage_fs_actual[item.src] | default(item.fstype) }}"
+    opts: "{{ item.opts }}"
+    dump: "{{ item.dump }}"
+    passno: "{{ item.passno }}"
+    state: mounted
+  loop: "{{ _storage_mount_list }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: storage mounts - Set mount point ownership and mode
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: "{{ item.mode | default(storage_default_modes[item.path] | default(omit)) }}"
+    owner: "{{ item.owner | default(omit) }}"
+    group: "{{ item.group | default(omit) }}"
+  loop: "{{ _storage_mount_list }}"
+  loop_control:
+    label: "{{ item.path }}"
+  when: item.mode is defined or item.owner is defined or item.group is defined or item.path in storage_default_modes
+
+# A freshly formatted volume has no SELinux labels until relabeled against
+# the existing fcontext policy; confined daemons are silently denied without it.
+- name: storage mounts - Relabel new filesystems per SELinux policy
+  ansible.builtin.command:
+    cmd: restorecon -R -v {{ item.path }}
+  register: _storage_restorecon
+  loop: "{{ _storage_mount_list | selectattr('src', 'in', _storage_fs_created) | list }}"
+  loop_control:
+    label: "{{ item.path }}"
+  changed_when: _storage_restorecon.stdout != ""
+  when:
+    - ansible_facts['selinux'] is defined
+    - ansible_facts['selinux']['status'] | default('') == 'enabled'

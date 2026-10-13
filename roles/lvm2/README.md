@@ -33,6 +33,16 @@ validation and threshold checks.
 Role Variables
 --------------
 
+### Variable reference
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `lvm_os_vg` | `""` | No | OS volume group; auto-detected from the root mount when empty, set it if detection fails |
+| `lvm_pv_grow` | `[]` | One of the lists | Partitions and PVs to grow into space added to the underlying disk (fields below) |
+| `lvm_volumes` | `[]` | One of the lists | Logical volumes to extend (fields below) |
+| `lvm_vg_extensions` | `[]` | One of the lists | Volume groups to extend with new physical volumes (fields below) |
+
+
 ```yaml
 # Override the auto-detected OS volume group.
 # The role detects this from the root mount device at runtime.

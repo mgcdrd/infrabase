@@ -26,6 +26,15 @@ the `/etc/hosts` entries.
 Role Variables
 --------------
 
+### Variable reference
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `etc_hosts_group` | `""` | One of group or entries | Inventory group whose members are written to `/etc/hosts` on every host in the play; empty skips cluster entries |
+| `etc_hosts_interface` | `ansible_default_ipv4` | No | Facts key used to resolve each host's IP (e.g. `ansible_eth1`, `ansible_bond0`) |
+| `etc_hosts_entries` | `[]` | One of group or entries | Static entries, each with `ip`, `hostname`, optional `aliases`; not merged across inventory levels |
+
+
 ```yaml
 # Inventory group whose members will be written into /etc/hosts on every host in the play.
 # If left empty, cluster node entries are skipped for that host.

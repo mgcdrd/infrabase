@@ -27,6 +27,13 @@ the referenced files/templates in the calling playbook's own `files/` or
 Role Variables
 --------------
 
+### Variable reference
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `file_deploy_items` | `[]` | Yes | Files, templates, and directories to deploy (fields below); an empty list is a no-op |
+
+
 ```yaml
 file_deploy_items: []
 # file_deploy_items:

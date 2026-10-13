@@ -17,6 +17,13 @@ Requirements
 Role Variables
 --------------
 
+### Variable reference
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `crio_version` | `""` | Yes | CRI-O minor version used to build the repo URLs (e.g. `"1.32"`); match the Kubernetes minor version |
+
+
 ### `crio_version`
 
 CRI-O minor version used to form the repository URL. **Required.**
@@ -29,10 +36,11 @@ crio_version: "1.32"
 
 Repository sources by OS:
 
-| OS      | Source                                                                |
-|---------|-----------------------------------------------------------------------|
-| Debian  | `download.opensuse.org/repositories/isv:/cri-o:/stable:/v<version>` |
-| RedHat  | `pkgs.k8s.io/addons:/cri-o:/stable:/v<version>`                      |
+| OS      | Source                                                                   |
+|---------|--------------------------------------------------------------------------|
+| Debian  | `download.opensuse.org/repositories/isv:/cri-o:/stable:/v<version>/deb/` |
+| RedHat  | `download.opensuse.org/repositories/isv:/cri-o:/stable:/v<version>/rpm/` |
+
 
 
 Dependencies

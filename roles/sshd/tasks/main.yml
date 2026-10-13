@@ -13,6 +13,14 @@
     _sshd_sftp_server: "{{ '/usr/lib/openssh/sftp-server'    if ansible_facts['os_family'] == 'Debian'
                             else '/usr/libexec/openssh/sftp-server' }}"
 
+- name: sshd main - Merge base access lists and Match blocks with every *_extra_* layer
+  ansible.builtin.set_fact:
+    _sshd_allow_users:   "{{ ([sshd_allow_users]   + (query('varnames', '^sshd_allow_users_extra(_.+)?$')   | sort | map('extract', vars) | list)) | flatten | unique }}"
+    _sshd_allow_groups:  "{{ ([sshd_allow_groups]  + (query('varnames', '^sshd_allow_groups_extra(_.+)?$')  | sort | map('extract', vars) | list)) | flatten | unique }}"
+    _sshd_deny_users:    "{{ ([sshd_deny_users]    + (query('varnames', '^sshd_deny_users_extra(_.+)?$')    | sort | map('extract', vars) | list)) | flatten | unique }}"
+    _sshd_deny_groups:   "{{ ([sshd_deny_groups]   + (query('varnames', '^sshd_deny_groups_extra(_.+)?$')   | sort | map('extract', vars) | list)) | flatten | unique }}"
+    _sshd_match_blocks:  "{{ ([sshd_match_blocks]  + (query('varnames', '^sshd_match_blocks_extra(_.+)?$')  | sort | map('extract', vars) | list)) | flatten }}"
+
 - name: sshd main - Enable and start sshd
   ansible.builtin.systemd_service:
     name:    "{{ _sshd_service }}"

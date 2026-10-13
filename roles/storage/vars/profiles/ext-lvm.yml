@@ -1,0 +1,16 @@
+---
+# auto.packer "ext-lvm": base-lvm plus /opt, /usr/local, /var/log, /var/log/audit.
+_storage_profile_vg: vGroup_01
+_storage_profile_mounts:
+  - { path: /boot/efi, efi_only: true }
+  - { path: /boot }
+  - { path: /,              lv: lgv_00, size: 2G, fstype: ext4 }
+  - { path: /home,          lv: lgv_01, size: 2G, fstype: ext4 }
+  - { path: /tmp,           lv: lgv_02, size: 2G, fstype: ext4 }
+  - { path: /usr,           lv: lgv_03, size: 4G, fstype: ext4 }
+  - { path: /var,           lv: lgv_04, size: 2G, fstype: ext4 }
+  - { path: /opt,           lv: lgv_05, size: 2G, fstype: ext4 }
+  - { path: /usr/local,     lv: lgv_06, size: 2G, fstype: ext4 }
+  - { path: /var/log,       lv: lgv_07, size: 2G, fstype: ext4 }
+  - { path: /var/log/audit, lv: lgv_08, size: 2G, fstype: ext4 }
+  - { path: swap,           lv: lgv_10, size: 2G, fstype: swap }

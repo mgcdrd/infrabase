@@ -1,0 +1,73 @@
+---
+
+# Build-time disk layout to start from: std, base-lvm, ext-lvm,
+# foreman-el-uefi, or "" for none. Host/group storage_mounts are merged over it
+# by path. See vars/profiles/ and the README.
+storage_scheme: ""
+
+# Default VG for mounts that set `lv` without `vg`. Empty = detect from the
+# root mount, falling back to the profile's VG.
+storage_vg: ""
+
+# Disks to prepare. Use stable /dev/disk/by-id paths for data disks.
+storage_disks: []
+# storage_disks:
+#   - device: /dev/disk/by-id/virtio-data01   # required
+#     label: gpt                              # only used on a blank disk (default: gpt)
+#     vg: vg_data                             # whole disk becomes a PV in this VG (no partitions)
+#     partitions:                             # optional
+#       - number: 1
+#         start: 0%                           # default 0%
+#         end: 100%                           # default 100%
+#         flags: [lvm]                        # default []
+#         grow: false                         # true: grow into free disk space, then pvresize
+#         vg: vg_data                         # partition becomes a PV in this VG
+
+# Extra VG settings or PVs not described by storage_disks.
+storage_vgs: []
+# storage_vgs:
+#   - vg: vg_data
+#     pesize: "4"                             # MiB, only used when the VG is created
+#     pvs: [/dev/sdc]                         # added to the VG; existing PVs are never removed
+
+# The mount list. Merged over the profile by `path`; later keys win.
+storage_mounts: []
+# storage_mounts:
+#   - path: /var/lib/pgsql
+#     lv: lv_pgsql                            # LV-backed: created if missing, extended if size is larger
+#     vg: vg_data                             # default: storage_vg / detected root VG / profile VG
+#     size: 30G                               # minimum size; never shrinks. Also 100%FREE at creation
+#     fstype: xfs                             # xfs or ext4; an existing filesystem is never reformatted
+#     opts: noatime                           # default: existing fstab opts, else storage_default_opts
+#     mode: "0750"                            # applied to the mount point after mounting
+#     owner: postgres
+#     group: postgres
+#     threshold: 85                           # extend by extend_by when usage % >= threshold
+#     extend_by: 10G
+#     shadow: false                           # true: allow mounting over a non-empty directory
+#   - path: /srv/share
+#     src: "nfs.example.com:/export/share"    # any other source: NFS, device, tmpfs
+#     fstype: nfs4
+#     opts: _netdev,nofail
+#   - path: /boot                             # no lv/src: adopts the existing mount, manages only what you set
+#     opts: nosuid
+#   - path: swap
+#     state: absent                           # unmount/swapoff and comment out of fstab (e.g. k8s nodes)
+
+storage_default_fstype: "{{ 'xfs' if ansible_facts['os_family'] == 'RedHat' else 'ext4' }}"
+storage_default_opts: defaults
+
+# Mode applied to a mount point after mounting unless the entry sets `mode`.
+storage_default_modes:
+  /tmp: "1777"
+  /var/tmp: "1777"
+
+# Unmount and comment out of /etc/fstab every disk/network mount that is not
+# in the defined set. Off by default: other roles manage mounts too. Entries
+# with `state: absent` are always acted on. Data is never touched.
+storage_prune: false
+storage_prune_exclude: []               # extra paths never pruned
+storage_prune_fstypes: [ext2, ext3, ext4, xfs, btrfs, vfat, nfs, nfs4, cifs, swap]
+
+# Never pruned, never unmounted by this role.
+storage_protected_paths: [/, /boot, /boot/efi, /usr, /var]

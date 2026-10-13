@@ -1,0 +1,20 @@
+---
+# Foreman "EL Single Disk UEFI" partition table plus the CIS mount options the
+# lab applied afterwards through secure_mounts (/var without noexec: package
+# managers and scripts need it). Minimum sizes only; LVs are never shrunk.
+_storage_profile_vg: vg0
+_storage_profile_mounts:
+  - { path: /dev/shm,       src: tmpfs, fstype: tmpfs, opts: "nodev,noexec,nosuid" }
+  - { path: /boot/efi,      efi_only: true }
+  - { path: /boot,          opts: nosuid }
+  - { path: /,              lv: lv_root,          size: 4G, fstype: xfs }
+  - { path: swap,           lv: lv_swap,          size: 2G, fstype: swap }
+  - { path: /usr,           lv: lv_usr,           size: 4G, fstype: xfs }
+  - { path: /usr/local,     lv: lv_usr_local,     size: 1G, fstype: xfs }
+  - { path: /opt,           lv: lv_opt,           size: 1G, fstype: xfs }
+  - { path: /tmp,           lv: lv_tmp,           size: 4G, fstype: xfs, opts: "nodev,noexec,nosuid" }
+  - { path: /var,           lv: lv_var,           size: 2G, fstype: xfs, opts: "nodev,nosuid" }
+  - { path: /var/tmp,       lv: lv_var_tmp,       size: 2G, fstype: xfs, opts: "nodev,noexec,nosuid" }
+  - { path: /var/log,       lv: lv_var_log,       size: 4G, fstype: xfs, opts: "nodev,noexec,nosuid" }
+  - { path: /var/log/audit, lv: lv_var_log_audit, size: 1G, fstype: xfs, opts: "nodev,noexec,nosuid" }
+  - { path: /home,          lv: lv_home,          size: 4G, fstype: xfs, opts: "nodev,noexec,nosuid" }

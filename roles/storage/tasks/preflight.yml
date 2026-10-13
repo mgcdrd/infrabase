@@ -1,0 +1,126 @@
+---
+
+# =====================
+# Mount entries
+
+- name: storage preflight - Assert every mount entry has a usable path
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.path is defined
+      - item.path == 'swap' or item.path.startswith('/')
+    fail_msg: >-
+      Every storage mount needs a 'path': an absolute mount point, or 'swap'.
+  loop: "{{ _storage_all }}"
+  loop_control:
+    label: "{{ item.path | default('?') }}"
+
+- name: storage preflight - Assert LV-backed mounts have vg and a valid size
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.vg | length > 0
+      - item.size is defined
+      - item.size | string is match('^[0-9]+(\.[0-9]+)?[KMGT]$|^[0-9]+%(FREE|VG|PVS|ORIGIN)$')
+    fail_msg: >-
+      '{{ item.path }}': an LV-backed mount needs a VG (storage_vg, the root VG
+      or an explicit vg) and a size such as 20G or 100%FREE.
+  loop: "{{ _storage_plan | selectattr('lv', 'defined') | list }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: storage preflight - Assert threshold mounts also set extend_by
+  ansible.builtin.assert:
+    quiet: true
+    that: item.extend_by is defined
+    fail_msg: "'{{ item.path }}' sets threshold but not extend_by (for example 10G)."
+  loop: "{{ _storage_plan | selectattr('threshold', 'defined') | list }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: storage preflight - Assert filesystems on block-backed mounts are supported
+  ansible.builtin.assert:
+    quiet: true
+    that: item.fstype in storage_block_fstypes
+    fail_msg: >-
+      '{{ item.path }}': fstype '{{ item.fstype }}' is not supported on a block
+      device by this role. Use one of: {{ storage_block_fstypes | join(', ') }}.
+  loop: "{{ _storage_plan | selectattr('block') | rejectattr('adopt') | list }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: storage preflight - Assert adopted mounts already exist
+  ansible.builtin.assert:
+    quiet: true
+    that: item.src | length > 0 or item.fstype == 'swap'
+    fail_msg: >-
+      '{{ item.path }}' has neither 'lv' nor 'src' and no line in /etc/fstab to
+      adopt. Give it an lv or a src.
+  loop: "{{ _storage_plan | selectattr('adopt') | list }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+# =====================
+# Boot firmware: UEFI needs /boot/efi, legacy BIOS must not define it
+
+- name: storage preflight - Assert boot mounts match the firmware
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - >-
+        not (_storage_uefi and '/boot/efi' in _storage_fstab
+             and '/boot/efi' not in (_storage_plan | map(attribute='path') | list)
+             and '/boot/efi' not in (_storage_absent | map(attribute='path') | list))
+      - >-
+        _storage_uefi or '/boot/efi' not in (_storage_plan | map(attribute='path') | list)
+    fail_msg: >-
+      Boot firmware and mounts disagree. This host is {{ 'UEFI' if _storage_uefi else 'legacy BIOS' }}:
+      a UEFI host must define /boot/efi, a legacy BIOS host must not.
+
+# =====================
+# Never act on protected paths
+
+- name: storage preflight - Assert absent entries are not protected paths
+  ansible.builtin.assert:
+    quiet: true
+    that: item.path not in storage_protected_paths
+    fail_msg: "'{{ item.path }}' is a protected path and cannot be set to state: absent."
+  loop: "{{ _storage_absent }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+# =====================
+# Disks
+
+- name: storage preflight - Assert all storage_disks entries have required keys
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.device is defined and item.device | length > 0
+      - item.partitions is not defined or item.vg is not defined
+    fail_msg: >-
+      storage_disks entry needs 'device' (prefer /dev/disk/by-id/...), and a disk
+      with 'partitions' sets 'vg' on its partitions, not on the disk.
+  loop: "{{ storage_disks }}"
+  loop_control:
+    label: "{{ item.device | default('?') }}"
+
+- name: storage preflight - Check disk block devices
+  ansible.builtin.stat:
+    path: "{{ item.device }}"
+    follow: true
+  register: _storage_disk_stat
+  loop: "{{ storage_disks }}"
+  loop_control:
+    label: "{{ item.device }}"
+
+- name: storage preflight - Fail on missing disks
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.stat.exists
+      - item.stat.isblk
+    fail_msg: "Disk '{{ item.item.device }}' does not exist or is not a block device."
+  loop: "{{ _storage_disk_stat.results }}"
+  loop_control:
+    label: "{{ item.item.device }}"

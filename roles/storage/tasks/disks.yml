@@ -1,0 +1,56 @@
+---
+
+# Creates partitions in free space, grows partitions that are marked `grow`
+# (e.g. after the hypervisor enlarged the disk), and resizes the PV on them.
+# A partition table is only ever written to a disk that is completely blank.
+
+- name: storage disks - Read current partition table per disk
+  community.general.parted:
+    device: "{{ disk_path }}"
+    state: info
+  loop: "{{ _storage_parts | map(attribute='disk') | unique | list }}"
+  loop_control:
+    loop_var: disk_path
+  register: _storage_parted_info
+  check_mode: false
+
+# Without a table, parted would write a new one: refuse if a filesystem or RAID
+# signature sits on the bare disk.
+- name: storage disks - Check unpartitioned disks carry no signature
+  ansible.builtin.command:
+    cmd: blkid -p -o value -s TYPE {{ item.disk_path }}
+  register: _storage_disk_sig
+  loop: "{{ _storage_parted_info.results }}"
+  loop_control:
+    label: "{{ item.disk_path }}"
+  when: item.disk.table == 'unknown'
+  changed_when: false
+  failed_when: _storage_disk_sig.rc not in [0, 2] or _storage_disk_sig.stdout | trim | length > 0
+  check_mode: false
+
+# Pin the label to the disk's actual table. community.general.parted defaults
+# to msdos, which on a GPT disk would rewrite the table instead of resizing.
+- name: storage disks - Create or grow partitions
+  community.general.parted:
+    device: "{{ item.disk }}"
+    number: "{{ item.number }}"
+    part_start: "{{ item.start }}"
+    part_end: "{{ item.end }}"
+    flags: "{{ item.flags }}"
+    label: >-
+      {{ (_storage_parted_info.results | selectattr('disk_path', 'equalto', item.disk) | first).disk.table
+         | replace('unknown', item.label) }}
+    resize: "{{ item.grow }}"
+    state: present
+  loop: "{{ _storage_parts }}"
+  loop_control:
+    label: "{{ item.dev }}"
+
+- name: storage disks - Resize physical volumes on grown partitions
+  community.general.lvm_pv:
+    device: "{{ item.dev }}"
+    resize: true
+  loop: "{{ _storage_parts | selectattr('grow') | list }}"
+  loop_control:
+    label: "{{ item.dev }}"
+  when: item.vg | length > 0 or 'lvm' in item.flags

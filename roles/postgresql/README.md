@@ -28,51 +28,33 @@ Requirements
 Role Variables
 --------------
 
-### Version / packages
+### Variable reference
 
-| Variable | Default | Description |
-|---|---|---|
-| `postgresql_version` | `"18"` | Major version. Selects the PGDG package set and all on-disk paths. |
-| `postgresql_manage_repo` | `true` | Add the PGDG repo (yum repo RPM on RHEL, apt source + key on Debian). |
-| `postgresql_packages_extra` | `[]` | Extra packages installed with the server. |
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `postgresql_version` | `"18"` | No | Major PostgreSQL version |
+| `postgresql_manage_repo` | `true` | No | Manage the PGDG repository |
+| `postgresql_packages_extra` | `[]` | No | Extra packages installed alongside the server, e.g. "postgresql{{ postgresql_version }}-plpython3" (RHEL) or "postgresql-plpython3-{{ postgresql_version }}" (Debian) |
+| `postgresql_listen_addresses` | `"localhost"` | No | Value written to listen_addresses |
+| `postgresql_port` | `5432` | No | Listen port |
+| `postgresql_settings` | `{}` | No | Arbitrary extra GUCs written to the managed conf.d drop-in as key = 'value' |
+| `postgresql_ssl` | `false` | No | Turn on server-side TLS |
+| `postgresql_ssl_dir` | `""` | No | Private directory the cert and key are copied into so user `postgres` can read them without loosening perms on the acme tree |
+| `postgresql_ssl_cert_file` | `""` | If `postgresql_ssl` | Path to the certificate PEM |
+| `postgresql_ssl_key_file` | `""` | If `postgresql_ssl` | Path to the private key PEM |
+| `postgresql_ssl_ca_file` | `""` | No | `ssl_ca_file` for client-certificate verification |
+| `postgresql_ssl_min_protocol_version` | `"TLSv1.2"` | No | `ssl_min_protocol_version` |
+| `postgresql_manage_cert` | `false` | No | Issue the certificate with mgcdrd.infrabase.acme_sh from inside this role |
+| `postgresql_acme_certs` | `[]` | If `postgresql_manage_cert` | Passed to `acme_sh_certs` when `postgresql_manage_cert` is true |
+| `postgresql_hba_entries` | *(list, 3 items)* | No | pg_hba.conf is rendered entirely from this list — order is preserved and nothing else is kept |
+| `postgresql_roles` | `[]` | No | Roles to create; each takes `name`, `password` (use a `vault_` var), `role_attr_flags`, `state` |
+| `postgresql_databases` | `[]` | No | Databases to create; each takes `name`, `owner`, `encoding`, `lc_collate`, `lc_ctype`, `template`, `state` |
+| `postgresql_privileges` | `[]` | No | Grants passed to `community.postgresql.postgresql_privs`; each takes `roles`, `database`, `privs`, `type`, `objs`, `schema`, `state` |
 
-### Listener
-
-| Variable | Default | Description |
-|---|---|---|
-| `postgresql_listen_addresses` | `"localhost"` | `listen_addresses` value. Add the host's own address(es) for remote access. |
-| `postgresql_port` | `5432` | Listen port. |
-| `postgresql_settings` | `{}` | Arbitrary extra GUCs, written to the drop-in as `key = 'value'`. |
-
-### TLS
-
-| Variable | Default | Description |
-|---|---|---|
-| `postgresql_ssl` | `false` | Enable server-side TLS. |
-| `postgresql_ssl_cert_file` | `""` | Path to the certificate PEM. Required when `postgresql_ssl`. |
-| `postgresql_ssl_key_file` | `""` | Path to the private key PEM. Required when `postgresql_ssl`. |
-| `postgresql_ssl_ca_file` | `""` | Optional `ssl_ca_file` for client-cert verification. |
-| `postgresql_ssl_dir` | `""` | Private dir the cert/key are copied into (`root:postgres`, `0640`). Empty **and** `postgresql_manage_cert: false` means the cert/key are used in place — they must already be readable by `postgres`. When set, or when `postgresql_manage_cert` is true, the files are copied to `<dir>/server.{crt,key}` (default dir: `<data_dir>/certs`). |
-| `postgresql_ssl_min_protocol_version` | `"TLSv1.2"` | `ssl_min_protocol_version`. |
-| `postgresql_manage_cert` | `false` | Issue the cert with `mgcdrd.infrabase.acme_sh` from inside this role. Off by default — normally the caller issues the cert (any CA / challenge) and points `postgresql_ssl_cert_file` / `_key_file` at the result. |
-| `postgresql_acme_certs` | `[]` | Passed straight to `acme_sh_certs` when `postgresql_manage_cert`. |
-
-### Host-based auth
-
-| Variable | Default | Description |
-|---|---|---|
-| `postgresql_hba_entries` | local `peer` + loopback `scram-sha-256` | `pg_hba.conf` is rendered **entirely** from this list, in order — nothing else is kept. Each entry: `type`, `database`, `user`, `address` (omit for `type: local`), `method`. |
 
 ### Roles / databases / privileges
 
 Applied only when non-empty.
-
-| Variable | Default | Description |
-|---|---|---|
-| `postgresql_roles` | `[]` | `community.postgresql.postgresql_user` items: `name`, `password` (use a `vault_` var), `role_attr_flags`, `state`. |
-| `postgresql_databases` | `[]` | `community.postgresql.postgresql_db` items: `name`, `owner`, `encoding`, `lc_collate`, `lc_ctype`, `template`, `state`. |
-| `postgresql_privileges` | `[]` | `community.postgresql.postgresql_privs` items: `roles`, `database`, `privs`, `type`, `objs`, `schema`, `state`. |
-
 
 OS-family differences
 ---------------------

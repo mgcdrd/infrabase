@@ -25,14 +25,16 @@ Requirements
 Role Variables
 --------------
 
-| Variable | Default | Description |
-|---|---|---|
-| `sudoers_timestamp_timeout` | `5` | Minutes before sudo re-prompts for a password. `0` = always prompt, `-1` = never expire. |
-| `sudoers_log_file` | `/var/log/sudo.log` | Path for sudo command logging via `Defaults logfile=` |
-| `sudoers_use_pty` | `true` | Enforce `Defaults use_pty` — prevents background privilege escalation without a terminal. |
-| `sudoers_disable_pwflags` | `[targetpw, rootpw, runaspw]` | List of sudo flags to disable. Prevents escalation via target/root/runas passwords instead of the invoking user's password. |
-| `sudoers_rules_group` | `""` | Namespace prefix for `sudoers_rules`' drop-in files — required when `sudoers_rules` is non-empty. See "Per-user/group sudo grants" below. |
-| `sudoers_rules` | `[]` | Declarative list of per-user/group sudo grants. See "Per-user/group sudo grants" below. |
+### Variable reference
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `sudoers_timestamp_timeout` | `5` | No | Minutes before sudo asks for the password again |
+| `sudoers_log_file` | `/var/log/sudo.log` | No | Path for sudo command logging |
+| `sudoers_use_pty` | `true` | No | Run sudo commands in a pty; blocks background privilege escalation |
+| `sudoers_disable_pwflags` | *(list, 3 items)* | No | Defaults flags forced off (`targetpw`, `rootpw`, `runaspw`) to stop password-sharing escalation |
+| `sudoers_rules_group` | `""` | If `sudoers_rules` is used | Namespace prefix for `/etc/sudoers.d/<group>-<rule>` files; rules not declared under this prefix are pruned, so each caller manages its own slice |
+| `sudoers_rules` | `[]` | No | Declarative sudoers drop-ins; each takes `name`, `principals` (users and/or `%groups`), plus the command and option fields shown in the README. Files under the group prefix not listed are removed |
 
 
 Dependencies

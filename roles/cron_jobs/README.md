@@ -22,6 +22,13 @@ their crontab entries managed here will actually run.
 Role Variables
 --------------
 
+### Variable reference
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `cron_jobs` | `[]` | Yes | Per-user cron entries to manage (fields below); an empty list is a no-op |
+
+
 ```yaml
 cron_jobs: []
 # cron_jobs:

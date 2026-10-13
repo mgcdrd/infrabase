@@ -26,6 +26,25 @@ present by default on both Debian 12+ and Rocky 9+.
 Role Variables
 --------------
 
+### Variable reference
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `password_policy_pwquality` | *(list, 12 items)* | Yes | `pwquality.conf` settings as `{key, value}` pairs; negative credit values are minimums |
+| `password_policy_pass_max_days` | `60` | No | Maximum password age in days (`PASS_MAX_DAYS`) |
+| `password_policy_pass_min_days` | `7` | No | Minimum days between password changes (`PASS_MIN_DAYS`) |
+| `password_policy_shadow_reconcile` | `[]` | No | Usernames allowed to have a missing `/etc/shadow` entry created with `pwconv`; any other passwd-only account fails the run |
+| `password_policy_login_defs` | *(list, 5 items)* | No | `/etc/login.defs` settings as `{key, value}` pairs |
+| `password_policy_inactive_days` | `30` | No | Days before an account is locked after its password expires |
+| `password_policy_tmout` | `900` | No | Shell session idle timeout in seconds |
+| `password_policy_umask` | `"027"` | No | Default umask for interactive shells |
+| `password_policy_faillock_deny` | `3` | No | Maximum consecutive failed logins before lockout (RedHat only — faillock.conf) |
+| `password_policy_faillock_unlock_time` | `900` | No | Seconds before a locked account is automatically unlocked (RedHat only) |
+| `password_policy_faillock_even_deny_root` | `true` | No | Also lock root after failed attempts (RedHat only) |
+| `password_policy_remember` | `24` | No | Number of previous passwords to remember (RedHat only — pwhistory.conf) |
+| `password_policy_pwhistory_enforce_root` | `true` | No | Enforce pwhistory for root as well (RedHat only) |
+
+
 ### pwquality (`password_policy_pwquality`)
 
 List of key/value pairs written to `/etc/security/pwquality.conf`:
@@ -53,19 +72,6 @@ List of key/value pairs written to `/etc/login.defs`:
 | `PASS_MIN_LEN` | `15` | Minimum password length (backup enforcement) |
 | `UMASK` | `027` | Default umask for new accounts |
 | `FAIL_DELAY` | `4` | Seconds to delay on failed login |
-
-### Other variables
-
-| Variable | Default | Description |
-|---|---|---|
-| `password_policy_inactive_days` | `30` | Days after password expiry before account is locked (`/etc/default/useradd INACTIVE=`) |
-| `password_policy_tmout` | `900` | Idle shell timeout in seconds (TMOUT in `/etc/profile`) |
-| `password_policy_umask` | `027` | Umask for interactive shells |
-| `password_policy_faillock_deny` | `3` | Failed login attempts before lockout (**RedHat only**) |
-| `password_policy_faillock_unlock_time` | `900` | Lockout duration in seconds (**RedHat only**) |
-| `password_policy_remember` | `5` | Number of previous passwords to reject (**RedHat only**) |
-| `password_policy_shadow_reconcile` | `[]` | Usernames explicitly allowed to have a missing `/etc/shadow` entry created via `pwconv`. Any passwd-only account **not** listed here fails the run instead of being silently patched. |
-
 
 Dependencies
 ------------

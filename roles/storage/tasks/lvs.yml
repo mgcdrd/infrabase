@@ -1,0 +1,90 @@
+---
+
+# `size` is a minimum: a missing LV is created, an LV smaller than `size` is
+# extended, and an LV that is already larger is left alone. Shrinking never
+# happens. `threshold` + `extend_by` additionally grow an LV by a fixed amount
+# when its filesystem is filling up; a mount that cannot be found is skipped.
+
+- name: storage lvs - Refresh mount facts for threshold checks
+  ansible.builtin.setup:
+    gather_subset:
+      - '!all'
+      - hardware
+  when: _storage_plan | selectattr('threshold', 'defined') | list | length > 0
+
+- name: storage lvs - Decide create/extend actions
+  ansible.builtin.set_fact:
+    _storage_lv_actions: >-
+      {%- set out = [] -%}
+      {%- for m in _storage_plan if m.lv is defined -%}
+      {%- set cur = _storage_lvs.get(m.vg ~ '/' ~ m.lv) -%}
+      {%- set pct = '%' in (m.size | string) -%}
+      {%- if cur is none -%}
+      {%- set _ = out.append({'vg': m.vg, 'lv': m.lv, 'path': m.path, 'action': 'create',
+                              'size': m.size | string,
+                              'delta': 0 if pct else (m.size | string | human_to_bytes)}) -%}
+      {%- elif m.fstype != 'swap' -%}
+      {%- set want = 0 if pct else (m.size | string | human_to_bytes) -%}
+      {%- if want > cur -%}
+      {%- set _ = out.append({'vg': m.vg, 'lv': m.lv, 'path': m.path, 'action': 'extend',
+                              'size': ((want / 1048576) | round(0, 'ceil') | int) ~ 'm',
+                              'delta': want - cur}) -%}
+      {%- elif m.threshold is defined -%}
+      {%- set mnt = ansible_facts['mounts'] | selectattr('mount', 'equalto', m.path) | list -%}
+      {%- if mnt | length > 0 and mnt[0].size_total > 0
+             and ((mnt[0].size_total - mnt[0].size_available) * 100 // mnt[0].size_total) >= m.threshold -%}
+      {%- set by = m.extend_by | string | human_to_bytes -%}
+      {%- set _ = out.append({'vg': m.vg, 'lv': m.lv, 'path': m.path, 'action': 'extend',
+                              'size': '+' ~ ((by / 1048576) | round(0, 'ceil') | int) ~ 'm',
+                              'delta': by}) -%}
+      {%- endif -%}
+      {%- endif -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {{ out }}
+
+# Space check, per VG, against the free space after any VG extension above.
+- name: storage lvs - Sum requested space per VG
+  ansible.builtin.set_fact:
+    _storage_lv_need: >-
+      {%- set out = {} -%}
+      {%- for a in _storage_lv_actions -%}
+      {%- set _ = out.update({a.vg: out.get(a.vg, 0) + a.delta}) -%}
+      {%- endfor -%}
+      {{ out }}
+
+- name: storage lvs - Assert VGs exist and have enough free space
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.key in _storage_vg_free
+      - item.value <= _storage_vg_free[item.key] | default(0)
+    fail_msg: >-
+      Volume group '{{ item.key }}' {{ 'has only ' ~ (_storage_vg_free[item.key] // 1048576) ~ ' MiB free but '
+      ~ (item.value // 1048576) ~ ' MiB are needed' if item.key in _storage_vg_free else 'does not exist' }}.
+  loop: "{{ _storage_lv_need | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+
+- name: storage lvs - Create logical volumes
+  community.general.lvol:
+    vg: "{{ item.vg }}"
+    lv: "{{ item.lv }}"
+    size: "{{ item.size }}"
+    shrink: false
+    state: present
+  loop: "{{ _storage_lv_actions | selectattr('action', 'equalto', 'create') | list }}"
+  loop_control:
+    label: "{{ item.vg }}/{{ item.lv }}"
+
+- name: storage lvs - Extend logical volumes and their filesystems
+  community.general.lvol:
+    vg: "{{ item.vg }}"
+    lv: "{{ item.lv }}"
+    size: "{{ item.size }}"
+    resizefs: true
+    shrink: false
+    state: present
+  loop: "{{ _storage_lv_actions | selectattr('action', 'equalto', 'extend') | list }}"
+  loop_control:
+    label: "{{ item.vg }}/{{ item.lv }}"

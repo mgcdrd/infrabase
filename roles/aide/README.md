@@ -30,14 +30,17 @@ the database already exists and the configuration has not changed).
 Role Variables
 --------------
 
-| Variable | Default | Description |
-|---|---|---|
-| `aide_db_dir` | `/var/lib/aide` | Directory for the AIDE database files |
-| `aide_log_dir` | `/var/log/aide` | Directory for AIDE check reports |
-| `aide_cron_hour` | `4` | Hour to run the daily check |
-| `aide_cron_minute` | `5` | Minute to run the daily check |
-| `aide_extra_paths` | `[]` | Additional paths to monitor. Each entry: `{path, rule}` |
-| `aide_exclude_paths` | `[]` | Paths to explicitly exclude (`!` prefix added automatically) |
+### Variable reference
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `aide_db_dir` | `/var/lib/aide` | No | Directory for the AIDE database files |
+| `aide_log_dir` | `/var/log/aide` | No | Directory for AIDE check reports |
+| `aide_cron_hour` | `"4"` | No | Hour to run the daily check |
+| `aide_cron_minute` | `"5"` | No | Minute to run the daily check |
+| `aide_extra_paths` | `[]` | No | Additional paths to monitor |
+| `aide_exclude_paths` | `[]` | No | Paths to exclude from monitoring (prepended with !) |
+
 
 ### `aide_extra_paths`
 

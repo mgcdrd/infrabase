@@ -1,0 +1,46 @@
+---
+
+# Read straight from the LVM tools, not ansible_facts['lvm']: the facts key
+# LVs by name only (the same name in two VGs collides) and go stale mid-play.
+
+- name: storage lvm state - Read volume groups
+  ansible.builtin.command:
+    cmd: vgs --reportformat json --units b --nosuffix -o vg_name,vg_free
+  register: _storage_vgs_raw
+  changed_when: false
+  check_mode: false
+
+- name: storage lvm state - Read logical volumes
+  ansible.builtin.command:
+    cmd: lvs --reportformat json --units b --nosuffix -o vg_name,lv_name,lv_size
+  register: _storage_lvs_raw
+  changed_when: false
+  check_mode: false
+
+- name: storage lvm state - Read physical volumes
+  ansible.builtin.command:
+    cmd: pvs --reportformat json -o pv_name,vg_name
+  register: _storage_pvs_raw
+  changed_when: false
+  check_mode: false
+
+- name: storage lvm state - Index LVM state
+  ansible.builtin.set_fact:
+    _storage_vg_free: >-
+      {%- set out = {} -%}
+      {%- for v in (_storage_vgs_raw.stdout | from_json).report[0].vg | default([]) -%}
+      {%- set _ = out.update({v.vg_name: v.vg_free | int}) -%}
+      {%- endfor -%}
+      {{ out }}
+    _storage_lvs: >-
+      {%- set out = {} -%}
+      {%- for l in (_storage_lvs_raw.stdout | from_json).report[0].lv | default([]) -%}
+      {%- set _ = out.update({l.vg_name ~ '/' ~ l.lv_name: l.lv_size | float | int}) -%}
+      {%- endfor -%}
+      {{ out }}
+    _storage_pv_vg: >-
+      {%- set out = {} -%}
+      {%- for p in (_storage_pvs_raw.stdout | from_json).report[0].pv | default([]) -%}
+      {%- set _ = out.update({p.pv_name: p.vg_name}) -%}
+      {%- endfor -%}
+      {{ out }}

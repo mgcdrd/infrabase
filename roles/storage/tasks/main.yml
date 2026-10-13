@@ -1,0 +1,53 @@
+---
+
+# =====================
+# Tooling for LVM, xfs, vfat and partitioning
+- name: storage main - Install storage packages
+  ansible.builtin.import_tasks: install.yml
+
+# =====================
+# Firmware, scheme profile, effective mount list and plan
+- name: storage main - Build the effective storage plan
+  ansible.builtin.import_tasks: facts.yml
+
+- name: storage main - Read LVM state
+  ansible.builtin.include_tasks: lvm_state.yml
+
+# =====================
+# Safety checks - before touching anything
+- name: storage main - Preflight validation
+  ansible.builtin.import_tasks: preflight.yml
+
+# =====================
+# Partitions and PVs, then VGs (adds space before LVs need it)
+- name: storage main - Partition disks and grow PVs
+  ansible.builtin.import_tasks: disks.yml
+  when: storage_disks | length > 0
+
+- name: storage main - Create and extend volume groups
+  ansible.builtin.import_tasks: vgs.yml
+  when: _storage_vg_pvs | length > 0
+
+- name: storage main - Refresh LVM state after VG changes
+  ansible.builtin.include_tasks: lvm_state.yml
+  when: _storage_vg_pvs | length > 0
+
+# =====================
+# Logical volumes, filesystems, swap, mounts
+- name: storage main - Create and extend logical volumes
+  ansible.builtin.import_tasks: lvs.yml
+  when: _storage_plan | selectattr('lv', 'defined') | list | length > 0
+
+- name: storage main - Create filesystems
+  ansible.builtin.import_tasks: filesystems.yml
+
+- name: storage main - Configure swap
+  ansible.builtin.import_tasks: swap.yml
+
+- name: storage main - Mount filesystems and persist to fstab
+  ansible.builtin.import_tasks: mounts.yml
+
+# =====================
+# Unmount and comment out what is no longer defined
+- name: storage main - Remove undefined mounts
+  ansible.builtin.import_tasks: prune.yml

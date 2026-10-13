@@ -30,54 +30,74 @@ service name, key group, and sftp path).
 Role Variables
 --------------
 
-### Connection
+### Variable reference
 
-| Variable | Default | Description |
-|---|---|---|
-| `sshd_port` | `22` | Port sshd listens on |
-| `sshd_address_family` | `any` | `inet`, `inet6`, or `any` |
-| `sshd_listen_addresses` | `[]` | Explicit listen addresses; empty = all |
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `sshd_manage_package` | `true` | No | Install openssh-server; set false if it is already installed |
+| `sshd_port` | `22` | No | Port sshd listens on |
+| `sshd_address_family` | `any` | No | `inet`, `inet6`, or `any` |
+| `sshd_listen_addresses` | `[]` | No | empty = listen on all interfaces |
+| `sshd_permit_root_login` | `"no"` | No | `PermitRootLogin` policy |
+| `sshd_max_auth_tries` | `4` | No | `MaxAuthTries`: authentication attempts per connection |
+| `sshd_max_sessions` | `10` | No | `MaxSessions`: multiplexed sessions per connection |
+| `sshd_pubkey_authentication` | `"yes"` | No | `PubkeyAuthentication` |
+| `sshd_authorized_keys_file` | `".ssh/authorized_keys"` | No | `AuthorizedKeysFile` path |
+| `sshd_authorized_keys_command` | `""` | No | `AuthorizedKeysCommand` lookup program (e.g. for LDAP-backed keys); empty disables |
+| `sshd_authorized_keys_command_user` | `"nobody"` | No | User the lookup command runs as; only written when `sshd_authorized_keys_command` is set |
+| `sshd_password_authentication` | `"no"` | No | `PasswordAuthentication` |
+| `sshd_permit_empty_passwords` | `"no"` | No | `PermitEmptyPasswords` |
+| `sshd_use_pam` | `"yes"` | No | `UsePAM` |
+| `sshd_allow_users` | `[]` | No | `AllowUsers`; empty means no restriction |
+| `sshd_allow_groups` | `[]` | No | `AllowGroups`; empty means no restriction |
+| `sshd_deny_users` | `[]` | No | `DenyUsers` |
+| `sshd_deny_groups` | `[]` | No | `DenyGroups` |
+| `sshd_<allow\|deny>_<users\|groups>_extra_<suffix>` | not set | No | Entries added to the matching base list without replacing it; one variable per group or host layer (see **Layering**) |
+| `sshd_login_grace_time` | `60` | No | `LoginGraceTime`: seconds to authenticate before disconnect |
+| `sshd_client_alive_interval` | `300` | No | `ClientAliveInterval` in seconds |
+| `sshd_client_alive_count_max` | `1` | No | `ClientAliveCountMax`; the CIS profile requires 1 |
+| `sshd_log_level` | `"VERBOSE"` | No | `LogLevel` |
+| `sshd_allow_tcp_forwarding` | `"no"` | No | `AllowTcpForwarding` |
+| `sshd_allow_agent_forwarding` | `"no"` | No | `AllowAgentForwarding` |
+| `sshd_allow_stream_local_forwarding` | `"no"` | No | `AllowStreamLocalForwarding` |
+| `sshd_x11_forwarding` | `"no"` | No | `X11Forwarding` |
+| `sshd_print_motd` | `"no"` | No | `PrintMotd` |
+| `sshd_max_startups` | `"10:30:60"` | No | `MaxStartups` (start:rate:full) for unauthenticated connections |
+| `sshd_banner` | `""` | No | Path to a pre-auth banner file; empty disables |
+| `sshd_match_blocks` | `[]` | No | Conditional `Match` blocks appended to `sshd_config` (fields below) |
+| `sshd_match_blocks_extra_<suffix>` | not set | No | `Match` blocks appended after the base blocks, in variable-name order |
+| `sshd_scrub_directives` | *(list, 1 items)* | No | Directives removed from other `sshd_config.d/*.conf` drop-ins so CIS text-search checks see only this role's values |
+| `sshd_ciphers` | *(AES-GCM and AES-CTR; see defaults)* | No | `Ciphers` list |
+| `sshd_kex_algorithms` | *(curve25519, DH group14/16; see defaults)* | No | `KexAlgorithms` list |
+| `sshd_macs` | *(hmac-sha2 etm and non-etm; see defaults)* | No | `MACs` list |
 
-### Authentication
+### Layering: base lists plus custom sets
 
-| Variable | Default | Description |
-|---|---|---|
-| `sshd_permit_root_login` | `no` | Root login policy |
-| `sshd_max_auth_tries` | `4` | Max authentication attempts per connection |
-| `sshd_max_sessions` | `10` | Max multiplexed sessions per connection |
-| `sshd_pubkey_authentication` | `yes` | Enable public key auth |
-| `sshd_authorized_keys_file` | `.ssh/authorized_keys` | AuthorizedKeysFile path |
-| `sshd_authorized_keys_command` | `""` | Path to an AuthorizedKeysCommand lookup program; empty = not set by this role (leaves it to an external drop-in, e.g. `ipa-client-install`) |
-| `sshd_authorized_keys_command_user` | `nobody` | User the command runs as; only written when `sshd_authorized_keys_command` is set |
-| `sshd_password_authentication` | `no` | Enable password auth |
-| `sshd_permit_empty_passwords` | `no` | Permit empty passwords |
-| `sshd_use_pam` | `yes` | Enable PAM |
+To add to a list without restating it, set `sshd_<allow|deny>_<users|groups>_extra_<suffix>` or
+`sshd_match_blocks_extra_<suffix>`, with a different suffix per group or host (Ansible replaces a
+list when two levels set the same name, but leaves differently named variables alone). The role
+unions the base and every extra, in variable-name order.
+
+```yaml
+# group_vars/k8smasters.yml
+sshd_allow_groups_extra_k8smasters: [kube-admins]
+
+# host_vars/kube1.example.com.yml: adds to the group's list
+sshd_allow_groups_extra_host: [backup-ops]
+```
+
+An allow list switches the restriction on, so the first extra entry makes `AllowUsers` or
+`AllowGroups` take effect where the base list was empty. Setting a base variable itself still
+replaces it, as before.
+
 
 ### Access control
-
-| Variable | Default | Description |
-|---|---|---|
-| `sshd_allow_users` | `[]` | Whitelist of users; empty = no restriction |
-| `sshd_allow_groups` | `[]` | Whitelist of groups; empty = no restriction |
-| `sshd_deny_users` | `[]` | Blacklist of users |
-| `sshd_deny_groups` | `[]` | Blacklist of groups |
 
 On IPA-enrolled hosts, access control is normally left to IPA HBAC rather
 than `sshd_allow_groups` — see the CIS-Rocky9-ScanFindings wiki page for the
 accepted-risk rationale on `sshd_limit_user_access`.
 
 ### Session
-
-| Variable | Default | Description |
-|---|---|---|
-| `sshd_login_grace_time` | `60` | Seconds to complete auth before disconnect |
-| `sshd_client_alive_interval` | `300` | Keepalive interval in seconds |
-| `sshd_client_alive_count_max` | `1` | Keepalives before disconnect — CIS requires exactly `1`, not the more common `3` |
-| `sshd_allow_tcp_forwarding` | `no` | TCP port forwarding |
-| `sshd_allow_agent_forwarding` | `no` | SSH agent forwarding |
-| `sshd_x11_forwarding` | `no` | X11 forwarding |
-| `sshd_print_motd` | `no` | Print MOTD on login |
-| `sshd_banner` | `""` | Path to banner file; empty = no banner |
 
 When `sshd_allow_tcp_forwarding`, `sshd_allow_agent_forwarding`,
 `sshd_allow_stream_local_forwarding`, and `sshd_x11_forwarding` are all `no`,
@@ -87,10 +107,6 @@ any one of the granular vars to `yes` and `DisableForwarding` is dropped
 automatically (it would otherwise override them).
 
 ### Drop-in scrubbing
-
-| Variable | Default | Description |
-|---|---|---|
-| `sshd_scrub_directives` | `[GSSAPIAuthentication]` | Directive names stripped from every `sshd_config.d/*.conf` file this role doesn't manage |
 
 CIS's automated check for some `sshd` settings does a naive text search
 across `sshd_config.d/*.conf` rather than resolving effective
@@ -114,12 +130,6 @@ sshd_match_blocks:
 ```
 
 ### Crypto
-
-| Variable | Default | Description |
-|---|---|---|
-| `sshd_ciphers` | `aes256-gcm@…,aes128-gcm@…,aes256-ctr,…` | Ciphers list |
-| `sshd_kex_algorithms` | `curve25519-sha256,…` | Key exchange algorithms |
-| `sshd_macs` | `hmac-sha2-512-etm@…,…` | Message authentication codes |
 
 Written to `/etc/ssh/sshd_config.d/00-crypto.conf`. Override to match your
 site policy or compliance requirement.

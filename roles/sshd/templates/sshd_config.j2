@@ -65,21 +65,21 @@ Banner {{ sshd_banner }}
 Subsystem sftp {{ _sshd_sftp_server }}
 
 # ---- Access control ----
-{% if sshd_deny_users %}
-DenyUsers {{ sshd_deny_users | join(' ') }}
+{% if _sshd_deny_users %}
+DenyUsers {{ _sshd_deny_users | join(' ') }}
 {% endif %}
-{% if sshd_allow_users %}
-AllowUsers {{ sshd_allow_users | join(' ') }}
+{% if _sshd_allow_users %}
+AllowUsers {{ _sshd_allow_users | join(' ') }}
 {% endif %}
-{% if sshd_deny_groups %}
-DenyGroups {{ sshd_deny_groups | join(' ') }}
+{% if _sshd_deny_groups %}
+DenyGroups {{ _sshd_deny_groups | join(' ') }}
 {% endif %}
-{% if sshd_allow_groups %}
-AllowGroups {{ sshd_allow_groups | join(' ') }}
+{% if _sshd_allow_groups %}
+AllowGroups {{ _sshd_allow_groups | join(' ') }}
 {% endif %}
 
 # ---- Match blocks ----
-{% for block in sshd_match_blocks %}
+{% for block in _sshd_match_blocks %}
 Match {{ block.type }} {{ block.targets | join(' ') }}
 {% for opt in block.options %}
   {{ opt }}

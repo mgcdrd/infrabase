@@ -27,6 +27,13 @@ sshd_use_pam:                  "yes"
 
 # ---- Access control ----
 # Lists of users/groups to allow or deny. Empty = no restriction applied.
+#
+# Layering: to add entries without restating the base list, set any number of
+# sshd_<allow|deny>_<users|groups>_extra_<suffix> vars (one per group/host
+# layer, e.g. sshd_allow_groups_extra_k8smasters). Base and extras are unioned.
+# Note an allow list switches the restriction on: the first extra entry makes
+# AllowUsers/AllowGroups take effect where the base was empty. Setting the base
+# var itself still replaces it, as before.
 sshd_allow_users:  []
 sshd_allow_groups: []
 sshd_deny_users:   []
@@ -48,6 +55,8 @@ sshd_banner:                         ""  # path to banner file, empty = no banne
 # ---- Match blocks ----
 # List of conditional match blocks appended at end of sshd_config.
 # Each entry: { type: "Group|User", targets: [...], options: [...] }
+# Layering: sshd_match_blocks_extra_<suffix> vars are appended after the base
+# blocks, in variable-name order.
 # Example:
 #   sshd_match_blocks:
 #     - type: Group

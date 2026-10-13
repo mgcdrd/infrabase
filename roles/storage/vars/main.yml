@@ -1,0 +1,3 @@
+---
+storage_schemes: [std, base-lvm, ext-lvm, foreman-el-uefi]
+storage_block_fstypes: [ext4, xfs, vfat, swap]

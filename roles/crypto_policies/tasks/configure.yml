@@ -24,7 +24,7 @@
 - name: crypto-policies configure - Deploy custom policy modules
   ansible.builtin.template:
     src:   "{{ item.src }}"
-    dest:  "{{ item.dst }}"
+    dest:  "/etc/crypto-policies/policies/modules/{{ item.dst | basename }}"
     owner: root
     group: root
     mode:  "0640"

@@ -31,6 +31,14 @@ ansible-galaxy collection install community.general
 Role Variables
 --------------
 
+### Variable reference
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `kernel_modules_list` | `[]` | One of list or blacklist | Kernel modules to load now and persist across reboots |
+| `kernel_modules_blacklist` | `[]` | One of list or blacklist | Kernel modules to blacklist and block from loading |
+
+
 ### `kernel_modules_list`
 
 List of module names to load and persist. Defaults to an empty list (no-op).

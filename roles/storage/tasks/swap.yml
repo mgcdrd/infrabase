@@ -1,0 +1,26 @@
+---
+
+# Swap is an ordinary mount here. A host that must not have swap (kubelet)
+# leaves it out of the defined set with `storage_prune`, or sets
+# `- { path: swap, state: absent }`; see prune.yml.
+
+- name: storage swap - Persist swap devices to fstab
+  ansible.posix.mount:
+    path: none
+    src: "{{ item.src }}"
+    fstype: swap
+    opts: "{{ item.opts }}"
+    dump: "{{ item.dump }}"
+    passno: "{{ item.passno }}"
+    state: present
+  loop: "{{ _storage_plan | selectattr('fstype', 'equalto', 'swap') | rejectattr('src', 'equalto', '') | list }}"
+  loop_control:
+    label: "{{ item.src }}"
+
+# Activates fstab swap entries that are not active yet; already-active ones
+# are skipped by swapon itself.
+- name: storage swap - Activate swap
+  ansible.builtin.command:
+    cmd: swapon -a
+  changed_when: false
+  when: _storage_plan | selectattr('fstype', 'equalto', 'swap') | list | length > 0

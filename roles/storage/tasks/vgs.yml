@@ -1,0 +1,43 @@
+---
+
+# Adds PVs to VGs and creates VGs that do not exist yet. remove_extra_pvs is
+# off: a PV that is not listed here must never be removed from a VG.
+
+- name: storage vgs - Check PV block devices
+  ansible.builtin.stat:
+    path: "{{ item.1 }}"
+    follow: true
+  register: _storage_pv_stat
+  loop: "{{ _storage_vg_pvs | dict2items | subelements('value') }}"
+  loop_control:
+    label: "{{ item.0.key }}: {{ item.1 }}"
+
+- name: storage vgs - Assert PVs exist and are not claimed by another VG
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.stat.exists
+      - item.stat.isblk
+      - >-
+        (item.stat.lnk_source | default(item.stat.path)) not in _storage_pv_vg
+        or _storage_pv_vg[item.stat.lnk_source | default(item.stat.path)] in ['', item.item.0.key]
+    fail_msg: >-
+      '{{ item.item.1 }}' does not exist, is not a block device, or is already a
+      PV in VG '{{ _storage_pv_vg[item.stat.lnk_source | default(item.stat.path)] | default('?') }}'
+      and cannot be added to '{{ item.item.0.key }}'.
+  loop: "{{ _storage_pv_stat.results }}"
+  loop_control:
+    label: "{{ item.item.0.key }}: {{ item.item.1 }}"
+
+# community.general.lvg runs pvcreate on new devices itself and refuses a
+# device that already holds a signature.
+- name: storage vgs - Create or extend volume groups
+  community.general.lvg:
+    vg: "{{ item.key }}"
+    pvs: "{{ item.value }}"
+    pesize: "{{ storage_vgs | selectattr('vg', 'equalto', item.key) | map(attribute='pesize') | first | default('4') | string }}"
+    remove_extra_pvs: false
+    state: present
+  loop: "{{ _storage_vg_pvs | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"

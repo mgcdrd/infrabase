@@ -17,9 +17,11 @@ Requirements
 Role Variables
 --------------
 
-| Variable | Default | Description |
-|---|---|---|
-| `login_banner_text` | Generic "authorized access only" text | Multi-line string written to `/etc/issue` and `/etc/issue.net`. |
+### Variable reference
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `login_banner_text` | *(standard authorized-use notice)* | No | Banner text written to `/etc/issue` and `/etc/issue.net` |
 
 
 Dependencies

@@ -1,5 +1,13 @@
 ---
 
+- name: firewall main - Merge base zones with every firewall_zones_extra_* layer
+  ansible.builtin.set_fact:
+    _firewall_zones_effective: >-
+      {{ ([firewall_zones]
+          + (query('varnames', '^firewall_zones_extra(_.+)?$') | sort
+             | map('extract', vars) | list))
+         | mgcdrd.infrabase.merge_firewall_zones }}
+
 - name: firewall main - Install and enable firewall
   ansible.builtin.import_tasks: install.yml
 

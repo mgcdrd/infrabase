@@ -2,11 +2,11 @@
 
 crypto_policies_cis: true
 
-# Additional paths to monitor. Each entry requires 'path' and 'rule' keys.
+# Additional policy modules to deploy. Each entry requires:
+#   src - template in this role's (or the caller's) templates/ dir
+#   dst - module file name only, e.g. no-temp.pmod; the role always writes it
+#         to /etc/crypto-policies/policies/modules/ (any directory part is dropped)
 # Example:
 #   crypto_policies_additional:
-#     - { file_name: no-temp , target: cipher@SSH , rule_string: '-*-CBC' }
-#     - file_name: no-example
-#       target: mac@SSH
-#       rule_string: '-3DES-CBC -AES-128-CBC -AES-192-CBC -AES-256-CBC -CHACHA20-POLY1305'
+#     - { src: no-temp.pmod.j2, dst: no-temp.pmod }
 crypto_policies_additional: []

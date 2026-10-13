@@ -29,6 +29,13 @@ Requirements
 Role Variables
 --------------
 
+### Variable reference
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `network_interfaces` | `[]` | Yes | Physical, bond, and VLAN definitions (keys below); empty is a no-op. Opt-in per host because a wrong device name can cut the SSH session |
+
+
 ### `network_interfaces`
 
 List of interface definitions. Empty by default — see

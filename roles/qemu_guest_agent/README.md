@@ -34,10 +34,13 @@ correct package manager.
 Role Variables
 ---------------
 
-| Variable | Default | Notes |
-|----------|---------|-------|
-| `qemu_guest_agent_skip_in_container` | `true` | Skip the role when running inside a container. Set `false` to force the install (e.g. a privileged LXC that proxies the channel). |
-| `qemu_guest_agent_container_virt_types` | `[lxc, systemd-nspawn, docker, podman, container, openvz]` | `virtualization_type` values treated as a container. |
+### Variable reference
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `qemu_guest_agent_skip_in_container` | `true` | No | Skip the role when running inside a container (LXC, systemd-nspawn, Docker, etc.) |
+| `qemu_guest_agent_container_virt_types` | *(list, 6 items)* | No | Virtualization types (ansible_facts['virtualization_type']) treated as a container for the skip above |
+
 
 Otherwise the role applies the same install-and-enable behavior on every
 supported OS family.

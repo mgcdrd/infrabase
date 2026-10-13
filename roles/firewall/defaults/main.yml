@@ -36,6 +36,14 @@ firewall_default_zone: public
 #                                same host on to_port instead of DNAT'ing
 #                                to another host.
 #
+#
+# Layering: firewall_zones is the base set (SSH only by default). To add to it
+# without restating it, set any number of firewall_zones_extra_<suffix> vars
+# (one per group/host layer, e.g. firewall_zones_extra_k8smasters). They are
+# merged into the base by zone name: list keys are concatenated and
+# de-duplicated, scalar keys (masquerade) take the last layer's value.
+# Layers apply in variable-name order. Setting firewall_zones itself still
+# replaces the base, as before.
 firewall_zones:
   - name: public
     interfaces: []

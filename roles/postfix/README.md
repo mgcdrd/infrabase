@@ -20,6 +20,25 @@ Role uses only builtin modules and does not require additional collections.
 Role Variables
 --------------
 
+### Variable reference
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `postfix_mode` | `client` | No | `client` sends all mail to a relay; `relay` accepts mail from `postfix_mynetworks` and forwards it |
+| `postfix_myhostname` | `"{{ ansible_fqdn }}"` | No | Fully qualified hostname of this mail system |
+| `postfix_mydomain` | `"{{ ansible_domain }}"` | No | Local internet domain name |
+| `postfix_myorigin` | `$mydomain` | No | Domain appended to locally posted mail |
+| `postfix_inet_interfaces` | `loopback-only` | Yes | Interfaces Postfix listens on: `loopback-only` (client mode) or `all` (needed for relay mode) |
+| `postfix_inet_protocols` | `all` | No | IP protocols to use: `all`, `ipv4`, `ipv6` |
+| `postfix_relayhost` | `""` | If `postfix_mode` is `client` | Host to forward outbound mail to, e.g. `[mail.example.com]:587`; optional in relay mode |
+| `postfix_sasl_enabled` | `false` | No | Authenticate to the upstream relay with SASL (credentials variables are documented below) |
+| `postfix_mynetworks` | `"127.0.0.0/8 [::1]/128"` | No | Networks trusted to relay mail through this host |
+| `postfix_relay_domains` | `""` | No | Domains this relay accepts and forwards mail for; empty relays only for hosts in `postfix_mynetworks` |
+| `postfix_tls_enabled` | `true` | No | Enable TLS support; disabling is not recommended |
+| `postfix_tls_security_level` | `may` | No | `may` (opportunistic) or `encrypt` (require TLS) |
+| `postfix_aliases` | `{}` | No | Key/value pairs added to /etc/aliases |
+
+
 ```yaml
 # Role mode. Controls the overall configuration profile applied.
 #   client - loopback-only listener, relayhost required, no public acceptance

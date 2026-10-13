@@ -1,0 +1,27 @@
+---
+
+- name: storage prune - Unmount {{ prune_item.path }}
+  block:
+    - name: storage prune - Unmount
+      ansible.posix.mount:
+        path: "{{ prune_item.path }}"
+        state: unmounted
+  rescue:
+    - name: storage prune - Show what holds the mount
+      ansible.builtin.command:
+        cmd: fuser -vm {{ prune_item.path }}
+      register: _storage_holders
+      changed_when: false
+      failed_when: false
+
+    - name: storage prune - Stop on busy mount
+      ansible.builtin.fail:
+        msg: >-
+          Cannot unmount '{{ prune_item.path }}': in use.
+          {{ (_storage_holders.stdout + _storage_holders.stderr) | trim }}
+
+- name: storage prune - Comment out {{ prune_item.path }} in fstab
+  ansible.builtin.replace:
+    path: /etc/fstab
+    regexp: '^({{ prune_item.line | regex_escape }})$'
+    replace: '# disabled by storage role: \1'

@@ -1,0 +1,157 @@
+---
+
+# =====================
+# Firmware: UEFI hosts carry /boot/efi, legacy BIOS hosts do not
+- name: storage facts - Detect UEFI firmware
+  ansible.builtin.stat:
+    path: /sys/firmware/efi
+  register: _storage_efi_stat
+
+# =====================
+# Scheme profile (build-time layout) as the base of the mount list
+- name: storage facts - Assert scheme is known
+  ansible.builtin.assert:
+    quiet: true
+    that: storage_scheme == '' or storage_scheme in storage_schemes
+    fail_msg: "storage_scheme '{{ storage_scheme }}' is unknown. Choose one of: {{ storage_schemes | join(', ') }}."
+
+- name: storage facts - Load scheme profile
+  ansible.builtin.include_vars:
+    file: "profiles/{{ storage_scheme }}.yml"
+  when: storage_scheme | length > 0
+
+# =====================
+# OS volume group: detected from the root mount (more reliable than parsing the
+# device mapper name, which doubles hyphens). Empty when root is not on LVM.
+- name: storage facts - Get root mount source device
+  ansible.builtin.command:
+    cmd: findmnt -n -o SOURCE /
+  register: _storage_root_dev
+  changed_when: false
+  check_mode: false
+
+- name: storage facts - Get VG of the root device
+  ansible.builtin.command:
+    cmd: lvs --noheadings -o vg_name {{ _storage_root_dev.stdout | trim }}
+  register: _storage_root_vg
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+# =====================
+# /etc/fstab as data: adopted mounts take their source from it and pruning
+# works from it.
+- name: storage facts - Read /etc/fstab
+  ansible.builtin.slurp:
+    src: /etc/fstab
+  register: _storage_fstab_raw
+
+- name: storage facts - Parse /etc/fstab
+  ansible.builtin.set_fact:
+    _storage_fstab: >-
+      {%- set out = {} -%}
+      {%- for l in (_storage_fstab_raw.content | b64decode).splitlines() -%}
+      {%- set f = l.split() -%}
+      {%- if f | length >= 4 and not f[0].startswith('#') and f[2] != 'swap' -%}
+      {%- set _ = out.update({f[1]: {'src': f[0], 'fstype': f[2], 'opts': f[3],
+                                     'dump': f[4] | default('0'), 'passno': f[5] | default('0'),
+                                     'line': l}}) -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {{ out }}
+    _storage_fstab_swaps: >-
+      {%- set out = [] -%}
+      {%- for l in (_storage_fstab_raw.content | b64decode).splitlines() -%}
+      {%- set f = l.split() -%}
+      {%- if f | length >= 4 and not f[0].startswith('#') and f[2] == 'swap' -%}
+      {%- set _ = out.append({'src': f[0], 'line': l}) -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {{ out }}
+
+# =====================
+# Effective mount list: profile, then host/group storage_mounts merged over it
+# by path. `state: absent` drops a profile entry and is acted on explicitly.
+- name: storage facts - Merge profile and storage_mounts
+  ansible.builtin.set_fact:
+    _storage_uefi: "{{ _storage_efi_stat.stat.exists }}"
+    _storage_vg_eff: >-
+      {{ storage_vg if storage_vg | length > 0
+         else (_storage_root_vg.stdout | trim if _storage_root_vg.rc == 0 and _storage_root_vg.stdout | trim | length > 0
+               else _storage_profile_vg | default('')) }}
+    _storage_all: >-
+      {{ _storage_profile_mounts | default([])
+         | community.general.lists_mergeby(storage_mounts, 'path') }}
+
+- name: storage facts - Resolve absent and firmware-specific entries
+  ansible.builtin.set_fact:
+    _storage_absent: "{{ _storage_all | selectattr('state', 'defined') | selectattr('state', 'equalto', 'absent') | list }}"
+
+- name: storage facts - Build the mount list
+  ansible.builtin.set_fact:
+    _storage_mounts: >-
+      {{ (_storage_all | difference(_storage_absent) | rejectattr('efi_only', 'defined') | list)
+         + ((_storage_all | difference(_storage_absent) | selectattr('efi_only', 'defined') | list)
+            if _storage_uefi else []) }}
+
+# One resolved record per mount: backing device, filesystem, options.
+- name: storage facts - Build the plan
+  ansible.builtin.set_fact:
+    _storage_plan: >-
+      {%- set out = [] -%}
+      {%- for m in _storage_mounts -%}
+      {%- set vg = m.vg | default(_storage_vg_eff) -%}
+      {%- set old = _storage_fstab.get(m.path, {}) -%}
+      {%- if m.lv is defined -%}
+      {%- set src = '/dev/mapper/' ~ (vg | replace('-', '--')) ~ '-' ~ (m.lv | replace('-', '--')) -%}
+      {%- elif m.src is defined -%}
+      {%- set src = m.src -%}
+      {%- else -%}
+      {%- set src = old.src | default('') -%}
+      {%- endif -%}
+      {%- set _ = out.append(m | combine({
+            'vg': vg,
+            'src': src,
+            'adopt': m.lv is not defined and m.src is not defined,
+            'block': src.startswith('/dev/'),
+            'fstype': m.fstype | default(old.fstype | default(storage_default_fstype)),
+            'opts': m.opts | default(old.opts | default(storage_default_opts)),
+            'dump': m.dump | default(old.dump | default('0')),
+            'passno': m.passno | default(old.passno | default('0'))
+          })) -%}
+      {%- endfor -%}
+      {{ out }}
+
+# =====================
+# Disks: partitions and which VG each PV belongs to
+- name: storage facts - Build partition list
+  ansible.builtin.set_fact:
+    _storage_parts: >-
+      {%- set out = [] -%}
+      {%- for d in storage_disks -%}
+      {%- for p in d.partitions | default([]) -%}
+      {%- set dev = d.device ~ ('-part' if d.device.startswith('/dev/disk/by-')
+                                else ('p' if d.device[-1].isdigit() else '')) ~ p.number -%}
+      {%- set _ = out.append({'disk': d.device, 'label': d.label | default('gpt'),
+                              'number': p.number, 'dev': dev,
+                              'start': p.start | default('0%'), 'end': p.end | default('100%'),
+                              'flags': p.flags | default([]), 'grow': p.grow | default(false),
+                              'vg': p.vg | default('')}) -%}
+      {%- endfor -%}
+      {%- endfor -%}
+      {{ out }}
+
+- name: storage facts - Collect PVs per volume group
+  ansible.builtin.set_fact:
+    _storage_vg_pvs: >-
+      {%- set out = {} -%}
+      {%- for p in _storage_parts if p.vg | length > 0 -%}
+      {%- set _ = out.update({p.vg: out.get(p.vg, []) + [p.dev]}) -%}
+      {%- endfor -%}
+      {%- for d in storage_disks if d.vg is defined -%}
+      {%- set _ = out.update({d.vg: out.get(d.vg, []) + [d.device]}) -%}
+      {%- endfor -%}
+      {%- for v in storage_vgs if v.pvs is defined -%}
+      {%- set _ = out.update({v.vg: out.get(v.vg, []) + v.pvs}) -%}
+      {%- endfor -%}
+      {{ out }}

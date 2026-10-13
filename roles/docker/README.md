@@ -16,6 +16,15 @@ Requirements
 Role Variables
 --------------
 
+### Variable reference
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `docker_apt_arch` | *(derived from `ansible_architecture`)* | No | Architecture name for Docker's apt repo; derived from `ansible_architecture` (x86_64 → amd64, aarch64 → arm64) |
+| `docker_log_driver` | `syslog` | No | Default logging driver for all containers. `syslog` sends to local rsyslog; note `docker logs` does not work with it, and existing containers must be recreated |
+| `docker_syslog_facility` | `local3` | No | Syslog facility used when `docker_log_driver` is `syslog` |
+
+
 ### `docker_apt_arch`
 
 Architecture string for the apt repository URL. Auto-detected from

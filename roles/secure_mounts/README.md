@@ -21,6 +21,13 @@ The `ansible.posix` collection must be installed (included in `ansible-base-ee`)
 Role Variables
 --------------
 
+### Variable reference
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `secure_mounts_list` | *(list, 1 items)* | No | Mounts to harden; each takes `path`, `opts`, and optionally `src`/`fstype` (used when the mount is not already in fstab). Default covers `/dev/shm` |
+
+
 ### `secure_mounts_list`
 
 List of mount points to configure. Each entry requires:

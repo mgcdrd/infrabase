@@ -19,7 +19,7 @@ table inet filter {
     ip  protocol icmp   accept
     ip6 nexthdr  icmpv6 accept
 
-{% for zone in firewall_zones %}
+{% for zone in _firewall_zones_effective %}
 {% set ifaces = zone.interfaces | default([]) %}
 {% set tcp    = zone.allowed_tcp_ports | default([]) %}
 {% set udp    = zone.allowed_udp_ports | default([]) %}
@@ -51,7 +51,7 @@ table inet filter {
     ct state established,related accept
     ct state invalid drop
 
-{% for zone in firewall_zones %}
+{% for zone in _firewall_zones_effective %}
 {% set ifaces = zone.interfaces | default([]) %}
 {% set has_nat = (zone.masquerade | default(false)) or (zone.forward_ports | default([]) | length > 0) %}
 {% if has_nat and ifaces | length > 0 %}
@@ -68,7 +68,7 @@ table inet filter {
 
 }
 
-{% set nat_zones = firewall_zones | selectattr('interfaces', 'defined') | selectattr('interfaces') | list %}
+{% set nat_zones = _firewall_zones_effective | selectattr('interfaces', 'defined') | selectattr('interfaces') | list %}
 {% if nat_zones | selectattr('masquerade', 'defined') | selectattr('masquerade') | list | length > 0
    or nat_zones | selectattr('forward_ports', 'defined') | rejectattr('forward_ports', 'equalto', []) | list | length > 0 %}
 table inet nat {

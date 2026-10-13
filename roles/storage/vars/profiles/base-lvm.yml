@@ -1,0 +1,12 @@
+---
+# auto.packer "base-lvm": /boot partition + one PV, VG vGroup_01, ext4.
+_storage_profile_vg: vGroup_01
+_storage_profile_mounts:
+  - { path: /boot/efi, efi_only: true }
+  - { path: /boot }
+  - { path: /,     lv: lgv_00, size: 2G, fstype: ext4 }
+  - { path: /home, lv: lgv_01, size: 2G, fstype: ext4 }
+  - { path: /tmp,  lv: lgv_02, size: 2G, fstype: ext4 }
+  - { path: /usr,  lv: lgv_03, size: 6G, fstype: ext4 }
+  - { path: /var,  lv: lgv_04, size: 4G, fstype: ext4 }
+  - { path: swap,  lv: lgv_10, size: 2G, fstype: swap }

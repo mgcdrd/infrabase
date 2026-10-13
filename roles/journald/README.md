@@ -17,11 +17,13 @@ Requirements
 Role Variables
 --------------
 
-| Variable | Default | Description |
-|---|---|---|
-| `journald_storage` | `persistent` | Where to store journal data. `persistent` writes to `/var/log/journal/` and survives reboots. |
-| `journald_compress` | `yes` | Compress journal data on disk. |
-| `journald_forward_syslog` | `yes` | Forward journal entries to the syslog socket. Set to `no` if rsyslog reads directly from the journal. |
+### Variable reference
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `journald_storage` | `persistent` | No | Where journal data is stored; `persistent` survives reboots under `/var/log/journal/` |
+| `journald_compress` | `"yes"` | No | Compress journal data on disk |
+| `journald_forward_syslog` | `"yes"` | No | Forward journal entries to syslog; needed when rsyslog reads from the journal socket |
 
 
 Dependencies

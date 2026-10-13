@@ -26,17 +26,19 @@ OS-family branching (chronyd task).
 Role Variables
 --------------
 
-| Variable | Default | Description |
-|---|---|---|
-| `hardened_services_disable_nfs` | `true` | Disable and mask NFS server. Set to `false` on intentional NFS server hosts. |
-| `hardened_services_emergency_auth` | `true` | Write drop-in overrides requiring `sulogin` for `emergency.service` and `rescue.service`. |
-| `hardened_services_chronyd_user` | `true` | Set `OPTIONS="-u chrony"` (RedHat) or `OPTIONS="-u _chrony"` (Debian). Set to `false` if chrony is not installed. |
-| `hardened_services_disable_bluetooth` | `true` | Disable and mask `bluetooth.service` if present. |
-| `hardened_services_disable_autofs` | `true` | Disable and mask `autofs.service` if present. |
-| `hardened_services_disable_rpcbind` | `true` | Disable and mask `rpcbind.service` **and** `rpcbind.socket`. Set to `false` on NFSv3 client/server hosts — rpcbind is required for portmapper lookups. |
-| `hardened_services_fix_grub_user_cfg` | `true` | chmod `0600` on `/boot/grub2/user.cfg` if it exists. RedHat only. |
-| `hardened_services_fix_unowned_files` | `false` | Scan local filesystems (see `hardened_services_local_fstypes`) for files with no owning user/group and chown them to `root:root`. Off by default — review what it would touch before enabling per-host. |
-| `hardened_services_local_fstypes` | `[xfs, ext4, ext3, btrfs]` | Filesystem types included in the unowned-file scan. Excludes NFS/tmpfs/pseudo filesystems. |
+### Variable reference
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `hardened_services_disable_nfs` | `true` | No | Disable and mask the NFS server service |
+| `hardened_services_emergency_auth` | `true` | No | Require sulogin authentication for emergency and rescue systemd targets via drop-in overrides in /etc/systemd/system/{emergency,rescue}.service.d/ |
+| `hardened_services_chronyd_user` | `true` | No | Ensure chronyd runs as an unprivileged user (chrony on RedHat, _chrony on Debian) |
+| `hardened_services_disable_bluetooth` | `true` | No | Disable and mask unused services |
+| `hardened_services_disable_autofs` | `true` | No | Disable and mask `autofs.service` if present. |
+| `hardened_services_disable_rpcbind` | `true` | No | Disable and mask `rpcbind.service` **and** `rpcbind.socket`. Set to `false` on NFSv3 client/server hosts — rpcbind is required for portmapper lookups. |
+| `hardened_services_fix_grub_user_cfg` | `true` | No | chmod 0600 /boot/grub2/user.cfg (GRUB password file) |
+| `hardened_services_fix_unowned_files` | `false` | No | Scan real (non-pseudo) local filesystems for files with no owning user or group and chown them to root:root |
+| `hardened_services_local_fstypes` | *(list, 4 items)* | No | Local filesystem types to include in the unowned-file scan above |
 
 
 Dependencies

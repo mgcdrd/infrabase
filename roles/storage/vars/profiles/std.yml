@@ -1,0 +1,9 @@
+---
+# auto.packer "std": plain partitions, no LVM. Everything is adopted from the
+# existing fstab; set opts per mount in storage_mounts as needed.
+_storage_profile_vg: ""
+_storage_profile_mounts:
+  - { path: /boot/efi, efi_only: true }
+  - { path: /boot }
+  - { path: / }
+  - { path: swap, fstype: swap }

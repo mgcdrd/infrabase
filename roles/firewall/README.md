@@ -18,7 +18,6 @@ assignment. On Debian, nftables rules are scoped with `iifname { ... }`.
 
 Tested on: Debian 12/13, Rocky Linux 9/10
 
-
 Requirements
 ------------
 
@@ -26,9 +25,42 @@ Requirements
 
 `ansible.posix` collection must be installed (included in `ansible-base-ee`).
 
-
 Role Variables
 --------------
+
+### Variable reference
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `firewall_default_zone` | `public` | No | RedHat only — firewalld default zone for interfaces not explicitly assigned |
+| `firewall_zones` | *(list, 1 items)* | No | Zone definitions; keys (name, interfaces, sources, allowed_tcp_ports, …) listed below. Default opens only SSH |
+| `firewall_zones_extra_<suffix>` | not set | No | Additional zones layered on top of `firewall_zones`, merged by zone name; define one per group or host layer (see **Layering**) |
+
+### Layering: base set plus custom sets
+
+`firewall_zones` is the base (SSH only by default). Instead of restating it to add a port, set one
+or more `firewall_zones_extra_<suffix>` variables. Use a different suffix per group or host, because
+Ansible replaces a list variable when two levels set the same name but does not touch differently
+named ones. The role collects every variable matching `firewall_zones_extra*` (in variable-name
+order) and merges them into the base **by zone name**: list keys (`interfaces`, `sources`,
+`allowed_*`, `source_rules`, `forward_ports`) are concatenated and de-duplicated, and scalar keys
+such as `masquerade` take the last layer's value.
+
+```yaml
+# group_vars/webproxy.yml
+firewall_zones_extra_webproxy:
+  - name: public
+    allowed_tcp_ports: [80, 443]
+
+# host_vars/proxy1.example.com.yml: adds to the group's ports, does not replace them
+firewall_zones_extra_host:
+  - name: public
+    allowed_tcp_ports: [8080]
+```
+
+Setting `firewall_zones` itself still replaces the base, so existing inventory keeps working.
+
+
 
 ### `firewall_default_zone`
 
@@ -40,18 +72,18 @@ a zone falls into this zone. **RedHat only.** Default: `public`.
 List of zone definitions. Each zone controls which interfaces it applies to
 and what traffic it permits.
 
-| Key                 | Required | Description                                                                                          |
-| ------------------- | -------- | ---------------------------------------------------------------------------------------------------- |
-| `name`              | yes      | firewalld zone name (RedHat) or logical label (Debian)                                               |
-| `interfaces`        | no       | Interface names to assign to this zone. Empty = no explicit assignment (default zone).               |
+| Key                 | Required | Description                                                                                                                                                                                                 |
+| ------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`              | yes      | firewalld zone name (RedHat) or logical label (Debian)                                                                                                                                                      |
+| `interfaces`        | no       | Interface names to assign to this zone. Empty = no explicit assignment (default zone).                                                                                                                      |
 | `sources`           | no       | Source CIDRs/addresses bound to this zone (firewalld `--add-source`). Traffic from them gets the zone's whole ruleset, same as arriving on one of its interfaces (OR'd with `interfaces`). **RedHat only.** |
-| `allowed_tcp_ports` | no       | TCP ports to allow inbound on this zone's interfaces.                                                |
-| `allowed_udp_ports` | no       | UDP ports to allow inbound on this zone's interfaces.                                                |
-| `allowed_services`  | no       | firewalld named services to allow (e.g. `http`, `https`). **RedHat only.**                           |
-| `source_rules`      | no       | Source-scoped accepts — AND a source with a specific port/service instead of granting the whole zone. Emitted as rich rules. **RedHat only** (Debian logs a warning and ignores them). |
-| `masquerade`        | no       | Enable source NAT for traffic forwarded out this zone's interfaces. Requires `interfaces` to be set. |
-| `forward_ports`     | no       | Port forwards (DNAT) into this zone. Requires `interfaces` to be set.                                |
-|                     |          |                                                                                                      |
+| `allowed_tcp_ports` | no       | TCP ports to allow inbound on this zone's interfaces.                                                                                                                                                       |
+| `allowed_udp_ports` | no       | UDP ports to allow inbound on this zone's interfaces.                                                                                                                                                       |
+| `allowed_services`  | no       | firewalld named services to allow (e.g. `http`, `https`). **RedHat only.**                                                                                                                                  |
+| `source_rules`      | no       | Source-scoped accepts — AND a source with a specific port/service instead of granting the whole zone. Emitted as rich rules. **RedHat only** (Debian logs a warning and ignores them).                      |
+| `masquerade`        | no       | Enable source NAT for traffic forwarded out this zone's interfaces. Requires `interfaces` to be set.                                                                                                        |
+| `forward_ports`     | no       | Port forwards (DNAT) into this zone. Requires `interfaces` to be set.                                                                                                                                       |
+|                     |          |                                                                                                                                                                                                             |
 
 `source_rules` entries:
 
@@ -87,12 +119,10 @@ On Debian, zones with an empty `interfaces` list apply their rules to all
 interfaces. On RedHat, the zone must be set as default (via `firewall_default_zone`)
 or assigned interfaces explicitly for its rules to take effect.
 
-
 Dependencies
 ------------
 
 - `ansible.posix` (for `ansible.posix.firewalld` on RedHat)
-
 
 Example Playbook
 ----------------
@@ -208,7 +238,6 @@ firewall_zones:
 `sources` binds the CIDR to the zone (the zone's full ruleset applies to it).
 `source_rules` is narrower — it opens just the listed ports/services to the
 listed sources without granting them the rest of the zone.
-
 
 Notes
 -----

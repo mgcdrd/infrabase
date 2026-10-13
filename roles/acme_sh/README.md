@@ -32,6 +32,42 @@ Requirements
 Role Variables
 --------------
 
+### Variable reference
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `acme_sh_cert_base_dir` | `/etc/ssl/acme` | No | Directory certs are deployed to; one subdirectory per primary domain |
+| `acme_sh_flat_ssl_dir` | `""` | Yes | If set, symlinks flat `<domain>.crt`/`.key` files for every domain and SAN here (for consumers that pick a cert per connection, e.g. nginx SNI). Empty skips |
+| `acme_sh_flat_ssl_owner` | `root` | No | Owner of the files under `acme_sh_flat_ssl_dir`; set to the worker user when a non-root process reads them per connection |
+| `acme_sh_flat_ssl_group` | `root` | No | Group of the files under `acme_sh_flat_ssl_dir` |
+| `acme_sh_email` | `""` | Yes | ACME account registration email |
+| `acme_sh_ca` | `letsencrypt` | No | CA to use: `letsencrypt`, `zerossl`, `buypass`, `sslcom`, `google`, or a full ACME directory URL |
+| `acme_sh_staging` | `false` | No | Use the CA's staging endpoint (no rate limits, untrusted certs) |
+| `acme_sh_cf_token` | `""` | If `challenge: dns_cf` | Cloudflare API token scoped to DNS:Edit (preferred); use `{{ vault_* }}` |
+| `acme_sh_cf_key` | `""` | No | Cloudflare Global API Key (legacy alternative to the token, needs `acme_sh_cf_email`) |
+| `acme_sh_cf_email` | `""` | No | Cloudflare account email, used only with `acme_sh_cf_key` |
+| `acme_sh_pdns_url` | `""` | If `challenge: dns_pdns` | PowerDNS API base URL (e.g. `https://dns.example.com:8081`) |
+| `acme_sh_pdns_server_id` | `"localhost"` | No | PowerDNS server ID for API calls |
+| `acme_sh_pdns_token` | `""` | If `challenge: dns_pdns` | PowerDNS API key; use `{{ vault_* }}` |
+| `acme_sh_pdns_ttl` | `""` | No | TTL for the challenge TXT records; empty uses acme.sh's default |
+| `acme_sh_eab_enabled` | `false` | No | Pass External Account Binding credentials to the CA (Sectigo, DigiCert, Google Public CA) |
+| `acme_sh_eab_kid` | `""` | If `acme_sh_eab_enabled` | EAB key ID from the CA |
+| `acme_sh_eab_hmac_key` | `""` | If `acme_sh_eab_enabled` | EAB HMAC key from the CA; use `{{ vault_* }}` |
+| `acme_sh_root_cn` | `"ISRG Root X1"` | No | Common name of the root used by `complete-le-chain.sh` for `complete_chain: true` certs |
+| `acme_sh_root_fingerprint` | *(see defaults)* | No | SHA-256 fingerprint the fetched root must match (default is ISRG Root X1) |
+| `acme_sh_root_urls` | *(list, 2 items)* | No | URLs the root CA PEM is fetched from (default is ISRG Root X1) |
+| `acme_sh_keylength` | `"2048"` | No | Key length for `acme.sh --issue`; `""` falls back to acme.sh's default (ec-256) |
+| `acme_sh_certs` | `[]` | Yes | Certificates to manage; each entry takes `domains`, `challenge`, `webroot_path`, `reload_cmd`, `keylength`, `complete_chain`, `root_*`, `state` (see below) |
+| `acme_sh_issuer_host` | `"{{ inventory_hostname }}"` | No | Single literal hostname that issues certs; other hosts pull from Vault. Default means every host issues itself |
+| `acme_sh_vault_kv_enabled` | `false` | No | Master switch for the issuer + Vault fan-out; false means no Vault interaction |
+| `acme_sh_vault_addr` | `"{{ vault_addr }}"` | If `acme_sh_vault_kv_enabled` | Vault address certs are written to and pulled from |
+| `acme_sh_vault_kv_mount` | `""` | If `acme_sh_vault_kv_enabled` | KV mount holding the certs |
+| `acme_sh_vault_kv_path_prefix` | `""` | If `acme_sh_vault_kv_enabled` | Path prefix under the mount; one sub-path per primary domain |
+| `acme_sh_vault_role_id_file` | `/etc/vault/acme-sh-role-id` | No | AppRole role_id file the push wrapper reads at runtime; pre-positioned on the issuer, not created by this role |
+| `acme_sh_vault_secret_id_file` | `/etc/vault/acme-sh-secret-id` | No | AppRole secret_id file the push wrapper reads at runtime; pre-positioned on the issuer |
+| `acme_sh_vault_deploy_reload_cmd` | `""` | No | Command run on non-issuer hosts when a Vault-deployed cert or key file changes (e.g. `systemctl reload nginx`) |
+
+
 ### Installation
 
 ```yaml

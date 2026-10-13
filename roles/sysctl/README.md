@@ -21,6 +21,14 @@ Requirements
 Role Variables
 --------------
 
+### Variable reference
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `sysctl_params` | `[]` | Yes | Parameters to apply, each `{name, value}`; empty is a no-op |
+| `sysctl_conf_file` | `/etc/sysctl.d/ansible-managed.conf` | No | File written under `/etc/sysctl.d/`; override per caller to keep configs namespaced |
+
+
 ### `sysctl_params`
 
 List of parameters to apply. Each entry requires `name` and `value` keys.

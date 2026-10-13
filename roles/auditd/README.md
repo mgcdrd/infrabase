@@ -22,39 +22,44 @@ Requirements
 Role Variables
 --------------
 
-### auditd.conf settings
+### Variable reference
 
-| Variable | Default | Description |
-|---|---|---|
-| `auditd_local_events` | `yes` | Record events from local system |
-| `auditd_log_format` | `ENRICHED` | Log format (ENRICHED or RAW) |
-| `auditd_name_format` | `hostname` | How to identify this host in logs |
-| `auditd_max_log_file_action` | `keep_logs` | Action when log reaches max size |
-| `auditd_space_left` | `25` | MB remaining before space_left_action fires |
-| `auditd_space_left_action` | `email` | Action when space_left threshold is hit |
-| `auditd_action_mail_acct` | `root` | Email recipient for space alerts |
-| `auditd_admin_space_left` | `12` | MB remaining before admin action fires |
-| `auditd_admin_space_left_action` | `halt` | Action when admin_space_left is hit |
-| `auditd_disk_full_action` | `single` | Action when disk is full |
-| `auditd_disk_error_action` | `syslog` | Action on disk error |
-| `auditd_overflow_action` | `syslog` | Action on audit queue overflow |
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `auditd_local_events` | `"yes"` | No | `local_events` in auditd.conf: record events from the local system |
+| `auditd_log_format` | `"ENRICHED"` | No | `log_format`: `ENRICHED` or `RAW` |
+| `auditd_name_format` | `"hostname"` | No | `name_format`: how this host is identified in logs |
+| `auditd_max_log_file_action` | `"keep_logs"` | No | Action when a log reaches its maximum size |
+| `auditd_space_left` | `"25"` | No | MB free before `auditd_space_left_action` fires |
+| `auditd_space_left_action` | `"email"` | No | Action when the `space_left` threshold is hit |
+| `auditd_action_mail_acct` | `"root"` | No | Mail recipient for space alerts |
+| `auditd_admin_space_left` | `"12"` | No | MB free before `auditd_admin_space_left_action` fires |
+| `auditd_admin_space_left_action` | `"halt"` | No | Action when the `admin_space_left` threshold is hit |
+| `auditd_disk_full_action` | `"single"` | No | Action when the audit volume is full |
+| `auditd_disk_error_action` | `"syslog"` | No | Action on an audit disk error |
+| `auditd_overflow_action` | `"syslog"` | No | Action on audit queue overflow |
+| `auditd_time_syscalls` | *(list, 3 items)* | No | Syscalls audited for time changes (CIS 4.1.3.3) |
+| `auditd_network_syscalls` | *(list, 2 items)* | No | Syscalls audited for network config changes (CIS 4.1.3.4) |
+| `auditd_perm_mod` | *(list, 10 items)* | No | Syscalls audited for permission changes, present on all architectures (CIS 4.1.3.5) |
+| `auditd_perm_mod_x86_only` | *(list, 3 items)* | No | Permission-change syscalls that exist only on x86_64 (chmod/chown/lchown) |
+| `auditd_perm_mod_root` | *(list, 6 items)* | No | Permission-change syscalls audited for root-owned actions |
+| `auditd_file_access_x86_only` | *(list, 2 items)* | No | Unsuccessful file-access syscalls that exist only on x86_64 (CIS 4.1.3.6) |
+| `auditd_file_access` | *(list, 4 items)* | No | Unsuccessful file-access syscalls for all architectures |
+| `auditd_file_delete_x86_only` | *(list, 3 items)* | No | File-deletion syscalls that exist only on x86_64 (CIS 4.1.3.9) |
+| `auditd_file_delete` | *(list, 2 items)* | No | File-deletion syscalls for all architectures |
+| `auditd_kernel_module_x86_only` | *(list, 2 items)* | No | Kernel-module syscalls that exist only on x86_64 (CIS 4.1.3.15) |
+| `auditd_kernel_module_syscalls` | *(list, 3 items)* | No | Kernel-module syscalls for all architectures |
+| `auditd_mount_syscalls` | *(list, 1 items)* | No | Mount/export syscalls (CIS 4.1.3.12/14) |
+| `auditd_privileged_commands_extra` | *(list, 5 items)* | No | Extra privileged command paths audited on top of the setuid/setgid binaries found at play time (CIS 4.1.3.13) |
+| `auditd_watches` | *(map, 28 lines)* | No | Watchpoints (path, permissions, key) for CIS 4.1.3.2/4/7/10/11/16 |
+| `auditd_watches_redhat` | *(list, 6 items)* | No | Additional watchpoints applied on RedHat-family hosts only |
+| `auditd_watches_debian` | *(list, 2 items)* | No | Additional watchpoints applied on Debian-family hosts only |
+
 
 ### Audit rule groups
 
 Each variable is a list that drives a section of `auditd.rules.j2`. Override
 to add or remove entries.
-
-| Variable | Description |
-|---|---|
-| `auditd_perm_mod` | Syscalls audited for permission/ownership modification |
-| `auditd_perm_mod_root` | Subset of perm_mod also audited for auid=0 |
-| `auditd_file_delete` | Syscalls audited for file deletion |
-| `auditd_file_access` | Syscalls audited for failed file access (EACCES/EPERM) |
-| `auditd_kernel_module_syscalls` | Syscalls audited for module load/unload |
-| `auditd_mount_syscalls` | Syscalls audited for mount/export |
-| `auditd_time_syscalls` | Syscalls audited for time changes (list of `{name, key}`) |
-| `auditd_privileged_commands_extra` | Extra paths unioned into the discovered setuid/setgid binary list |
-| `auditd_watches` | File/dir watchpoints (`-w`), list of `{file, perm, key}` |
 
 Network config and kernel module syscall rules include `-F auid>=1000 -F
 auid!=unset` — CIS's automated check requires the filter to be present, not

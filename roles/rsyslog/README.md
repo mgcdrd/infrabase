@@ -53,17 +53,31 @@ receiver plus an extra category-routed listener.
 Role Variables — simple
 ------------------------
 
-| Variable | Default | Description |
-|---|---|---|
-| `rsyslog_file_create_mode` | `0640` | Permissions for log files created by rsyslog. |
-| `rsyslog_preserve_fqdn` | `true` | Keep full FQDNs in hostnames (local and received) instead of truncating to the short name. |
-| `rsyslog_remote_host` | `""` | Remote syslog server FQDN or IP. Leave empty to skip forwarding. |
-| `rsyslog_remote_port` | `514` | Remote syslog port. |
-| `rsyslog_remote_protocol` | `tcp` | `tcp` or `udp`. TCP is preferred for reliable delivery. |
-| `rsyslog_remote_zip_level` | `0` | `omfwd` `ZipLevel` (0 = off, 1–9 = compress forwarded traffic). |
-| `rsyslog_receiver_enable` | `false` | Accept incoming syslog from other hosts (log server role). |
-| `rsyslog_receiver_tcp_port` | `514` | TCP listen port when receiver is enabled. |
-| `rsyslog_receiver_udp_port` | `514` | UDP listen port when receiver is enabled. |
+### Variable reference
+
+| Variable | Default | Required | Description |
+|---|---|---|---|
+| `rsyslog_file_create_mode` | `"0640"` | No | Permissions on log files rsyslog creates (CIS 4.2.1.3) |
+| `rsyslog_preserve_fqdn` | `true` | No | Keep the full FQDN in hostnames instead of the short name, for local and received messages |
+| `rsyslog_remote_host` | `""` | No | Central syslog host to forward everything to (the common client case); empty disables forwarding |
+| `rsyslog_remote_port` | `514` | No | Remote syslog port |
+| `rsyslog_remote_protocol` | `tcp` | No | `tcp` or `udp`; TCP is preferred for reliable delivery |
+| `rsyslog_remote_zip_level` | `0` | No | omfwd compression: 0 is off, 1 to 9 sets ZipLevel |
+| `rsyslog_receiver_enable` | `false` | No | Make this host a syslog receiver on a single TCP/UDP port pair |
+| `rsyslog_receiver_tcp_port` | `514` | No | TCP listen port when the receiver is enabled |
+| `rsyslog_receiver_udp_port` | `514` | No | UDP listen port when the receiver is enabled |
+| `rsyslog_listeners` | `[]` | No | Advanced multi-port inputs, one entry per listener (fields below) |
+| `rsyslog_file_inputs` | `[]` | No | Flat files or globs tailed into the local rsyslog pipeline (fields below) |
+| `rsyslog_rulesets` | `[]` | No | Rulesets routing messages to a local dynamic file, a forward action, or both (fields below) |
+| `rsyslog_log_archive_enable` | `false` | No | Compress, archive, and purge the dynamic `*.log` files written by `rsyslog_rulesets` |
+| `rsyslog_log_archive_source_dir` | `/syslog` | No | Tree scanned for `*.log` files; should contain the ruleset `path` values |
+| `rsyslog_log_archive_dest_dir` | `/archive` | No | Destination for compressed files once past `rsyslog_log_archive_move_after_days` |
+| `rsyslog_log_archive_compress_after_days` | `1` | No | `find -mtime` threshold for gzip compression |
+| `rsyslog_log_archive_move_after_days` | `4` | No | `find -mtime` threshold for moving to the destination dir |
+| `rsyslog_log_archive_delete_after_days` | `180` | No | `find -mtime` threshold for deletion from the destination dir |
+| `rsyslog_log_archive_script_path` | `/usr/local/sbin/logrotation.sh` | No | Install path of the rotation script |
+| `rsyslog_log_archive_cron_hour` | `"0"` | No | Cron hour for the rotation job |
+| `rsyslog_log_archive_cron_minute` | `"1"` | No | Cron minute for the rotation job |
 
 
 Role Variables — advanced (multi-port / multi-target)
@@ -222,18 +236,6 @@ When enabled, deploys a script that daily: gzips `*.log` files older than
 `source_dir` to `dest_dir` (mirroring the directory structure underneath),
 then deletes archived `*.log.gz` files older than `delete_after_days` from
 `dest_dir`. Runs via a root cron job at `cron_hour:cron_minute`.
-
-| Variable | Default | Description |
-|---|---|---|
-| `rsyslog_log_archive_enable` | `false` | Deploy the script and its cron job. |
-| `rsyslog_log_archive_source_dir` | `/syslog` | Directory tree scanned for `*.log` files — should match/contain the `path` values used in `rsyslog_rulesets`. |
-| `rsyslog_log_archive_dest_dir` | `/archive` | Where compressed files land once they age past `move_after_days`. |
-| `rsyslog_log_archive_compress_after_days` | `1` | `find -mtime` threshold for gzip compression. |
-| `rsyslog_log_archive_move_after_days` | `4` | `find -mtime` threshold for moving to `dest_dir`. |
-| `rsyslog_log_archive_delete_after_days` | `180` | `find -mtime` threshold for deletion from `dest_dir`. |
-| `rsyslog_log_archive_script_path` | `/usr/local/sbin/logrotation.sh` | Where the script gets installed. |
-| `rsyslog_log_archive_cron_hour` | `"0"` | Cron hour field. |
-| `rsyslog_log_archive_cron_minute` | `"1"` | Cron minute field. |
 
 Both `source_dir` and `dest_dir` must already exist/be mounted — the role
 does not provision storage.

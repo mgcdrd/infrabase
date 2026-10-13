@@ -1,0 +1,33 @@
+---
+galaxy_info:
+  author: mgcdrd
+  description: >-
+    Lifecycle of disks, LVM and mounts from one variable structure: partitions,
+    PV/VG/LV create and extend, filesystems, fstab and mount options, swap,
+    and opt-in pruning of undefined mounts.
+  role_name: storage
+
+  license: GPL-3.0-or-later
+
+  min_ansible_version: '2.14'
+
+  platforms:
+    - name: EL
+      versions:
+        - '9'
+        - '10'
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+
+  galaxy_tags:
+    - mgcdrd
+    - storage
+    - lvm
+    - mounts
+    - disk
+
+collections:
+  - community.general
+  - ansible.posix

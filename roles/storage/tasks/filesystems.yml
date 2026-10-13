@@ -1,0 +1,49 @@
+---
+
+# Filesystems are only created on blank devices. A device that already holds a
+# filesystem keeps it, whatever fstype the variables say: it is mounted with
+# the type it actually has and a warning is shown on a mismatch.
+
+- name: storage filesystems - Probe block devices for an existing filesystem
+  ansible.builtin.command:
+    cmd: blkid -p -o value -s TYPE {{ item.src }}
+  register: _storage_blkid
+  loop: "{{ _storage_plan | selectattr('block') | rejectattr('adopt') | list }}"
+  loop_control:
+    label: "{{ item.src }}"
+  changed_when: false
+  failed_when: _storage_blkid.rc not in [0, 2]
+  check_mode: false
+
+- name: storage filesystems - Create filesystems on blank devices
+  community.general.filesystem:
+    fstype: "{{ item.item.fstype }}"
+    dev: "{{ item.item.src }}"
+  register: _storage_mkfs
+  loop: "{{ _storage_blkid.results }}"
+  loop_control:
+    label: "{{ item.item.src }}"
+  when: item.stdout | trim | length == 0
+
+- name: storage filesystems - Record actual filesystem types
+  ansible.builtin.set_fact:
+    _storage_fs_actual: >-
+      {%- set out = {} -%}
+      {%- for r in _storage_blkid.results if r.stdout | trim | length > 0 -%}
+      {%- set _ = out.update({r.item.src: r.stdout | trim}) -%}
+      {%- endfor -%}
+      {{ out }}
+    _storage_fs_created: >-
+      {{ _storage_mkfs.results | default([]) | selectattr('changed') | map(attribute='item.item.src') | list }}
+
+- name: storage filesystems - Warn when an existing filesystem differs from fstype
+  ansible.builtin.debug:
+    msg: >-
+      '{{ item.path }}': {{ item.src }} already holds {{ _storage_fs_actual[item.src] }}, not
+      {{ item.fstype }}. Keeping it and mounting it as {{ _storage_fs_actual[item.src] }}.
+  loop: "{{ _storage_plan | selectattr('block') | rejectattr('adopt') | list }}"
+  loop_control:
+    label: "{{ item.path }}"
+  when:
+    - item.src in _storage_fs_actual
+    - _storage_fs_actual[item.src] != item.fstype
