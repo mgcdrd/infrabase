@@ -22,7 +22,7 @@
 # Partitions and PVs, then VGs (adds space before LVs need it)
 - name: storage main - Partition disks and grow PVs
   ansible.builtin.import_tasks: disks.yml
-  when: storage_disks | length > 0
+  when: _storage_disks_eff | length > 0
 
 - name: storage main - Create and extend volume groups
   ansible.builtin.import_tasks: vgs.yml

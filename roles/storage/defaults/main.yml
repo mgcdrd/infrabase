@@ -11,6 +11,8 @@ storage_vg: ""
 
 # Disks to prepare. Use stable /dev/disk/by-id paths for data disks.
 storage_disks: []
+# Also read: every storage_disks_extra(_.+)? var, merged over this list by
+# `device` in variable-name order. Use the same device path in every layer.
 # storage_disks:
 #   - device: /dev/disk/by-id/virtio-data01   # required
 #     label: gpt                              # only used on a blank disk (default: gpt)
@@ -32,6 +34,8 @@ storage_vgs: []
 
 # The mount list. Merged over the profile by `path`; later keys win.
 storage_mounts: []
+# Also read: every storage_mounts_extra(_.+)? var, merged over this list by
+# `path` in variable-name order, e.g. storage_mounts_extra_foreman.
 # storage_mounts:
 #   - path: /var/lib/pgsql
 #     lv: lv_pgsql                            # LV-backed: created if missing, extended if size is larger

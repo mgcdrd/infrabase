@@ -81,12 +81,12 @@ Notes:
 
 | Name                   | Default       | Required                 | Purpose                      |
 |------------------------|---------------|--------------------------|------------------------------|
-| acme_sh_cf_token       | `""`          | If `challenge: dns_cf`   | Cloudflare API token scoped to DNS:Edit (preferred); use `{{ vault_* }}` |
+| acme_sh_cf_token       | `""`          | If `challenge: dns_cf`   | Cloudflare API token scoped to DNS:Edit (preferred); set it to a Vault lookup |
 | acme_sh_cf_key         | `""`          | No                       | Cloudflare Global API Key (legacy alternative to the token, needs `acme_sh_cf_email`) |
 | acme_sh_cf_email       | `""`          | No                       | Cloudflare account email, used only with `acme_sh_cf_key` |
 | acme_sh_pdns_url       | `""`          | If `challenge: dns_pdns` | PowerDNS API base URL (e.g. `https://dns.example.com:8081`) |
 | acme_sh_pdns_server_id | `"localhost"` | No                       | PowerDNS server ID for API calls |
-| acme_sh_pdns_token     | `""`          | If `challenge: dns_pdns` | PowerDNS API key; use `{{ vault_* }}` |
+| acme_sh_pdns_token     | `""`          | If `challenge: dns_pdns` | PowerDNS API key; set it to a Vault lookup |
 | acme_sh_pdns_ttl       | `""`          | No                       | TTL for the challenge TXT records; empty uses acme.sh's default |
 Notes:
 - the `acme_sh_cf_*` and the `acme_sh_pdns_*` are mutually exclusive per each `acme_sh_certs` element.  Both can be used on different elements of the `acme_sh_certs`, but only 1 per cert, if you will.
@@ -153,8 +153,8 @@ an opaque ACME error.
 
 ```yaml
 acme_sh_eab_enabled:  true
-acme_sh_eab_kid:      "{{ vault_acme_eab_kid }}"
-acme_sh_eab_hmac_key: "{{ vault_acme_eab_hmac_key }}"
+acme_sh_eab_kid:      "{{ lookup('community.hashi_vault.vault_kv2_get', vault_kv_env + '/acme/eab', engine_mount_point=vault_kv_infra_mount, url=vault_addr).secret.kid }}"
+acme_sh_eab_hmac_key: "{{ lookup('community.hashi_vault.vault_kv2_get', vault_kv_env + '/acme/eab', engine_mount_point=vault_kv_infra_mount, url=vault_addr).secret.hmac_key }}"
 ```
 
 ### Cloudflare DNS credentials (dns_cf challenge)
@@ -412,7 +412,7 @@ Issues 3 certs:
 
 ```yaml
 acme_sh_register_email: "admin@acme.com"
-acme_sh_cf_token: "{{ vault_cf_token }}"
+acme_sh_cf_token: "{{ lookup('community.hashi_vault.vault_kv2_get', vault_kv_env + '/cloudflare', engine_mount_point=vault_kv_infra_mount, url=vault_addr).secret.token }}"
 acme_sh_certs:
   - domains:
       - "proxy.acme.com"
@@ -441,8 +441,8 @@ Issue 1 cert:
 acme_sh_register_email: "admin@acme.com"
 acme_sh_ca: "https://acme.sectigo.com/v2/DV"
 acme_sh_eab_enabled:  true
-acme_sh_eab_kid:      "{{ vault_sectigo_eab_kid }}"
-acme_sh_eab_hmac_key: "{{ vault_sectigo_eab_hmac }}"
+acme_sh_eab_kid:      "{{ lookup('community.hashi_vault.vault_kv2_get', vault_kv_env + '/acme/sectigo', engine_mount_point=vault_kv_infra_mount, url=vault_addr).secret.kid }}"
+acme_sh_eab_hmac_key: "{{ lookup('community.hashi_vault.vault_kv2_get', vault_kv_env + '/acme/sectigo', engine_mount_point=vault_kv_infra_mount, url=vault_addr).secret.hmac_key }}"
 acme_sh_certs:
   - domains:
       - "example.com"
@@ -460,8 +460,8 @@ Issue 1 cert:
 acme_sh_register_email: "admin@acme.com"
 acme_sh_ca: google
 acme_sh_eab_enabled:  true
-acme_sh_eab_kid:      "{{ vault_google_eab_kid }}"
-acme_sh_eab_hmac_key: "{{ vault_google_eab_hmac_key }}"
+acme_sh_eab_kid:      "{{ lookup('community.hashi_vault.vault_kv2_get', vault_kv_env + '/acme/google/<fqdn>', engine_mount_point=vault_kv_infra_mount, url=vault_addr).secret.kid }}"
+acme_sh_eab_hmac_key: "{{ lookup('community.hashi_vault.vault_kv2_get', vault_kv_env + '/acme/google/<fqdn>', engine_mount_point=vault_kv_infra_mount, url=vault_addr).secret.hmac_key }}"
 acme_sh_certs:
   - domains:
       - "foreman.acme.com"
@@ -487,7 +487,7 @@ Example play in playbook
     - mgcdrd.infrabase.acme_sh
   vars:
     acme_sh_register_email: "admin@lab.acme.com"
-    acme_sh_cf_token: "{{ vault_cf_token }}"
+    acme_sh_cf_token: "{{ lookup('community.hashi_vault.vault_kv2_get', vault_kv_env + '/cloudflare', engine_mount_point=vault_kv_infra_mount, url=vault_addr).secret.token }}"
     acme_sh_certs:
       - domains:
           - "dns.lab.acme.com"

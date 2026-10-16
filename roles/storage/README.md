@@ -30,6 +30,8 @@ Role variables
 | `storage_disks` | `[]` | Disks to partition or add to a VG |
 | `storage_vgs` | `[]` | Extra VG settings (`pesize`) or PVs not described by `storage_disks` |
 | `storage_mounts` | `[]` | Mounts, merged over the profile by `path` |
+| `storage_disks_extra_<suffix>` | unset | Extra disk layers, any number. Merged over `storage_disks` by `device`, in variable-name order |
+| `storage_mounts_extra_<suffix>` | unset | Extra mount layers, any number. Merged over `storage_mounts` by `path`, in variable-name order |
 | `storage_default_fstype` | `xfs` (RedHat), `ext4` (Debian) | Used when a new mount sets no `fstype` |
 | `storage_default_opts` | `defaults` | Used when a mount has no `opts` and no existing fstab line |
 | `storage_default_modes` | `/tmp`, `/var/tmp`: `1777` | Mode applied to a mount point after mounting |
@@ -77,6 +79,29 @@ A filesystem is only created on a blank device. If a device already holds one,
 it is kept and mounted as the type it has, with a warning when that differs from
 `fstype`. Mounting over a directory that has files in it fails unless the entry
 sets `shadow: true`.
+
+### Layering with `_extra_<suffix>`
+
+A host or group that sets `storage_mounts` replaces the list from a broader
+group instead of adding to it, so a service-specific layout would drop the
+base list (for example the CIS mount options set for all hosts). Put the
+service's entries in `storage_mounts_extra_<suffix>` instead (and
+`storage_disks_extra_<suffix>` for disks). Layers are read in variable-name
+order; a later layer that names the same `path` (mounts) or `device` (disks)
+overrides the earlier entry key by key, and `state: absent` in a later layer
+removes it. Disk `device` strings must match exactly to merge, so use by-id
+paths in every layer.
+
+```yaml
+# group_vars/all: base hardening mounts
+storage_mounts:
+  - {path: /tmp, opts: "nodev,nosuid,noexec"}
+# host_vars/foreman: the service's own LVs, added to the base
+storage_disks_extra_foreman:
+  - {device: /dev/disk/by-id/virtio-data01, vg: vg_foreman}
+storage_mounts_extra_foreman:
+  - {path: /var/lib/pulp, lv: lv_pulp, vg: vg_foreman, size: 100G}
+```
 
 ### Disks
 

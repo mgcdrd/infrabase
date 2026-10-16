@@ -101,7 +101,7 @@
     fail_msg: >-
       storage_disks entry needs 'device' (prefer /dev/disk/by-id/...), and a disk
       with 'partitions' sets 'vg' on its partitions, not on the disk.
-  loop: "{{ storage_disks }}"
+  loop: "{{ _storage_disks_eff }}"
   loop_control:
     label: "{{ item.device | default('?') }}"
 
@@ -110,7 +110,7 @@
     path: "{{ item.device }}"
     follow: true
   register: _storage_disk_stat
-  loop: "{{ storage_disks }}"
+  loop: "{{ _storage_disks_eff }}"
   loop_control:
     label: "{{ item.device }}"
 

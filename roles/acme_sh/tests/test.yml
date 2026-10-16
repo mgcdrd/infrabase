@@ -10,7 +10,7 @@
     acme_sh_ca: letsencrypt
     acme_sh_staging: true                    # use staging for tests
 
-    acme_sh_cf_token: "{{ vault_cf_token }}"
+    acme_sh_cf_token: "{{ lookup('community.hashi_vault.vault_kv2_get', vault_kv_env + '/cloudflare', engine_mount_point=vault_kv_infra_mount, url=vault_addr).secret.token }}"
 
     acme_sh_certs:
       - domains:

@@ -1082,6 +1082,8 @@ what differs on this host.
 | storage_disks           | `[]`                            | Disks to partition or add to a VG            |
 | storage_vgs             | `[]`                            | Extra VG settings (`pesize`) or PVs not described by `storage_disks`       |
 | storage_mounts          | `[]`                            | Mounts, merged over the profile by `path`    |
+| storage_disks_extra_`<suffix>` | unset                    | Extra disk layers, merged over `storage_disks` by `device`, variable-name order |
+| storage_mounts_extra_`<suffix>` | unset                   | Extra mount layers, merged over `storage_mounts` by `path`, variable-name order |
 | storage_default_fstype  | `xfs` (RedHat), `ext4` (Debian) | Used when a new mount sets no `fstype`       |
 | storage_default_opts    | `defaults`                      | Used when a mount has no `opts` and no existing fstab line                 |
 | storage_default_modes   | `/tmp`, `/var/tmp`: `1777`      | Mode applied to a mount point after mounting |

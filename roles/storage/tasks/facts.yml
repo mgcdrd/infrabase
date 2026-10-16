@@ -70,7 +70,27 @@
       {{ out }}
 
 # =====================
-# Effective mount list: profile, then host/group storage_mounts merged over it
+# Layers: storage_mounts / storage_disks, then every *_extra(_.+)? var in
+# variable-name order, each merged over the one before by `path` / `device`.
+# Lets a service add its own mounts or disks without replacing the base list
+# (e.g. the CIS mount options set for all hosts).
+- name: storage facts - Merge base and *_extra_* layers
+  ansible.builtin.set_fact:
+    _storage_mounts_layered: >-
+      {%- set ns = namespace(acc=storage_mounts) -%}
+      {%- for layer in query('varnames', '^storage_mounts_extra(_.+)?$') | sort | map('extract', vars) -%}
+      {%- set ns.acc = ns.acc | community.general.lists_mergeby(layer, 'path') -%}
+      {%- endfor -%}
+      {{ ns.acc }}
+    _storage_disks_eff: >-
+      {%- set ns = namespace(acc=storage_disks) -%}
+      {%- for layer in query('varnames', '^storage_disks_extra(_.+)?$') | sort | map('extract', vars) -%}
+      {%- set ns.acc = ns.acc | community.general.lists_mergeby(layer, 'device') -%}
+      {%- endfor -%}
+      {{ ns.acc }}
+
+# =====================
+# Effective mount list: profile, then the layered storage_mounts merged over it
 # by path. `state: absent` drops a profile entry and is acted on explicitly.
 - name: storage facts - Merge profile and storage_mounts
   ansible.builtin.set_fact:
@@ -81,7 +101,7 @@
                else _storage_profile_vg | default('')) }}
     _storage_all: >-
       {{ _storage_profile_mounts | default([])
-         | community.general.lists_mergeby(storage_mounts, 'path') }}
+         | community.general.lists_mergeby(_storage_mounts_layered, 'path') }}
 
 - name: storage facts - Resolve absent and firmware-specific entries
   ansible.builtin.set_fact:
@@ -128,7 +148,7 @@
   ansible.builtin.set_fact:
     _storage_parts: >-
       {%- set out = [] -%}
-      {%- for d in storage_disks -%}
+      {%- for d in _storage_disks_eff -%}
       {%- for p in d.partitions | default([]) -%}
       {%- set dev = d.device ~ ('-part' if d.device.startswith('/dev/disk/by-')
                                 else ('p' if d.device[-1].isdigit() else '')) ~ p.number -%}
@@ -148,7 +168,7 @@
       {%- for p in _storage_parts if p.vg | length > 0 -%}
       {%- set _ = out.update({p.vg: out.get(p.vg, []) + [p.dev]}) -%}
       {%- endfor -%}
-      {%- for d in storage_disks if d.vg is defined -%}
+      {%- for d in _storage_disks_eff if d.vg is defined -%}
       {%- set _ = out.update({d.vg: out.get(d.vg, []) + [d.device]}) -%}
       {%- endfor -%}
       {%- for v in storage_vgs if v.pvs is defined -%}
