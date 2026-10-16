@@ -1,0 +1,10 @@
+---
+
+- name: fail2ban main - install
+  import_tasks: install.yml
+
+- name: fail2ban main - configure
+  import_tasks: configure.yml
+
+- name: fail2ban main - service
+  import_tasks: service.yml

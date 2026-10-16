@@ -1,0 +1,39 @@
+---
+# Preset jails and filters. Not meant to be overridden: pick them with
+# fail2ban_presets and tune thresholds through the fail2ban_nginx_* defaults.
+
+_fail2ban_preset_filters:
+  nginx:
+    # Matches the "reverse_proxy" log format of mgcdrd.infrasvc.nginx (starts
+    # with $remote_addr). fail2ban strips the timestamp, hence the empty \[\].
+    - name: nginx-probe
+      failregex:
+        - '^<HOST> - \S+ \[\] "[A-Z]+ [^"]*(?:/\.env|/\.git/|/\.aws|/\.ssh|wp-login\.php|wp-admin|xmlrpc\.php|phpmyadmin|phpunit|/cgi-bin/|/etc/passwd|/boot\.ini|/actuator|\.\./)[^"]*"'
+    - name: nginx-4xx
+      failregex:
+        - '^<HOST> - \S+ \[\] "[^"]*" (?:400|403|405|444) '
+
+_fail2ban_preset_jails:
+  nginx:
+    # Stock filter shipped with fail2ban; matches "limiting requests" lines.
+    - name: nginx-limit-req
+      filter: nginx-limit-req
+      port: http,https
+      logpath: "{{ fail2ban_nginx_error_logpath }}"
+      maxretry: "{{ fail2ban_nginx_limit_req_maxretry }}"
+      findtime: "{{ fail2ban_nginx_limit_req_findtime }}"
+    # Known scanner paths (.env, .git, wp-login, ...); any status code counts.
+    - name: nginx-probe
+      filter: nginx-probe
+      port: http,https
+      logpath: "{{ fail2ban_nginx_access_logpath }}"
+      maxretry: "{{ fail2ban_nginx_probe_maxretry }}"
+      findtime: "{{ fail2ban_nginx_probe_findtime }}"
+      bantime: "{{ fail2ban_nginx_probe_bantime }}"
+    # Bursts of 400/403/405/444: blocked agents, geoblocked clients, junk requests.
+    - name: nginx-4xx
+      filter: nginx-4xx
+      port: http,https
+      logpath: "{{ fail2ban_nginx_access_logpath }}"
+      maxretry: "{{ fail2ban_nginx_4xx_maxretry }}"
+      findtime: "{{ fail2ban_nginx_4xx_findtime }}"

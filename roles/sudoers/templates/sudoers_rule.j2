@@ -2,4 +2,4 @@
 # Managed by Ansible ({{ sudoers_rules_group }}) -- do not edit directly, changes will be overwritten.
 Cmnd_Alias {{ _alias }}_CMDS = {{ rule.commands | join(', ') }}
 User_Alias {{ _alias }}_USERS = {{ rule.principals | join(', ') }}
-{{ _alias }}_USERS ALL=(root) NOPASSWD: {{ _alias }}_CMDS
+{{ _alias }}_USERS ALL=({{ rule.runas | default('root') }}) {{ 'NOPASSWD:' if rule.nopasswd else '' }} {{ _alias }}_CMDS

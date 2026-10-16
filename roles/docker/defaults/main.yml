@@ -14,4 +14,11 @@ docker_apt_arch: >-
 # set at container *create* time — existing containers need to be recreated
 # (e.g. `docker compose up -d --force-recreate`) to pick this up.
 docker_log_driver: syslog
-docker_syslog_facility: local3
+docker_log_opts:
+  syslog-address:    "unixgram:///dev/log"
+  #docker_syslog_facility: local3
+  docker_syslog_format: rfc5424
+  docker_syslog_tag: "{% raw %}{{.Name}}{% endraw %}"
+
+  docker_json_logs_max_size: 10m
+  docker_json_logs_max_file:  5

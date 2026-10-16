@@ -1,0 +1,62 @@
+---
+
+# =====================
+# Check if setting env so time variables are empty
+- name: cron_jobs preflight - Assert cron environment entry
+  ansible.builtin.assert:
+    that:
+      - >-
+        not (env | default(false) | bool)
+        or
+        (
+          special_time is not defined and
+          minute is not defined and
+          hour is not defined and
+          day is not defined and
+          month is not defined and
+          weekday is not defined
+        )
+    fail_msg: >-
+      env=true cannot be used with special_time, minute, hour, day,
+      month, or weekday.
+  loop: "{{ cron_jobs_defaults + cron_jobs_additional }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+# =====================
+# Check if special_time and other time set on any definition
+- name: cron_jobs preflight - Assert special_time vs normal cron schedule
+  ansible.builtin.assert:
+    that:
+      - >-
+        not (
+          item.special_time is defined and
+          (
+            item.minute is defined or
+            item.hour is defined or
+            item.day is defined or
+            item.month is defined or
+            item.weekday is defined
+          )
+        )
+    fail_msg: >-
+      Cron job '{{ item.name }}': special_time cannot be used with
+      minute, hour, day, month, or weekday.
+  loop: "{{ cron_jobs_defaults + cron_jobs_additional }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+# =====================
+# Check 
+- name: cron_jobs - Validate job definitions
+  ansible.builtin.assert:
+    that:
+      - item.name is defined
+      - item.job is defined or item.state | default('present') == 'absent'
+    fail_msg: >-
+      cron_jobs entry '{{ item.name | default("(missing name)") }}' needs a
+      'job' unless state is 'absent'.
+    quiet: true
+  loop: "{{ cron_jobs_defaults + cron_jobs_additional }}"
+  loop_control:
+    label: "{{ item.name | default('?') }}"

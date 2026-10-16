@@ -1,0 +1,20 @@
+---
+# RedHat: fail2ban comes from EPEL (or the host's content view). The package
+# pulls in fail2ban-firewalld, which provides the firewalld ipset actions.
+# Debian: nftables for the ban action, python3-systemd for backend = systemd.
+
+- name: fail2ban install - Install fail2ban (Debian)
+  ansible.builtin.apt:
+    pkg:
+      - fail2ban
+      - nftables
+      - python3-systemd
+    state: present
+    update_cache: true
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: fail2ban install - Install fail2ban (RedHat)
+  ansible.builtin.dnf:
+    name:  fail2ban
+    state: present
+  when: ansible_facts['os_family'] == 'RedHat'

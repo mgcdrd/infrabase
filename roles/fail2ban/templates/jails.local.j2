@@ -1,0 +1,21 @@
+#=============DO NOT EDIT - ANSIBLE CONTROLLED===============
+{% for jail in _fail2ban_jails %}
+[{{ jail.name }}]
+enabled = {{ 'true' if jail.enabled | default(true) | bool else 'false' }}
+filter  = {{ jail.filter | default(jail.name) }}
+{% for key in ['port', 'logpath', 'maxretry', 'findtime', 'bantime', 'backend', 'banaction'] if jail[key] is defined %}
+{{ '%-9s'|format(key) }}= {{ jail[key] }}
+{% endfor %}
+{% for k, v in (jail.options | default({})).items() %}
+{# YAML yes/no become Python booleans; quote the value ("no") for options like usedns. #}
+{{ k }} = {{ (v | string | lower) if v is boolean else v }}
+{% endfor %}
+
+{% endfor %}
+{% if fail2ban_recidive_enabled | bool %}
+[recidive]
+enabled  = true
+bantime  = {{ fail2ban_recidive_bantime }}
+findtime = {{ fail2ban_recidive_findtime }}
+maxretry = {{ fail2ban_recidive_maxretry }}
+{% endif %}

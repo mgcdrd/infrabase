@@ -18,11 +18,22 @@ Role Variables
 
 ### Variable reference
 
-| Variable | Default | Required | Description |
-|---|---|---|---|
-| `docker_apt_arch` | *(derived from `ansible_architecture`)* | No | Architecture name for Docker's apt repo; derived from `ansible_architecture` (x86_64 → amd64, aarch64 → arm64) |
-| `docker_log_driver` | `syslog` | No | Default logging driver for all containers. `syslog` sends to local rsyslog; note `docker logs` does not work with it, and existing containers must be recreated |
-| `docker_syslog_facility` | `local3` | No | Syslog facility used when `docker_log_driver` is `syslog` |
+| Variable          | Default                                 | Required | Description |
+|-------------------|-----------------------------------------|----------|-------------|
+| docker_apt_arch   | *(derived from `ansible_architecture`)* | No       | Architecture name for Docker's apt repo; derived from `ansible_architecture` (x86_64 → amd64, aarch64 → arm64) |
+| docker_log_driver | `syslog`                                | No       | Default logging driver for all containers. `syslog`, `json-file`, or `journald`  |
+| docker_log_opts   | `[]`                                    | No       | Dictionary. Fields below |
+
+
+
+| Field                     | Default                          | Required | Description |
+|---------------------------|----------------------------------|----------|-------------|
+| docker_syslog_addr        | `unixgram:///dev/log`            | No       | Syslog host to use; default is localhost                  |
+| docker_syslog_facility    | `""`                             | No       | Syslog facility used when `docker_log_driver` is `syslog` |
+| docker_syslog_format      | `rfc5424`                        | No       | Syslog formatting to use                                  |
+| docker_syslog_tag         | `{% raw %}{{.Name}}{% endraw %}` | No       | Tags to be used on log messages                           |
+| docker_json_logs_max_size | `10m`                            | No       | JSON file max size, specify units (k, m, g, etc)          |
+| docker_json_logs_max_file | `5`                              | No       | JSON file number count                                    |
 
 
 ### `docker_apt_arch`
@@ -42,20 +53,25 @@ Override only if auto-detection produces the wrong value:
 docker_apt_arch: amd64
 ```
 
-### `docker_log_driver` / `docker_syslog_facility`
+### `docker_log_driver` / `docker_log_opts*`
 
 Deploys `/etc/docker/daemon.json` setting the default logging driver for
 every container on this host (`log-driver`, default `syslog`) and, for the
-syslog driver, which facility it tags messages with (`docker_syslog_facility`,
-default `local3`) — targets the local rsyslog socket
+syslog driver, which syslog format messages use (`docker_syslog_format`,
+default `rfc5424`) — targets the local rsyslog socket
 (`unixgram:///dev/log`), tagged per-container via Docker's `{{.Name}}`
 template, so it flows through the same rsyslog forwarding as everything
-else. See `mgcdrd.infrabase.rsyslog`'s README for how `local3` gets routed
-centrally.
+else. 
 
 ```yaml
 docker_log_driver: syslog
-docker_syslog_facility: local3
+docker_log_opts:
+  syslog-address:    "unixgram:///dev/log"
+  docker_syslog_facility: ""
+  docker_syslog_format: rfc5424
+  docker_syslog_tag: "{% raw %}{{.Name}}{% endraw %}"
+  docker_json_logs_max_size: 10m
+  docker_json_logs_max_file:  5
 ```
 
 **Trade-offs to know before enabling on a host with running containers:**

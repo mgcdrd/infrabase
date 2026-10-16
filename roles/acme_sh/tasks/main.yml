@@ -13,7 +13,7 @@
   when: inventory_hostname == acme_sh_issuer_host
 
 - name: acme_sh - Manage certificates
-  ansible.builtin.include_tasks: manage_cert.yml
+  ansible.builtin.include_tasks: manage_cert.ymln
   loop: "{{ acme_sh_certs }}"
   loop_control:
     loop_var: _cert

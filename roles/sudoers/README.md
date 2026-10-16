@@ -102,6 +102,8 @@ sudoers_rules:
     commands:                    # matched literally by sudoers, no
       - /usr/sbin/nginx -t       # wildcards — only these exact invocations
       - /usr/sbin/nginx -s reload
+    runas: root                  # user for run as; defaults to root
+    nopasswd: true               # if 'NOPASSWD' is needed
     state: present                # present (default) | absent
 ```
 

@@ -1,0 +1,14 @@
+#=============DO NOT EDIT - ANSIBLE CONTROLLED===============
+[DEFAULT]
+ignoreip = {{ fail2ban_ignoreip | join(' ') }}
+bantime  = {{ fail2ban_bantime }}
+findtime = {{ fail2ban_findtime }}
+maxretry = {{ fail2ban_maxretry }}
+backend  = {{ fail2ban_backend }}
+banaction          = {{ fail2ban_banaction }}
+banaction_allports = {{ fail2ban_banaction_allports }}
+{% if fail2ban_bantime_increment | bool %}
+bantime.increment = true
+bantime.factor    = {{ fail2ban_bantime_factor }}
+bantime.maxtime   = {{ fail2ban_bantime_maxtime }}
+{% endif %}

@@ -1,0 +1,78 @@
+---
+
+- name: fail2ban configure - Validate preset names
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item in _fail2ban_preset_jails
+    fail_msg: "Unknown fail2ban preset '{{ item }}'. Available: {{ _fail2ban_preset_jails.keys() | list | join(', ') }}"
+  loop: "{{ fail2ban_presets }}"
+
+- name: fail2ban configure - Validate custom jails and filters have names
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.name is defined
+    fail_msg: "Every fail2ban_jails and fail2ban_filters entry needs a name."
+  loop: "{{ fail2ban_jails + fail2ban_filters }}"
+  loop_control:
+    label: "{{ item.name | default('(unnamed)') }}"
+
+- name: fail2ban configure - Collect jails and filters from presets and variables
+  ansible.builtin.set_fact:
+    _fail2ban_jails: >-
+      {{ fail2ban_presets | map('extract', _fail2ban_preset_jails) | flatten
+         + fail2ban_jails }}
+    _fail2ban_filters: >-
+      {{ fail2ban_presets | map('extract', _fail2ban_preset_filters) | flatten
+         + fail2ban_filters }}
+
+- name: fail2ban configure - Deploy jail defaults
+  ansible.builtin.template:
+    src:   defaults.local.j2
+    dest:  /etc/fail2ban/jail.d/00-ansible-defaults.local
+    owner: root
+    group: root
+    mode:  "0644"
+  notify: fail2ban reload
+
+- name: fail2ban configure - Deploy filters
+  ansible.builtin.template:
+    src:   filter.conf.j2
+    dest:  "/etc/fail2ban/filter.d/{{ item.name }}.conf"
+    owner: root
+    group: root
+    mode:  "0644"
+  loop: "{{ _fail2ban_filters }}"
+  loop_control:
+    label: "{{ item.name }}"
+  notify: fail2ban reload
+
+- name: fail2ban configure - Deploy jails
+  ansible.builtin.template:
+    src:   jails.local.j2
+    dest:  /etc/fail2ban/jail.d/10-ansible-jails.local
+    owner: root
+    group: root
+    mode:  "0644"
+  notify: fail2ban reload
+
+# The recidive jail reads fail2ban's own log, which doesn't exist until the
+# service has run once; without it the validation below fails on a fresh host.
+- name: fail2ban configure - Ensure fail2ban's own log exists for recidive
+  ansible.builtin.file:
+    path:              /var/log/fail2ban.log
+    state:             touch
+    owner:             root
+    group:             root
+    mode:              "0640"
+    modification_time: preserve
+    access_time:       preserve
+  when: fail2ban_recidive_enabled | bool
+
+# Catches a bad regex or option (or a jail whose logpath doesn't exist yet)
+# before the service is restarted with it.
+- name: fail2ban configure - Validate fail2ban configuration
+  ansible.builtin.command:
+    cmd: /usr/bin/fail2ban-client -t
+  changed_when: false

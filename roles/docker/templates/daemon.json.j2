@@ -1,8 +1,27 @@
 {
   "log-driver": "{{ docker_log_driver }}",
+{%- if docker_log_driver != 'journald' and docker_log_opts is defined %}
   "log-opts": {
-    "syslog-address": "unixgram:///dev/log",
-    "syslog-facility": "{{ docker_syslog_facility }}",
-    "tag": "{% raw %}{{.Name}}{% endraw %}"
+    {%- if docker_syslog_addr is defined %}
+    "syslog-address": "{{ docker_syslog_addr }}"{% if docker_syslog_facility is defined or docker_syslog_format is defined or docker_syslog_tag is defined %},{% endif %}
+    {% endif %}
+    {%- if docker_syslog_facility is defined %}
+    "syslog-facility": "{{ docker_syslog_facility }}"{% if docker_syslog_format is defined or docker_syslog_tag is defined %},{% endif %}
+    {% endif %}
+    {%- if docker_syslog_format is defined %}
+    "syslog-format": "{{ docker_syslog_format }}"{% if docker_syslog_tag is defined %},{% endif %}
+    {% endif %}
+    {%- if docker_syslog_tag is defined %}
+    "tag": "{{ docker_syslog_tag }}"
+    {% endif %}
+    {% if docker_log_driver == 'json-file' %}
+    {%- if docker_json_logs_max_size is defined  %}
+    "max-size": "{{ docker_json_logs_max_size }}"{% if docker_json_logs_max_file is defined %},{% endif %}
+    {% endif %}
+    {%- if docker_json_logs_max_file is defined %}
+    "max-file": "{{ docker_json_logs_max_file }}"
+    {%- endif %}
+    {% endif %}    
   }
+{% endif %}
 }

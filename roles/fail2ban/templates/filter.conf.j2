@@ -1,0 +1,14 @@
+#=============DO NOT EDIT - ANSIBLE CONTROLLED===============
+[Definition]
+failregex = {{ item.failregex[0] }}
+{% for rx in item.failregex[1:] %}
+            {{ rx }}
+{% endfor %}
+{% if item.ignoreregex is defined and item.ignoreregex | length > 0 %}
+ignoreregex = {{ item.ignoreregex[0] }}
+{% for rx in item.ignoreregex[1:] %}
+              {{ rx }}
+{% endfor %}
+{% else %}
+ignoreregex =
+{% endif %}

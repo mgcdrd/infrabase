@@ -1,0 +1,7 @@
+---
+
+- name: fail2ban service - Enable and start fail2ban
+  ansible.builtin.systemd_service:
+    name:    fail2ban
+    state:   started
+    enabled: true

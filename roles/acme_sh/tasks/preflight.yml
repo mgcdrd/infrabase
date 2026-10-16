@@ -5,8 +5,8 @@
   ansible.builtin.assert:
     quiet: true
     that:
-      - acme_sh_email | length > 0
-    fail_msg: "acme_sh_email must be set to register an ACME account."
+      - acme_sh_register_email | length > 0
+    fail_msg: "acme_sh_register_email must be set to register an ACME account."
 
 - name: acme_sh preflight - Assert EAB credentials present when enabled
   become: false

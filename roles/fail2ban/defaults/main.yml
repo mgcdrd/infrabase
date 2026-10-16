@@ -1,0 +1,74 @@
+---
+
+# ---- JAIL DEFAULTS ([DEFAULT] in jail.d/00-ansible-defaults.local) ----
+# Networks fail2ban never bans. Add the environment's trusted ranges.
+fail2ban_ignoreip:
+  - 127.0.0.1/8
+  - ::1
+  - 10.0.0.0/8
+  - 172.16.0.0/12
+  - 192.168.0.0/16
+
+fail2ban_bantime:  1h
+fail2ban_findtime: 10m
+fail2ban_maxretry: 5
+
+# Each repeat offence by the same address doubles the ban, up to maxtime.
+fail2ban_bantime_increment: true
+fail2ban_bantime_factor:    2
+fail2ban_bantime_maxtime:   4w
+
+# auto lets fail2ban pick per jail; set systemd to read the journal.
+fail2ban_backend: auto
+
+# Firewall actions. RedHat bans through firewalld ipsets (firewallcmd-ipset);
+# Debian through nftables.
+fail2ban_banaction: "{{ 'firewallcmd-ipset' if ansible_facts['os_family'] == 'RedHat' else 'nftables' }}"
+fail2ban_banaction_allports: "{{ 'firewallcmd-ipset' if ansible_facts['os_family'] == 'RedHat' else 'nftables[type=allports]' }}"
+
+# ---- PRESETS ----
+# Ready-made jails + filters, enabled by name. Available: nginx
+fail2ban_presets: []
+
+# Used by the nginx preset. The per-server-block logs written by
+# mgcdrd.infrasvc.nginx; limit_req/limit_conn errors land in the error logs.
+fail2ban_nginx_access_logpath: /var/log/nginx/*.access.log
+fail2ban_nginx_error_logpath:  /var/log/nginx/*error.log
+
+# Thresholds of the nginx preset's jails.
+fail2ban_nginx_limit_req_maxretry: 100
+fail2ban_nginx_limit_req_findtime: 1m
+fail2ban_nginx_probe_maxretry:     2
+fail2ban_nginx_probe_findtime:     10m
+fail2ban_nginx_probe_bantime:      1d
+fail2ban_nginx_4xx_maxretry:       30
+fail2ban_nginx_4xx_findtime:       1m
+
+# Repeat-offender jail across all jails (any preset or custom). Off by default.
+fail2ban_recidive_enabled: false
+fail2ban_recidive_bantime:  4w
+fail2ban_recidive_findtime: 1d
+fail2ban_recidive_maxretry: 3
+
+# ---- CUSTOM JAILS AND FILTERS ----
+# Each jail: name (required), filter (default: name), logpath, port,
+# maxretry, findtime, bantime, backend, banaction, enabled (default true),
+# and `options` (extra key: value lines).
+#
+# fail2ban_jails:
+#   - name: myapp
+#     filter: myapp
+#     logpath: /var/log/myapp/access.log
+#     port: http,https
+#     maxretry: 10
+fail2ban_jails: []
+
+# Each filter: name (required) and failregex (list). ignoreregex optional.
+# Remember fail2ban strips the log timestamp before matching, so a pattern
+# written against `[15/Oct/2026:10:00:00 +0000]` must use `\[\]`.
+#
+# fail2ban_filters:
+#   - name: myapp
+#     failregex:
+#       - '^<HOST> - \S+ \[\] "[A-Z]+ [^"]*" 401 '
+fail2ban_filters: []

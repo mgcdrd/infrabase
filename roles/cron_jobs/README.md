@@ -24,13 +24,13 @@ Role Variables
 
 ### Variable reference
 
-| Variable | Default | Required | Description |
-|---|---|---|---|
-| `cron_jobs` | `[]` | Yes | Per-user cron entries to manage (fields below); an empty list is a no-op |
-
+| Variable               | Default | Required | Description |
+|------------------------|---------|----------|-------------|
+| `cron_jobs_defaults`   | `[]`    | No       | Per-user cron entries to manage (fields below); an empty list is a no-op |
+| `cron_jobs_additional` | `[]`    | No       | Per-user cron entries to manage (fields below); an empty list is a no-op |
 
 ```yaml
-cron_jobs: []
+cron_jobs_defaults: []
 # cron_jobs:
 #   - name: nightly backup
 #     user: appuser
@@ -46,15 +46,24 @@ cron_jobs: []
 #     state: absent
 ```
 
-| Field | Required | Description |
-|---|---|---|
-| `name` | yes | Descriptive job name — used as the idempotency key. |
-| `user` | no | User the job runs as. Default: `root`. |
-| `job` | yes, unless `state: absent` | Command to run. |
-| `minute`, `hour`, `day`, `month`, `weekday` | no | Cron time fields. Default: `*` (every). |
-| `special_time` | no | Named schedule (`reboot`, `daily`, `hourly`, `weekly`, `monthly`, `yearly`) instead of explicit time fields. |
-| `state` | no | `present` (default) or `absent`. |
-| `disabled` | no | `true` writes the job commented out. Default: `false`. |
+| Field        | Default     | Required | Description |
+|--------------|-------------|----------|-------------|
+| name         | `""`        | Yes      | Descriptive job name — used as the idempotency key.       |
+| user         | `root`      | No       | User the job will run as.                                 |
+| cron_file    | `""`        | No       | Uses this file instead of an individual user’s crontab.   |
+| env          | `false`     | No       | Entry is an env var with `<name>=<job>`                   |
+| insertbefore | `""`        | No       | Used with `env`, value is `name` of other line            | 
+| insertafter  | `""`        | No       | Used with `env`, value is `name` of other line            |
+| minute       | `*`         | No       | Cron time fields                                          |
+| hour         | `*`         | No       | Cron time fields                                          |
+| day          | `*`         | No       | Cron time fields                                          |
+| month        | `*`         | No       | Cron time fields                                          |
+| weekday      | `*`         | No       | Cron time fields                                          |
+| special_time | `""`        | No       | Named schedule - `reboot`, `daily`, `hourly`, `weekly`, `monthly`, `yearly` |
+| job          | `""`        | Yes      | Command to run, or value `name` is set to when `env=true` |
+| state        | `present`   | No       | `present` if adding, or `absent` is removing              |
+| disabled     | `false`     | No       | If set, comment out line but leave it                     |
+| backup       | `false`     | No       | Create a backup before it is modified                     |
 
 
 Dependencies
@@ -66,6 +75,13 @@ No additional dependencies are required.
 Example Playbook
 ----------------
 
+### Create a crontab file for root with
+```
+FOO=/dev/null
+#Ansible: Auto-updates
+0 12 * * 0 /usr/bin/dnf -y update
+```
+
 ```yaml
 - name: Manage app cron jobs
   hosts: app_servers
@@ -73,15 +89,17 @@ Example Playbook
   roles:
     - role: mgcdrd.infrabase.cron_jobs
       vars:
-        cron_jobs:
-          - name: nightly backup
-            user: appuser
-            job: /opt/app/bin/backup.sh
-            minute: "30"
-            hour: "2"
-          - name: cleanup tmp
-            special_time: daily
-            job: find /tmp -mtime +7 -delete
+        cron_jobs_defaults:
+        - name: FOO
+          env: true
+          job: /dev/null
+          insertbefore: "Auto-updates"
+        - name: "Auto-updates"
+          user: root
+          weekday: 0
+          minute: 0
+          hour: 12
+          job: /usr/bin/dnf -y update
 ```
 
 
