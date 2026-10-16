@@ -30,7 +30,7 @@ acme_sh_flat_ssl_group: root
 
 # ---- ACCOUNT ----
 
-acme_sh_email: ""    # ACME account registration email — required
+acme_sh_register_email: ""    # ACME account registration email — required
 
 # CA to use: letsencrypt, zerossl, buypass, sslcom
 # Full ACME directory URLs are also accepted.

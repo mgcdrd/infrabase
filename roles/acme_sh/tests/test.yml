@@ -6,7 +6,7 @@
   roles:
     - mgcdrd.infrabase.acme_sh
   vars:
-    acme_sh_email: "admin@lab.example.com"
+    acme_sh_register_email: "admin@lab.example.com"
     acme_sh_ca: letsencrypt
     acme_sh_staging: true                    # use staging for tests
 

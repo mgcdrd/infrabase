@@ -32,7 +32,7 @@
       - --no-profile
       - --log
       - --accountemail
-      - "{{ acme_sh_email }}"
+      - "{{ acme_sh_register_email }}"
     chdir: /root/.acme_src
   when: not _acme_sh_binary.stat.exists
   changed_when: true
